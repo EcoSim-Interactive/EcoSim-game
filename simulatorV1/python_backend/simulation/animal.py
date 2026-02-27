@@ -1,0 +1,599 @@
+"""Animal entity enriched with behaviours and accessor helpers."""
+from __future__ import annotations
+
+import copy
+import itertools
+import random
+from typing import Any, Callable, Dict, Iterable, Optional, Tuple
+
+from domain import Species
+from domain.constants import WATER_MEMORY_TTL_STEPS, WATER_MEMORY_SEARCH_RADIUS
+from .ai import behavior as ai_behavior
+
+LogFn = Callable[[str], None]
+
+
+class Animal(Species):
+    """Concrete animal carrying behaviour logic, accessors, and a unique identifier."""
+
+    _id_sequence = itertools.count(1)
+
+    _pack_states: dict[str, dict[str, Any]] = {}
+    _group_states: dict[str, dict[str, Any]] = {}
+
+    def __init__(
+        self,
+        name: str,
+        position: Tuple[float, float],
+        vision: float = 100,
+        smell_range: float = 50,
+        speed: float = 5,
+        diurnal: bool = True,
+        temperament: str = "neutre",
+        diet: str = "omnivore",
+        body_nutrition: float = 80.0,
+        *,
+        species_type: str | None = None,
+        animal_id: int | None = None,
+        traits: Optional[Dict[str, Any]] = None,
+        group_id: Optional[str] = None,
+        pack_id: Optional[str] = None,
+        age_years: Optional[float] = None,
+    ) -> None:
+        traits_copy: Dict[str, Any] = copy.deepcopy(traits) if isinstance(traits, dict) else {}
+        initial_age = self._coerce_age_value(traits_copy.get("age_years", age_years))
+        super().__init__(
+            name=name,
+            position=position,
+            vision=vision,
+            smell_range=smell_range,
+            speed=speed,
+            diurnal=diurnal,
+            temperament=temperament,
+            diet=diet,
+            body_nutrition=body_nutrition,
+            age_years=initial_age,
+        )
+        self.original_name = name
+        self.animal_id = animal_id if animal_id is not None else next(self._id_sequence)
+        self.species_type = species_type or name
+        self.traits = traits_copy
+        self.age_years = self._coerce_age_value(self.traits.get("age_years", self.age_years))
+        self.traits["age_years"] = self.age_years
+        self.age_units = "years"
+        self.age_profile_spec = copy.deepcopy(self.traits.get("age_profile")) if isinstance(self.traits.get("age_profile"), dict) else None
+        self.age_profile = self._normalize_age_profile(self.age_profile_spec)
+        if self.age_profile_spec is not None:
+            self.traits["age_profile"] = copy.deepcopy(self.age_profile_spec)
+        self.age_stage = self._compute_age_stage()
+        self.traits["age_stage"] = self.age_stage
+        self.sex = self._normalize_sex(self.traits.get("sex"))
+        self.traits["sex"] = self.sex
+        self.display_name = self._compute_display_name()
+        self.name = self.display_name
+        self.traits["display_name"] = self.display_name
+        self.group_id = group_id or self.traits.get("group_id")
+        if self.group_id:
+            self.group_state = self._group_states.setdefault(str(self.group_id), {})
+            self.traits["group_id"] = self.group_id
+        else:
+            self.group_state = {}
+            self.traits.pop("group_id", None)
+        self.pack_id = pack_id or self.traits.get("pack_id")
+        if self.pack_id:
+            self.pack_state = self._pack_states.setdefault(str(self.pack_id), {})
+            self.traits["pack_id"] = self.pack_id
+        else:
+            self.pack_state = {}
+            self.traits.pop("pack_id", None)
+        self.water_memory: Optional[Dict[str, float]] = None
+        self.water_memory_ttl = 0
+        self.social_state: Dict[str, Any] = {}
+        self.territory_anchor: Optional[Tuple[float, float]] = None
+        territory_cfg = self.traits.get("territory")
+        if isinstance(territory_cfg, dict):
+            center = territory_cfg.get("center")
+            if isinstance(center, (list, tuple)) and len(center) >= 2:
+                self.territory_anchor = (float(center[0]), float(center[1]))
+            else:
+                self.territory_anchor = (self.x, self.y)
+
+    @classmethod
+    def from_species(cls, species: Species, *, species_type: str | None = None) -> "Animal":
+        """Create an Animal instance from an existing Species instance."""
+        if isinstance(species, cls):
+            if species_type is not None:
+                species.set_species_type(species_type)
+            return species
+
+        instance = cls(
+            name=species.name,
+            position=(species.x, species.y),
+            vision=species.vision,
+            smell_range=species.smell_range,
+            speed=species.speed,
+            diurnal=species.diurnal,
+            temperament=species.temperament,
+            diet=species.diet,
+            body_nutrition=species.body_nutrition,
+            species_type=species_type or getattr(species, "species_type", species.name),
+            animal_id=getattr(species, "animal_id", None),
+            traits=getattr(species, "traits", None),
+            group_id=getattr(species, "group_id", None),
+            pack_id=getattr(species, "pack_id", None),
+        )
+
+        # Mirror dynamic state from the original object.
+        instance.original_name = getattr(species, "original_name", species.name)
+        instance.vitality = species.vitality
+        instance.consumed = species.consumed
+        instance.memory = species.memory
+        instance.rest_steps = species.rest_steps
+        instance.max_rest_steps = species.max_rest_steps
+        instance.hunger = species.hunger
+        instance.thirst = species.thirst
+        instance.fatigue = species.fatigue
+        instance.resting = species.resting
+        instance.alive = species.alive
+        instance.social_state = dict(getattr(species, "social_state", {}))
+        instance.territory_anchor = getattr(species, "territory_anchor", None)
+        if instance.pack_id:
+            instance.pack_state = cls._pack_states.setdefault(str(instance.pack_id), {})
+        if instance.group_id:
+            instance.group_state = cls._group_states.setdefault(str(instance.group_id), {})
+        instance.sex = getattr(species, "sex", instance.sex)
+        instance.age_years = getattr(species, "age_years", instance.age_years)
+        instance.age_profile_spec = copy.deepcopy(getattr(species, "age_profile_spec", instance.age_profile_spec))
+        instance.age_profile = copy.deepcopy(getattr(species, "age_profile", instance.age_profile))
+        instance.age_units = getattr(species, "age_units", getattr(instance, "age_units", "years"))
+        instance.age_stage = getattr(species, "age_stage", instance._compute_age_stage())
+        instance.traits["sex"] = instance.sex
+        instance.traits["age_years"] = instance.age_years
+        instance.traits["age_stage"] = instance.age_stage
+        instance.traits["display_name"] = instance.display_name
+        instance.display_name = instance._compute_display_name()
+        instance.name = instance.display_name
+        return instance
+
+    # ------------------------------------------------------------------ #
+    # Characteristic accessors
+
+    def get_id(self) -> int:
+        return self.animal_id
+
+    def set_id(self, value: int) -> None:
+        self.animal_id = value
+
+    def get_name(self) -> str:
+        return self.name
+
+    def set_name(self, value: str) -> None:
+        self.name = value
+        self.display_name = value
+
+    def get_species_type(self) -> str:
+        return self.species_type
+
+    def set_species_type(self, value: str) -> None:
+        self.species_type = value
+
+    def get_position(self) -> Tuple[float, float]:
+        return (self.x, self.y)
+
+    def set_position(self, position: Tuple[float, float]) -> None:
+        self.x, self.y = position
+
+    def get_vision(self) -> float:
+        return self.vision
+
+    def set_vision(self, value: float) -> None:
+        self.vision = value
+
+    def get_smell_range(self) -> float:
+        return self.smell_range
+
+    def set_smell_range(self, value: float) -> None:
+        self.smell_range = value
+
+    def get_speed(self) -> float:
+        return self.speed
+
+    def set_speed(self, value: float) -> None:
+        self.speed = value
+
+    def is_diurnal(self) -> bool:
+        return self.diurnal
+
+    def set_diurnal(self, value: bool) -> None:
+        self.diurnal = value
+
+    def get_temperament(self) -> str:
+        return self.temperament
+
+    def set_temperament(self, value: str) -> None:
+        self.temperament = value
+
+    def get_diet(self) -> str:
+        return self.diet
+
+    def set_diet(self, value: str) -> None:
+        self.diet = value
+
+    def get_body_nutrition(self) -> float:
+        return self.body_nutrition
+
+    def set_body_nutrition(self, value: float) -> None:
+        self.body_nutrition = value
+
+    def get_vitality(self) -> float:
+        return self.vitality
+
+    def set_vitality(self, value: float) -> None:
+        self.vitality = value
+
+    def get_consumed(self) -> int:
+        return self.consumed
+
+    def set_consumed(self, value: int) -> None:
+        self.consumed = value
+
+    def get_hunger(self) -> float:
+        return self.hunger
+
+    def set_hunger(self, value: float) -> None:
+        self.hunger = value
+
+    def get_thirst(self) -> float:
+        return self.thirst
+
+    def set_thirst(self, value: float) -> None:
+        self.thirst = value
+
+    def get_fatigue(self) -> float:
+        return self.fatigue
+
+    def set_fatigue(self, value: float) -> None:
+        self.fatigue = value
+
+    def is_resting(self) -> bool:
+        return self.resting
+
+    def set_resting(self, value: bool) -> None:
+        self.resting = value
+
+    def get_rest_steps(self) -> int:
+        return self.rest_steps
+
+    def set_rest_steps(self, value: int) -> None:
+        self.rest_steps = value
+
+    def get_max_rest_steps(self) -> int:
+        return self.max_rest_steps
+
+    def set_max_rest_steps(self, value: int) -> None:
+        self.max_rest_steps = value
+
+    def get_memory(self) -> Any:
+        return self.memory
+
+    def set_memory(self, value: Any) -> None:
+        self.memory = value
+
+    def is_alive(self) -> bool:
+        return self.alive
+
+    def set_alive(self, value: bool) -> None:
+        self.alive = value
+
+    def get_traits(self) -> Dict[str, Any]:
+        return copy.deepcopy(self.traits)
+
+    def set_traits(self, traits: Dict[str, Any]) -> None:
+        self.traits = {}
+        if not isinstance(traits, dict):
+            return
+        for key, value in traits.items():
+            self.set_trait(key, value)
+
+    def update_traits(self, updates: Dict[str, Any]) -> None:
+        if not isinstance(updates, dict):
+            return
+        for key, value in updates.items():
+            self.set_trait(key, value)
+
+    def get_trait(self, key: str, default: Any = None) -> Any:
+        return self.traits.get(key, default)
+
+    def set_trait(self, key: str, value: Any) -> None:
+        if key == "sex":
+            self.set_sex(value)
+            return
+        if key == "age_stage":
+            self.set_age_stage(value)
+            return
+        if key == "age_years":
+            self.set_age_years(value)
+            return
+        if key == "age_profile":
+            if isinstance(value, dict):
+                self.age_profile_spec = copy.deepcopy(value)
+                self.traits["age_profile"] = copy.deepcopy(value)
+            else:
+                self.age_profile_spec = None
+                if value is None:
+                    self.traits.pop("age_profile", None)
+                else:
+                    self.traits["age_profile"] = value
+            self.age_profile = self._normalize_age_profile(self.age_profile_spec)
+            self.age_stage = self._compute_age_stage()
+            self.traits["age_stage"] = self.age_stage
+            self.display_name = self._compute_display_name()
+            self.name = self.display_name
+            self.traits["display_name"] = self.display_name
+            return
+        if key == "group_id":
+            self.set_group_id(value)
+            return
+        if key == "pack_id":
+            self.set_pack_id(value)
+            return
+        if key == "naming":
+            if isinstance(value, dict):
+                self.traits[key] = copy.deepcopy(value)
+            else:
+                self.traits[key] = value
+            self.display_name = self._compute_display_name()
+            self.name = self.display_name
+            self.traits["display_name"] = self.display_name
+            return
+        if isinstance(value, dict):
+            self.traits[key] = copy.deepcopy(value)
+        else:
+            self.traits[key] = value
+
+    def get_group_id(self) -> Optional[str]:
+        return self.group_id
+
+    def set_group_id(self, value: Optional[str]) -> None:
+        self.group_id = value
+        if value:
+            self.group_state = self._group_states.setdefault(str(value), {})
+            self.traits["group_id"] = value
+        else:
+            self.group_state = {}
+            self.traits.pop("group_id", None)
+
+    def get_pack_id(self) -> Optional[str]:
+        return self.pack_id
+
+    def set_pack_id(self, value: Optional[str]) -> None:
+        self.pack_id = value
+        if value:
+            self.pack_state = self._pack_states.setdefault(str(value), {})
+            self.traits["pack_id"] = value
+        else:
+            self.pack_state = {}
+            self.traits.pop("pack_id", None)
+
+    def remember_social(self, key: str, value: Any) -> None:
+        self.social_state[key] = value
+
+    def recall_social(self, key: str, default: Any = None) -> Any:
+        return self.social_state.get(key, default)
+
+    def remember_water(self, x: float, y: float, ttl_steps: int = WATER_MEMORY_TTL_STEPS) -> None:
+        try:
+            self.water_memory = {"x": float(x), "y": float(y)}
+            self.water_memory_ttl = max(0, int(ttl_steps))
+        except (TypeError, ValueError):
+            return
+
+    def recall_water(self) -> Optional[Tuple[float, float]]:
+        if not self.water_memory or self.water_memory_ttl <= 0:
+            return None
+        return (float(self.water_memory.get("x", 0.0)), float(self.water_memory.get("y", 0.0)))
+
+    def _tick_water_memory(self) -> None:
+        if self.water_memory_ttl > 0:
+            self.water_memory_ttl -= 1
+            if self.water_memory_ttl <= 0:
+                self.water_memory = None
+
+    @classmethod
+    def pack_state_for(cls, pack_id: str) -> Dict[str, Any]:
+        return cls._pack_states.setdefault(str(pack_id), {})
+
+    @classmethod
+    def group_state_for(cls, group_id: str) -> Dict[str, Any]:
+        return cls._group_states.setdefault(str(group_id), {})
+
+    # ------------------------------------------------------------------ #
+    # Demographics helpers
+
+    def _normalize_sex(self, value: Any) -> str:
+        if isinstance(value, str):
+            lowered = value.strip().lower()
+            if lowered in {"male", "m", "masc"}:
+                return "male"
+            if lowered in {"female", "f", "fem"}:
+                return "female"
+            if lowered:
+                return lowered
+        return "unknown"
+
+    def _normalize_stage(self, value: Any) -> str:
+        if isinstance(value, str):
+            lowered = value.strip().lower()
+            if lowered:
+                return lowered
+        return "adult"
+
+    def _coerce_age_value(self, value: Any) -> float:
+        try:
+            age = float(value)
+        except (TypeError, ValueError):
+            return 0.0
+        return max(0.0, age)
+
+    def _normalize_age_profile(self, spec: Any) -> list[Dict[str, Any]]:
+        stages: list[Dict[str, Any]] = []
+        units = "years"
+        raw_entries: Iterable[Any] = []
+        if isinstance(spec, dict):
+            units = spec.get("units", "years") if isinstance(spec.get("units"), str) else "years"
+            raw_entries = spec.get("stages", []) if isinstance(spec.get("stages"), list) else []
+        elif isinstance(spec, list):
+            raw_entries = spec
+        for entry in raw_entries:
+            if not isinstance(entry, dict):
+                continue
+            name_value = entry.get("name") or entry.get("label")
+            if not isinstance(name_value, str):
+                continue
+            name = name_value.strip().lower()
+            if not name:
+                continue
+            try:
+                minimum = float(entry.get("min", 0.0))
+            except (TypeError, ValueError):
+                minimum = 0.0
+            maximum = None
+            if "max" in entry and entry["max"] is not None:
+                try:
+                    maximum = float(entry["max"])
+                except (TypeError, ValueError):
+                    maximum = None
+            stages.append({"name": name, "min": minimum, "max": maximum})
+        if not stages:
+            stages = [
+                {"name": "juvenile", "min": 0.0, "max": 1.0},
+                {"name": "adult", "min": 1.0, "max": None},
+            ]
+        stages.sort(key=lambda item: item["min"])
+        self.age_units = units if isinstance(units, str) else "years"
+        return stages
+
+    def _compute_age_stage(self) -> str:
+        age = getattr(self, "age_years", 0.0)
+        for stage in self.age_profile:
+            minimum = stage.get("min", 0.0)
+            maximum = stage.get("max")
+            if age >= minimum and (maximum is None or age < maximum):
+                return stage["name"]
+        return self.age_profile[-1]["name"] if self.age_profile else "adult"
+
+    def _extract_label(self, source: Any) -> Optional[str]:
+        if isinstance(source, str):
+            return source
+        if isinstance(source, dict):
+            if self.sex in source and isinstance(source[self.sex], str):
+                return source[self.sex]
+            if "default" in source and isinstance(source["default"], str):
+                return source["default"]
+        return None
+
+    def _compute_display_name(self) -> str:
+        naming = self.traits.get("naming", {})
+        label: Optional[str] = None
+        if isinstance(naming, dict):
+            label = self._extract_label(naming.get(self.age_stage))
+            if label is None:
+                label = self._extract_label(naming.get("default"))
+            if label is None:
+                label = self._extract_label(naming.get(self.sex))
+        if not label:
+            base = self.species_type if isinstance(self.species_type, str) else self.original_name
+            label = str(base)
+        return label
+
+    def get_display_name(self) -> str:
+        return self.display_name
+
+    def set_sex(self, value: str) -> None:
+        self.sex = self._normalize_sex(value)
+        self.traits["sex"] = self.sex
+        self.display_name = self._compute_display_name()
+        self.name = self.display_name
+        self.traits["display_name"] = self.display_name
+
+    def set_age_stage(self, value: str) -> None:
+        self.age_stage = self._normalize_stage(value)
+        self.traits["age_stage"] = self.age_stage
+        self.display_name = self._compute_display_name()
+        self.name = self.display_name
+        self.traits["display_name"] = self.display_name
+
+    def set_age_years(self, value: Any) -> None:
+        age = self._coerce_age_value(value)
+        self.age_years = age
+        self.traits["age_years"] = self.age_years
+        self.age_stage = self._compute_age_stage()
+        self.traits["age_stage"] = self.age_stage
+        self.display_name = self._compute_display_name()
+        self.name = self.display_name
+        self.traits["display_name"] = self.display_name
+
+    def advance_age(self, minutes_per_step: float) -> None:
+        try:
+            minutes = float(minutes_per_step)
+        except (TypeError, ValueError):
+            return
+        if minutes <= 0:
+            return
+        years_increment = minutes / (60.0 * 24.0 * 365.25)
+        if years_increment <= 0:
+            return
+        self.set_age_years(self.age_years + years_increment)
+
+    def update_vitals(self, world_time: Dict[str, float]) -> None:
+        super().update_vitals(world_time)
+        self._tick_water_memory()
+
+    # ------------------------------------------------------------------ #
+    # Behaviour routines
+
+    def decide_idle_action(self) -> str:
+        return ai_behavior.decide_idle_action(self)
+
+    def handle_thirst(self, world: Any, log: LogFn) -> Tuple[bool, str, str]:
+        return ai_behavior.handle_thirst(self, world, log)
+
+    def handle_fatigue(self, log: LogFn) -> Tuple[bool, str, str]:
+        return ai_behavior.handle_fatigue(self, log)
+
+    def handle_cycle_rest(self, log: LogFn) -> Tuple[bool, str, str]:
+        return ai_behavior.handle_cycle_rest(self, log)
+
+    def handle_hunger(self, world: Any, log: LogFn) -> Tuple[bool, str, str]:
+        return ai_behavior.handle_hunger(self, world, log)
+
+    def handle_idle(self, world: Any, log: LogFn) -> Tuple[str, str]:
+        return ai_behavior.handle_idle(self, world, log)
+
+
+# ---------------------------------------------------------------------- #
+# Backward-compatible helper wrappers
+
+
+def decide_idle_action(species: Animal) -> str:
+    return species.decide_idle_action()
+
+
+def handle_thirst(species: Animal, world: Any, log: LogFn) -> Tuple[bool, str, str]:
+    return species.handle_thirst(world, log)
+
+
+def handle_fatigue(species: Animal, log: LogFn) -> Tuple[bool, str, str]:
+    return species.handle_fatigue(log)
+
+
+def handle_cycle_rest(species: Animal, log: LogFn) -> Tuple[bool, str, str]:
+    return species.handle_cycle_rest(log)
+
+
+def handle_hunger(species: Animal, world: Any, log: LogFn) -> Tuple[bool, str, str]:
+    return species.handle_hunger(world, log)
+
+
+def handle_idle(species: Animal, world: Any, log: LogFn) -> Tuple[str, str]:
+    return species.handle_idle(world, log)

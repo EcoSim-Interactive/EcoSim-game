@@ -1,0 +1,71 @@
+{
+  "name": "GazelleDeThomson",
+  "vision": 140,
+  "smell_range": 260,
+  "speed": 21,
+  "diurnal": true,
+  "temperament": "prudent",
+  "diet": "herbivore",
+  "body_nutrition": 65,
+  "traits": {
+    "naming": {
+      "default": {
+        "male": "Gazelle",
+        "female": "Gazelle"
+      },
+      "newborn": {
+        "male": "Faon",
+        "female": "Faon"
+      },
+      "juvenile": {
+        "male": "Jeune gazelle",
+        "female": "Jeune gazelle"
+      },
+      "subadult": {
+        "male": "Gazelle subadulte",
+        "female": "Gazelle subadulte"
+      },
+      "adult": {
+        "male": "Gazelle adulte",
+        "female": "Gazelle adulte"
+      },
+      "senior": {
+        "male": "Gazelle agee",
+        "female": "Gazelle agee"
+      }
+    },
+    "age_profile": {
+      "units": "years",
+      "stages": [
+        {
+          "name": "newborn",
+          "min": 0.0,
+          "max": 0.25
+        },
+        {
+          "name": "juvenile",
+          "min": 0.25,
+          "max": 1.5
+        },
+        {
+          "name": "subadult",
+          "min": 1.5,
+          "max": 2.0
+        },
+        {
+          "name": "adult",
+          "min": 2.0,
+          "max": 8.0
+        },
+        {
+          "name": "senior",
+          "min": 8.0
+        }
+      ]
+    },
+    "water": {
+      "max_depth": 0.4,
+      "juvenile_max_depth": 0.25
+    }
+  }
+}

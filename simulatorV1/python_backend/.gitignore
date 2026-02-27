@@ -1,0 +1,55 @@
+# === Fichiers Python compilés ===
+__pycache__/
+*.py[cod]
+*$py.class
+
+# === Environnements virtuels ===
+.env/
+.venv/
+env/
+venv/
+ENV/
+VENV/
+
+# === Fichiers de logs ===
+*.log
+**/logs/
+**/logs/**
+
+# === Configuration de l'éditeur ===
+.vscode/
+.idea/
+
+# === Outils Python ===
+# pipenv
+Pipfile.lock
+# poetry
+poetry.lock
+# tox
+.tox/
+# mypy
+.mypy_cache/
+# pyright
+.pyright/
+# coverage
+.coverage
+htmlcov/
+.coverage.*
+
+# === Jupyter Notebooks et cache IPython ===
+.ipynb_checkpoints/
+__checkpoint__/
+
+# === Cython compilation ===
+*.c
+*.cpp
+*.so
+
+# === Fichiers de tests ===
+*.tmp
+*.test
+*.swp
+
+# === Fichiers système ===
+.DS_Store
+Thumbs.db

@@ -1,0 +1,71 @@
+{
+  "name": "ElephantDeSavane",
+  "vision": 110,
+  "smell_range": 280,
+  "speed": 11,
+  "diurnal": true,
+  "temperament": "prudent",
+  "diet": "herbivore",
+  "body_nutrition": 220,
+  "traits": {
+    "naming": {
+      "default": {
+        "male": "Elephant",
+        "female": "Elephante"
+      },
+      "calf": {
+        "male": "Elephanteau",
+        "female": "Elephanteau"
+      },
+      "juvenile": {
+        "male": "Jeune elephant",
+        "female": "Jeune elephante"
+      },
+      "adolescent": {
+        "male": "Elephant adolescent",
+        "female": "Elephante adolescente"
+      },
+      "adult": {
+        "male": "Elephant adulte",
+        "female": "Elephante adulte"
+      },
+      "senior": {
+        "male": "Elephant age",
+        "female": "Elephante agee"
+      }
+    },
+    "age_profile": {
+      "units": "years",
+      "stages": [
+        {
+          "name": "calf",
+          "min": 0.0,
+          "max": 2.0
+        },
+        {
+          "name": "juvenile",
+          "min": 2.0,
+          "max": 5.0
+        },
+        {
+          "name": "adolescent",
+          "min": 5.0,
+          "max": 15.0
+        },
+        {
+          "name": "adult",
+          "min": 15.0,
+          "max": 40.0
+        },
+        {
+          "name": "senior",
+          "min": 40.0
+        }
+      ]
+    },
+    "water": {
+      "max_depth": 2.2,
+      "juvenile_max_depth": 1.0
+    }
+  }
+}
