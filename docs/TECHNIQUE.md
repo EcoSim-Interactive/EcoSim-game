@@ -46,34 +46,27 @@ Ce dépôt contient un simulateur d'écosystème pré-calculé (backend Python) 
 
 ## Exécution locale (avec `uv` — recommandé)
 
-1. Créer un environnement Python et l'activer (optionnel si `uv` gère l'environnement) :
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
-
-2. Verrouiller puis synchroniser les dépendances via `uv` :
+1. Verrouiller puis synchroniser les dépendances via `uv` :
 
 ```powershell
 uv lock
 uv sync
 ```
 
-3. Ajouter une dépendance (ex. websockets) :
+2. Ajouter une dépendance (ex. websockets) :
 
 ```powershell
 uv add websockets
 ```
 
-4. Lancer le serveur WebSocket :
+3. Lancer le serveur WebSocket :
 
 ```powershell
 # depuis simulatorV1/python_backend
 uv run server.py
 ```
 
-5. Lancer la simulation CLI hors-ligne :
+4. Lancer la simulation CLI hors-ligne :
 
 ```powershell
 uv run app/main.py
