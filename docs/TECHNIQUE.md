@@ -88,3 +88,4 @@ python -m simulatorV1.python_backend.scripts.clear_logs
 
 ## Ressources utiles
 - Fichiers importants : [simulatorV1/python_backend/README.md](simulatorV1/python_backend/README.md), [simulatorV1/python_backend/main.py](simulatorV1/python_backend/main.py), [simulatorV1/python_backend/server.py](simulatorV1/python_backend/server.py), [simulatorV1/godot_interface/simulation/scripts/socket_client.gd](simulatorV1/godot_interface/simulation/scripts/socket_client.gd)
+
