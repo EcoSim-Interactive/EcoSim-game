@@ -1,0 +1,14 @@
+[gd_resource type="Theme" load_steps=2 format=3 uid="uid://c8h61p7bbxak2"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ej5vc"]
+bg_color = Color(0.14902, 0.203922, 0.286275, 1)
+border_color = Color(0.2, 0.254902, 0.333333, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[resource]
+Label/constants/line_spacing = 3
+Label/styles/normal = null
+PanelContainer/styles/panel = SubResource("StyleBoxFlat_ej5vc")

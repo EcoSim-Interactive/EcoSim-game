@@ -1,3 +1,4 @@
+## Gere le deplacement de la camera du monde avec drag, inertie et zoom.
 extends Camera2D
 
 var dragging: bool = false

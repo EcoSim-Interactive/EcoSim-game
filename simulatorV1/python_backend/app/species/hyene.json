@@ -6,8 +6,27 @@
   "diurnal": false,
   "temperament": "neutre",
   "diet": "carnivore",
-  "body_nutrition": 85,
+  "body_nutrition": 120000,
   "traits": {
+    "metabolism": {
+      "body_mass_kg": 60,
+      "daily_food_intake_kg": 4.2,
+      "food_calories_per_kg": 1800,
+      "reserve_days": 5.0,
+      "meal_intake_kg": 3.5,
+      "carcass_edible_ratio": 0.6,
+      "carcass_calories_per_kg": 1900,
+      "sex_mass_scale": {
+        "male": 0.95,
+        "female": 1.0
+      },
+      "age_stage_mass_scale": {
+        "cub": 0.2,
+        "subadult": 0.65,
+        "adult": 1.0,
+        "senior": 0.9
+      }
+    },
     "naming": {
       "default": {
         "male": "Hyene",

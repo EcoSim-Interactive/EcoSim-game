@@ -1,16 +1,16 @@
-"""Shared domain constants."""
+"""Constantes metier partagees par le domaine et la simulation."""
 BASE_MINUTES_PER_STEP = 5.0
 DEFAULT_MINUTES_PER_STEP = 5
 
-# Spatial scale
+# Echelle spatiale
 METERS_PER_PIXEL = 2.0
 PIXELS_PER_METER = 0.5
 
-# Day/night cycle
+# Cycle jour/nuit
 DAY_START_HOUR = 6
 DAY_END_HOUR = 20
 
-# Water defaults
+# Parametres par defaut lies a l'eau
 DEFAULT_WATER_DEPTH_BY_TYPE = {
     "river": 1.4,
     "lake": 1.8,
@@ -25,11 +25,15 @@ RELOCATE_OFF_WATER_FALLBACK_RADIUS = 30
 WATER_MEMORY_TTL_STEPS = 480
 WATER_MEMORY_SEARCH_RADIUS = 120
 
-# Food defaults
-DEFAULT_FOOD_NUTRITION = 35.0
-DEFAULT_CARCASS_NUTRITION = 80.0
+# Parametres par defaut lies a la nourriture
+DEFAULT_FOOD_NUTRITION = 8000.0
+DEFAULT_CARCASS_NUTRITION = 100000.0
+DEFAULT_DAILY_CALORIE_NEED = 2400.0
+DEFAULT_CALORIE_RESERVE_DAYS = 3.0
+DEFAULT_MEAL_CALORIES = 60.0
+REST_CALORIE_BURN_FACTOR = 0.7
 
-# Movement and interaction
+# Deplacement et interactions
 MOVE_TARGET_EPSILON = 1.0
 MOVE_FATIGUE_PER_UNIT = 0.2
 FATIGUE_SLOWDOWN_THRESHOLD = 70.0
@@ -40,9 +44,8 @@ CARNIVORE_EAT_DISTANCE = 15.0
 DRINK_DISTANCE = 5.0
 DRINK_THIRST_REDUCTION = 70.0
 DRINK_TARGET_SEARCH_RADIUS = 40
-HUNGER_BASELINE = 5.0
 
-# Vitals scaling (per 10 minutes by default)
+# Evolution des besoins vitaux (exprimee par unite de 10 minutes)
 MINUTES_PER_RATE_UNIT = 10.0
 HUNGER_RATE_PER_UNIT = 0.15
 THIRST_RATE_PER_UNIT = 0.25
@@ -61,13 +64,13 @@ REST_FATIGUE_RECOVERY_PER_UNIT = 2.0
 REST_VITALITY_RECOVERY_PER_UNIT = 0.5
 
 
-# Feeding coordination guards
+# Garde-fous pour la coordination alimentaire en groupe
 HUNGER_CRITICAL_FEED_OVERRIDE = 85.0
 PACK_FEED_WAIT_LIMIT_STEPS = 60
 PACK_KILL_STALE_STEPS = 240
 SCAVENGE_WAIT_LIMIT_STEPS = 80
 
-# Engine decision thresholds
+# Seuils de decision utilises par le moteur de simulation
 THIRST_CRITICAL_THRESHOLD = 90.0
 FATIGUE_CRITICAL_THRESHOLD = 90.0
 THIRST_MODERATE_THRESHOLD = 20.0

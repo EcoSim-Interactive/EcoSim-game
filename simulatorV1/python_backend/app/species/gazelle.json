@@ -6,8 +6,28 @@
   "diurnal": true,
   "temperament": "prudent",
   "diet": "herbivore",
-  "body_nutrition": 65,
+  "body_nutrition": 90000,
   "traits": {
+    "metabolism": {
+      "body_mass_kg": 24,
+      "daily_food_intake_kg": 4.0,
+      "food_calories_per_kg": 700,
+      "reserve_days": 3.0,
+      "meal_intake_kg": 2.4,
+      "carcass_edible_ratio": 0.58,
+      "carcass_calories_per_kg": 1400,
+      "sex_mass_scale": {
+        "male": 1.15,
+        "female": 1.0
+      },
+      "age_stage_mass_scale": {
+        "newborn": 0.12,
+        "juvenile": 0.45,
+        "subadult": 0.75,
+        "adult": 1.0,
+        "senior": 0.9
+      }
+    },
     "naming": {
       "default": {
         "male": "Gazelle",

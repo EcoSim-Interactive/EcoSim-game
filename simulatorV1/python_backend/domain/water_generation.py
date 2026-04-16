@@ -1,4 +1,4 @@
-"""Water generation utilities for the world."""
+"""Outils de generation procedurale des points d'eau et de leurs formes."""
 from __future__ import annotations
 
 import random

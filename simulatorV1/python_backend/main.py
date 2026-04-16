@@ -1,4 +1,4 @@
-"""Backward compatible entry point forwarding to app.main."""
+"""Point d'entree de compatibilite qui delegue vers l'interface CLI principale."""
 from app.main import run_cli
 
 

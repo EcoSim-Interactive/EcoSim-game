@@ -1,4 +1,4 @@
-"""Group cohesion helpers for social species."""
+"""Helpers de cohesion de groupe pour les especes sociales."""
 from __future__ import annotations
 
 from typing import Iterable, Tuple
@@ -26,7 +26,14 @@ def maintain_group_cohesion(
     alignment: float = 0.4,
     cohesion: float = 0.6,
 ) -> Tuple[bool, str]:
-    """Keep herd members within a soft radius and avoid collisions."""
+    """Maintient un groupe compact sans provoquer de superposition brutale."""
+    def _attempt_move(target: dict[str, float], primary_action: str) -> Tuple[bool, str]:
+        if animal.move_towards(target, world):
+            return True, primary_action
+        if animal.random_move(world):
+            return True, "herd_reposition"
+        return False, ""
+
     herd_members = [member for member in herd if member is not animal and member.alive]
     if not herd_members:
         return False, ""
@@ -35,12 +42,11 @@ def maintain_group_cohesion(
     center = {"x": center_x, "y": center_y}
     distance_to_center = animal.distance_to(center)
 
-    # Pull toward herd center if drifting too far.
+    # On recentre un individu qui s'ecarte trop du noyau du groupe.
     if distance_to_center > radius:
-        animal.move_towards(center, world)
-        return True, "herd_return_to_center"
+        return _attempt_move(center, "herd_return_to_center")
 
-    # Maintain comfortable spacing with closest neighbour.
+    # On evite ensuite que deux individus se collent de facon non naturelle.
     nearest = min(herd_members, key=lambda mate: animal.distance_to({"x": mate.x, "y": mate.y}))
     separation = animal.distance_to({"x": nearest.x, "y": nearest.y})
 
@@ -49,15 +55,13 @@ def maintain_group_cohesion(
             "x": animal.x + (animal.x - nearest.x) * alignment,
             "y": animal.y + (animal.y - nearest.y) * alignment,
         }
-        animal.move_towards(avoidance_target, world)
-        return True, "herd_avoid_collision"
+        return _attempt_move(avoidance_target, "herd_avoid_collision")
 
     if distance_to_center > spacing:
         cohesion_target = {
             "x": animal.x + (center_x - animal.x) * cohesion,
             "y": animal.y + (center_y - animal.y) * cohesion,
         }
-        animal.move_towards(cohesion_target, world)
-        return True, "herd_cohesion_step"
+        return _attempt_move(cohesion_target, "herd_cohesion_step")
 
     return False, ""

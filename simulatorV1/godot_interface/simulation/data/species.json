@@ -1,0 +1,286 @@
+{
+  "species": [
+	{
+	  "name": "GazelleDeThomson",
+	  "vision": 140,
+	  "smell_range": 260,
+	  "speed": 21,
+	  "diurnal": true,
+	  "temperament": "prudent",
+	  "diet": "herbivore",
+	  "body_nutrition": 90000,
+	  "traits": {
+		"metabolism": {
+		  "body_mass_kg": 24,
+		  "daily_food_intake_kg": 4.0,
+		  "food_calories_per_kg": 700,
+		  "reserve_days": 3.0,
+		  "meal_intake_kg": 2.4,
+		  "carcass_edible_ratio": 0.58,
+		  "carcass_calories_per_kg": 1400,
+		  "sex_mass_scale": {
+			"male": 1.15,
+			"female": 1.0
+		  },
+		  "age_stage_mass_scale": {
+			"newborn": 0.12,
+			"juvenile": 0.45,
+			"subadult": 0.75,
+			"adult": 1.0,
+			"senior": 0.9
+		  }
+		},
+		"naming": {
+		  "default": {
+			"male": "Gazelle",
+			"female": "Gazelle"
+		  },
+		  "newborn": {
+			"male": "Faon",
+			"female": "Faon"
+		  },
+		  "juvenile": {
+			"male": "Jeune gazelle",
+			"female": "Jeune gazelle"
+		  },
+		  "subadult": {
+			"male": "Gazelle subadulte",
+			"female": "Gazelle subadulte"
+		  },
+		  "adult": {
+			"male": "Gazelle adulte",
+			"female": "Gazelle adulte"
+		  },
+		  "senior": {
+			"male": "Gazelle agee",
+			"female": "Gazelle agee"
+		  }
+		},
+		"age_profile": {
+		  "units": "years",
+		  "stages": [
+			{ "name": "newborn", "min": 0.0, "max": 0.25 },
+			{ "name": "juvenile", "min": 0.25, "max": 1.5 },
+			{ "name": "subadult", "min": 1.5, "max": 2.0 },
+			{ "name": "adult", "min": 2.0, "max": 8.0 },
+			{ "name": "senior", "min": 8.0 }
+		  ]
+		},
+		"water": {
+		  "max_depth": 0.4,
+		  "juvenile_max_depth": 0.25
+		}
+	  }
+	},
+	{
+	  "name": "ElephantDeSavane",
+	  "vision": 110,
+	  "smell_range": 280,
+	  "speed": 11,
+	  "diurnal": true,
+	  "temperament": "prudent",
+	  "diet": "herbivore",
+	  "body_nutrition": 1800000,
+	  "traits": {
+		"metabolism": {
+		  "body_mass_kg": 4200,
+		  "daily_food_intake_kg": 160,
+		  "food_calories_per_kg": 550,
+		  "reserve_days": 3.2,
+		  "meal_intake_kg": 55,
+		  "carcass_edible_ratio": 0.35,
+		  "carcass_calories_per_kg": 1100,
+		  "sex_mass_scale": {
+			"male": 1.0,
+			"female": 0.9
+		  },
+		  "age_stage_mass_scale": {
+			"calf": 0.08,
+			"juvenile": 0.2,
+			"adolescent": 0.5,
+			"adult": 1.0,
+			"senior": 0.85
+		  }
+		},
+		"naming": {
+		  "default": {
+			"male": "Elephant",
+			"female": "Elephante"
+		  },
+		  "calf": {
+			"male": "Elephanteau",
+			"female": "Elephanteau"
+		  },
+		  "juvenile": {
+			"male": "Jeune elephant",
+			"female": "Jeune elephante"
+		  },
+		  "adolescent": {
+			"male": "Elephant adolescent",
+			"female": "Elephante adolescente"
+		  },
+		  "adult": {
+			"male": "Elephant adulte",
+			"female": "Elephante adulte"
+		  },
+		  "senior": {
+			"male": "Elephant age",
+			"female": "Elephante agee"
+		  }
+		},
+		"age_profile": {
+		  "units": "years",
+		  "stages": [
+			{ "name": "calf", "min": 0.0, "max": 2.0 },
+			{ "name": "juvenile", "min": 2.0, "max": 5.0 },
+			{ "name": "adolescent", "min": 5.0, "max": 15.0 },
+			{ "name": "adult", "min": 15.0, "max": 40.0 },
+			{ "name": "senior", "min": 40.0 }
+		  ]
+		},
+		"water": {
+		  "max_depth": 2.2,
+		  "juvenile_max_depth": 1.0
+		}
+	  }
+	},
+	{
+	  "name": "HyeneTachetee",
+	  "vision": 90,
+	  "smell_range": 320,
+	  "speed": 16,
+	  "diurnal": false,
+	  "temperament": "neutre",
+	  "diet": "carnivore",
+	  "body_nutrition": 120000,
+	  "traits": {
+		"metabolism": {
+		  "body_mass_kg": 60,
+		  "daily_food_intake_kg": 4.2,
+		  "food_calories_per_kg": 1800,
+		  "reserve_days": 5.0,
+		  "meal_intake_kg": 3.5,
+		  "carcass_edible_ratio": 0.6,
+		  "carcass_calories_per_kg": 1900,
+		  "sex_mass_scale": {
+			"male": 0.95,
+			"female": 1.0
+		  },
+		  "age_stage_mass_scale": {
+			"cub": 0.2,
+			"subadult": 0.65,
+			"adult": 1.0,
+			"senior": 0.9
+		  }
+		},
+		"naming": {
+		  "default": {
+			"male": "Hyene",
+			"female": "Hyene"
+		  },
+		  "cub": {
+			"male": "Hyenon",
+			"female": "Hyenon"
+		  },
+		  "subadult": {
+			"male": "Hyene subadulte",
+			"female": "Hyene subadulte"
+		  },
+		  "adult": {
+			"male": "Hyene adulte",
+			"female": "Hyene adulte"
+		  },
+		  "senior": {
+			"male": "Hyene agee",
+			"female": "Hyene agee"
+		  }
+		},
+		"age_profile": {
+		  "units": "years",
+		  "stages": [
+			{ "name": "cub", "min": 0.0, "max": 1.0 },
+			{ "name": "subadult", "min": 1.0, "max": 2.0 },
+			{ "name": "adult", "min": 2.0, "max": 12.0 },
+			{ "name": "senior", "min": 12.0 }
+		  ]
+		},
+		"water": {
+		  "max_depth": 0.6,
+		  "juvenile_max_depth": 0.35
+		}
+	  }
+	},
+	{
+	  "name": "LionDAfrique",
+	  "vision": 120,
+	  "smell_range": 180,
+	  "speed": 18,
+	  "diurnal": true,
+	  "temperament": "agite",
+	  "diet": "carnivore",
+	  "body_nutrition": 180000,
+	  "traits": {
+		"metabolism": {
+		  "body_mass_kg": 150,
+		  "daily_food_intake_kg": 5.5,
+		  "food_calories_per_kg": 1800,
+		  "reserve_days": 5.5,
+		  "meal_intake_kg": 6.5,
+		  "carcass_edible_ratio": 0.58,
+		  "carcass_calories_per_kg": 1900,
+		  "sex_mass_scale": {
+			"male": 1.2,
+			"female": 1.0
+		  },
+		  "age_stage_mass_scale": {
+			"cub": 0.18,
+			"juvenile": 0.45,
+			"subadult": 0.72,
+			"adult": 1.0,
+			"senior": 0.9
+		  }
+		},
+		"naming": {
+		  "default": {
+			"male": "Lion",
+			"female": "Lionne"
+		  },
+		  "cub": {
+			"male": "Lionceau",
+			"female": "Lionceau"
+		  },
+		  "juvenile": {
+			"male": "Jeune lion",
+			"female": "Jeune lionne"
+		  },
+		  "subadult": {
+			"male": "Lion subadult",
+			"female": "Lionne subadulte"
+		  },
+		  "adult": {
+			"male": "Lion adulte",
+			"female": "Lionne adulte"
+		  },
+		  "senior": {
+			"male": "Lion age",
+			"female": "Lionne agee"
+		  }
+		},
+		"age_profile": {
+		  "units": "years",
+		  "stages": [
+			{ "name": "cub", "min": 0.0, "max": 1.0 },
+			{ "name": "juvenile", "min": 1.0, "max": 2.5 },
+			{ "name": "subadult", "min": 2.5, "max": 4.0 },
+			{ "name": "adult", "min": 4.0, "max": 12.0 },
+			{ "name": "senior", "min": 12.0 }
+		  ]
+		},
+		"water": {
+		  "max_depth": 0.7,
+		  "juvenile_max_depth": 0.4
+		}
+	  }
+	}
+  ]
+}

@@ -25,6 +25,12 @@ window/stretch/mode="canvas_items"
 
 time_display="Label pour afficher le temps"
 
+[importer_defaults]
+
+animation_library={
+&"animation/fps": 60.0
+}
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"

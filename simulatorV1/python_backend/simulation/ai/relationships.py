@@ -1,7 +1,9 @@
-"""Relationship-driven AI helpers."""
+"""Comportements de haut niveau declenches par les relations sociales."""
 from __future__ import annotations
 
 from typing import Iterable, Tuple
+
+from domain.constants import HUNGER_CRITICAL_FEED_OVERRIDE, THIRST_MODERATE_THRESHOLD
 
 from ..animal import Animal
 from ..actions import (
@@ -12,23 +14,27 @@ from ..actions import (
 )
 
 
+def _territory_can_wait(animal: Animal) -> bool:
+    """Suspend les contraintes territoriales quand la survie immediate prend le dessus."""
+    if animal.hunger >= HUNGER_CRITICAL_FEED_OVERRIDE:
+        return True
+    if animal.thirst > THIRST_MODERATE_THRESHOLD:
+        return True
+    if hasattr(animal, "recall_water_target") and animal.recall_water_target() is not None:
+        return True
+    return False
+
+
 def handle_species_relationships(
     animal: Animal,
     animals: Iterable[Animal],
     world,
     log,
 ) -> Tuple[bool, str, str, bool]:
-    """Apply relationship-driven behaviours before default survival rules."""
+    """Applique les comportements sociaux avant les routines de survie generiques."""
     traits = animal.get_traits()
     if not traits:
         return False, "", "", False
-
-    territory_cfg = traits.get("territory")
-    if isinstance(territory_cfg, dict):
-        enforced, action = enforce_territory(animal, territory_cfg, world)
-        if enforced:
-            log(f"{animal.name} patrouille son territoire.")
-            return True, action, "maintien du territoire", False
 
     if animal.pack_id or traits.get("role") in {"hunter", "leader", "patriarch"}:
         acted, action, resolve_food = execute_predation_cycle(animal, animals, world, log)
@@ -40,6 +46,13 @@ def handle_species_relationships(
         acted, action, resolve_food = seek_carcass_opportunity(animal, world)
         if acted:
             return True, action, "charognage opportuniste", resolve_food
+
+    territory_cfg = traits.get("territory")
+    if isinstance(territory_cfg, dict) and not _territory_can_wait(animal):
+        enforced, action = enforce_territory(animal, territory_cfg, world)
+        if enforced:
+            log(f"{animal.name} patrouille son territoire.")
+            return True, action, "maintien du territoire", False
 
     herd_cfg = traits.get("herd_behavior")
     if isinstance(herd_cfg, dict):

@@ -1,3 +1,4 @@
+## Gere la teinte globale du monde et l'affichage de l'heure simulee.
 extends CanvasModulate
 
 var sky_gradient: Gradient

@@ -1,3 +1,4 @@
+## Affiche une ressource alimentaire avec son rendu visuel et sa jauge restante.
 extends Node2D
 
 @export var default_color: Color = Color(0.2, 0.8, 0.2, 1.0)

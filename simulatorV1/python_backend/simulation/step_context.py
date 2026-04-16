@@ -1,4 +1,4 @@
-"""Utilities to build per-step context snapshots for the simulation engine."""
+"""Construit les snapshots de contexte utilises a chaque pas de simulation."""
 from __future__ import annotations
 
 import copy
@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 
 
 def compute_world_time(world: Any, step_index: int) -> Dict[str, int | bool]:
-    """Return coarse-grained world time information for the current step."""
+    """Calcule l'heure logique du monde pour le pas courant."""
     total_minutes = step_index * world.minutes_per_step
     hour = (total_minutes // 60) % 24
     minute = total_minutes % 60
@@ -20,7 +20,7 @@ def compute_world_time(world: Any, step_index: int) -> Dict[str, int | bool]:
 
 
 def build_step_frame(step_index: int, world_time: Dict[str, Any]) -> Dict[str, Any]:
-    """Create the base payload for a simulation step."""
+    """Initialise la structure standard de donnees pour un tour de simulation."""
     return {
         "step": step_index + 1,
         "hour": int(world_time["hour"]),
@@ -60,6 +60,9 @@ def initialize_species_status(species: Any) -> Dict[str, Any]:
             "y": species.y,
             "vitality": species.vitality,
             "consumed": species.consumed,
+            "calories": getattr(species, "calories", None),
+            "max_calories": getattr(species, "max_calories", None),
+            "daily_calorie_need": getattr(species, "daily_calorie_need", None),
             "hunger": species.hunger,
             "thirst": species.thirst,
             "fatigue": species.fatigue,
@@ -82,6 +85,9 @@ def finalize_species_status(species: Any, status: Dict[str, Any]) -> Dict[str, A
         "y": species.y,
         "vitality": species.vitality,
         "consumed": species.consumed,
+        "calories": getattr(species, "calories", None),
+        "max_calories": getattr(species, "max_calories", None),
+        "daily_calorie_need": getattr(species, "daily_calorie_need", None),
         "hunger": species.hunger,
         "thirst": species.thirst,
         "fatigue": species.fatigue,
@@ -119,6 +125,9 @@ def build_summary_payload(species_list: List[Any], world: Any) -> Dict[str, Any]
                 "position": [s.x, s.y],
                 "vitality": s.vitality,
                 "consumed": s.consumed,
+                "calories": getattr(s, "calories", None),
+                "max_calories": getattr(s, "max_calories", None),
+                "daily_calorie_need": getattr(s, "daily_calorie_need", None),
                 "hunger": s.hunger,
                 "thirst": s.thirst,
                 "fatigue": s.fatigue,

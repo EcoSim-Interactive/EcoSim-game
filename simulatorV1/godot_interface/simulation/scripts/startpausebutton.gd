@@ -1,3 +1,4 @@
+## Synchronise l'etat du bouton avec le lancement ou la pause de la simulation.
 extends CheckButton
 
 @export var world_path: NodePath

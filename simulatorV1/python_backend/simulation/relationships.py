@@ -1,4 +1,4 @@
-"""High-level dispatcher for social and inter-species behaviours."""
+"""Point d'entree de compatibilite pour les comportements sociaux et inter-especes."""
 from __future__ import annotations
 
 from typing import Iterable, Tuple
@@ -8,7 +8,7 @@ from .ai import relationships as ai_relationships
 
 __all__ = ["handle_species_relationships"]
 
-# Backward compatibility wrapper.
+# Wrapper historique conserve pour les anciens imports.
 
 def handle_species_relationships(
     animal: Animal,

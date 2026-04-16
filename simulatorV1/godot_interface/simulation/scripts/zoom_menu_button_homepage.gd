@@ -1,3 +1,4 @@
+## Fournit un menu de zoom simple pour piloter la camera depuis l'interface.
 extends MenuButton
 
 @export var camera_path: NodePath

@@ -1,4 +1,4 @@
-"""Domain entity representing a species inside the world."""
+"""Entite de domaine representant un individu vivant dans le monde."""
 from __future__ import annotations
 
 import math
@@ -8,17 +8,20 @@ from typing import Any, Dict, Optional, Tuple
 from .constants import (
     BASE_MINUTES_PER_STEP,
     CARNIVORE_EAT_DISTANCE,
+    DEFAULT_CALORIE_RESERVE_DAYS,
+    DEFAULT_DAILY_CALORIE_NEED,
+    DEFAULT_MEAL_CALORIES,
     DRINK_DISTANCE,
     DRINK_THIRST_REDUCTION,
     EAT_DISTANCE,
     FATIGUE_SLOWDOWN_FACTOR,
     FATIGUE_SLOWDOWN_THRESHOLD,
-    HUNGER_BASELINE,
     HUNGER_RATE_PER_UNIT,
     MINUTES_PER_RATE_UNIT,
     MOVE_FATIGUE_PER_UNIT,
     MOVE_TARGET_EPSILON,
     RANDOM_MOVE_ATTEMPTS,
+    REST_CALORIE_BURN_FACTOR,
     REST_FATIGUE_RECOVERY_PER_UNIT,
     REST_VITALITY_RECOVERY_PER_UNIT,
     THIRST_RATE_PER_UNIT,
@@ -37,6 +40,8 @@ from .constants import (
 
 
 class Species:
+    """Modele de base partage par toutes les entites animales simulables."""
+
     def __init__(
         self,
         name: str,
@@ -47,8 +52,14 @@ class Species:
         diurnal: bool = True,
         temperament: str = "neutre",
         diet: str = "omnivore",
-        body_nutrition: float = 80.0,
+        body_nutrition: Optional[float] = 80.0,
         age_years: float = 0.0,
+        daily_calorie_need: float = DEFAULT_DAILY_CALORIE_NEED,
+        calorie_reserve_days: float = DEFAULT_CALORIE_RESERVE_DAYS,
+        meal_calories: float = DEFAULT_MEAL_CALORIES,
+        body_mass_kg: Optional[float] = None,
+        carcass_edible_ratio: float = 0.55,
+        carcass_calories_per_kg: float = 1800.0,
     ) -> None:
         self.name = name
         self.x, self.y = position
@@ -58,8 +69,17 @@ class Species:
         self.diurnal = diurnal
         self.temperament = temperament
         self.diet = diet
-        self.body_nutrition = body_nutrition
         self.age_years = float(age_years)
+        self.daily_calorie_need = max(1.0, float(daily_calorie_need))
+        self.calorie_reserve_days = max(0.25, float(calorie_reserve_days))
+        self.max_calories = self.daily_calorie_need * self.calorie_reserve_days
+        self.calories = self.max_calories
+        self.meal_calories = max(1.0, float(meal_calories))
+        self.base_body_mass_kg = Species._coerce_positive_float(body_mass_kg)
+        self.body_mass_kg = self.base_body_mass_kg
+        self.carcass_edible_ratio = self._normalize_ratio(carcass_edible_ratio, fallback=0.55)
+        self.carcass_calories_per_kg = max(1.0, float(carcass_calories_per_kg))
+        self.body_nutrition = self._resolve_body_nutrition(body_nutrition)
 
         self.vitality = 100.0
         self.consumed = 0
@@ -74,6 +94,82 @@ class Species:
         self.resting = False
         self.alive = True
 
+    @staticmethod
+    def _coerce_positive_float(value: Any) -> Optional[float]:
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            return None
+        return number if number > 0.0 else None
+
+    @staticmethod
+    def _normalize_ratio(value: Any, *, fallback: float) -> float:
+        try:
+            ratio = float(value)
+        except (TypeError, ValueError):
+            return fallback
+        return max(0.05, min(1.0, ratio))
+
+    def estimate_carcass_calories(self) -> float:
+        """Estime les calories effectivement disponibles dans la carcasse."""
+        if self.body_mass_kg is None:
+            return 0.0
+        return max(0.0, self.body_mass_kg * self.carcass_edible_ratio * self.carcass_calories_per_kg)
+
+    def _resolve_body_nutrition(self, explicit_value: Optional[float]) -> float:
+        explicit = Species._coerce_positive_float(explicit_value)
+        if explicit is not None:
+            return explicit
+        estimated = self.estimate_carcass_calories()
+        if estimated > 0.0:
+            return estimated
+        return 80.0
+
+    @property
+    def hunger(self) -> float:
+        """Expose une jauge de faim derivee du deficit calorique courant."""
+        if self.max_calories <= 0.0:
+            return 100.0
+        deficit = max(0.0, self.max_calories - self.calories)
+        return max(0.0, min(100.0, (deficit / self.max_calories) * 100.0))
+
+    @hunger.setter
+    def hunger(self, value: float) -> None:
+        """Accepte encore une faim en pourcentage pour conserver la compatibilite."""
+        try:
+            hunger_percent = float(value)
+        except (TypeError, ValueError):
+            hunger_percent = 0.0
+        hunger_percent = max(0.0, min(100.0, hunger_percent))
+        self.calories = self.max_calories * (1.0 - (hunger_percent / 100.0))
+
+    def calorie_deficit(self) -> float:
+        return max(0.0, self.max_calories - self.calories)
+
+    def apply_calories(self, value: float) -> float:
+        """Ajoute des calories dans la reserve et renvoie le reellement absorbe."""
+        try:
+            delta = float(value)
+        except (TypeError, ValueError):
+            return 0.0
+        if delta <= 0.0:
+            return 0.0
+        previous = self.calories
+        self.calories = min(self.max_calories, self.calories + delta)
+        return self.calories - previous
+
+    def burn_calories(self, value: float) -> float:
+        """Retire des calories de la reserve et renvoie le reellement depense."""
+        try:
+            delta = float(value)
+        except (TypeError, ValueError):
+            return 0.0
+        if delta <= 0.0:
+            return 0.0
+        previous = self.calories
+        self.calories = max(0.0, self.calories - delta)
+        return previous - self.calories
+
     def distance_to(self, target: Dict[str, float]) -> float:
         return math.sqrt((self.x - target["x"]) ** 2 + (self.y - target["y"]) ** 2)
 
@@ -83,17 +179,17 @@ class Species:
         return self.distance_to(water)
 
 
-    def move_towards(self, target: Dict[str, float], world: Any = None) -> None:
+    def move_towards(self, target: Dict[str, float], world: Any = None) -> bool:
         if self.resting:
-            return
+            return False
 
         dx = target["x"] - self.x
         dy = target["y"] - self.y
         dist = math.sqrt(dx**2 + dy**2)
         if dist < MOVE_TARGET_EPSILON:
-            return
+            return False
 
-        # Reduction de vitesse si fatigue elevee
+        # La fatigue reduit la vitesse effective pour eviter des deplacements irreels.
         fatigue_factor = FATIGUE_SLOWDOWN_FACTOR if self.fatigue > FATIGUE_SLOWDOWN_THRESHOLD else 1.0
         scale = 1.0
         if world is not None and hasattr(world, "minutes_per_step"):
@@ -134,21 +230,26 @@ class Species:
                     new_x, new_y = best
                     moved = True
                 if not moved:
-                    return
+                    return False
 
         if world is not None and hasattr(world, "width") and hasattr(world, "height"):
             new_x = max(0.0, min(float(world.width), new_x))
             new_y = max(0.0, min(float(world.height), new_y))
 
+        travelled = math.sqrt((new_x - self.x) ** 2 + (new_y - self.y) ** 2)
+        if travelled < MOVE_TARGET_EPSILON:
+            return False
+
         self.x = new_x
         self.y = new_y
 
-        # Consommation basee sur la distance
-        self.fatigue += MOVE_FATIGUE_PER_UNIT * move_dist
+        # Le cout de deplacement depend directement de la distance parcourue.
+        self.fatigue += MOVE_FATIGUE_PER_UNIT * travelled
+        return True
 
-    def random_move(self, world: Any) -> None:
+    def random_move(self, world: Any) -> bool:
         if self.resting:
-            return
+            return False
 
         fatigue_factor = FATIGUE_SLOWDOWN_FACTOR if self.fatigue > FATIGUE_SLOWDOWN_THRESHOLD else 1.0
         scale = 1.0
@@ -175,7 +276,8 @@ class Species:
             move_dist = math.sqrt((new_x - self.x) ** 2 + (new_y - self.y) ** 2)
             self.x, self.y = new_x, new_y
             self.fatigue += MOVE_FATIGUE_PER_UNIT * move_dist
-            return
+            return True
+        return False
 
     def try_eat(self, world: Any) -> Optional[Dict[str, Any]]:
         for food in list(world.food_sources):
@@ -192,7 +294,7 @@ class Species:
                 if result and result.get("consumed", 0.0) > 0.0:
                     self.consumed += 1
                     consumed = float(result["consumed"])
-                    self.hunger = max(0.0, self.hunger - consumed)
+                    self.apply_calories(consumed)
                     self.memory = None
                     payload = result.get("food") or {}
                     payload["consumed"] = consumed
@@ -221,7 +323,7 @@ class Species:
                 return True
             return False
 
-        # Shoreline drinking: if standing next to water tile, allow drinking.
+        # Autorise la consommation si l'animal se trouve au bord d'une zone d'eau.
         if hasattr(world, "_water_tiles") and hasattr(world, "_water_tile_lookup"):
             cx = int(round(self.x))
             cy = int(round(self.y))
@@ -263,23 +365,26 @@ class Species:
 
     def _compute_required_food_amount(self, food: Dict[str, Any]) -> float:
         remaining = float(food.get("remaining_nutrition", food.get("nutrition", 0.0)))
-        hunger_factor = max(self.hunger, 0.0)
-        baseline = HUNGER_BASELINE if hunger_factor <= 0.0 else hunger_factor
-        return min(remaining, baseline)
+        deficit = self.calorie_deficit()
+        if deficit <= 0.0:
+            return 0.0
+        return min(remaining, deficit, self.meal_calories)
 
     def update_vitals(self, world_time: Dict[str, float]) -> None:
         minutes = world_time["minutes_per_step"]
         rate_scale = minutes / MINUTES_PER_RATE_UNIT
 
-        # Metabolisme
-        self.hunger += HUNGER_RATE_PER_UNIT * rate_scale
+        # La faim est maintenant derivee d'une reserve calorique reelle.
+        daily_burn = self.daily_calorie_need * (minutes / (24.0 * 60.0))
+        rest_factor = REST_CALORIE_BURN_FACTOR if self.resting else 1.0
+        self.burn_calories(daily_burn * rest_factor)
         self.thirst += THIRST_RATE_PER_UNIT * rate_scale
 
-        # Fatigue augmente naturellement si on ne se repose pas
+        # La fatigue continue de monter hors phase de repos.
         if not self.resting:
             self.fatigue += FATIGUE_RATE_PER_UNIT * rate_scale
 
-        # Penalite vitale si besoins critiques
+        # Les besoins critiques entament directement la vitalite.
         if self.hunger > VITALITY_HUNGER_THRESHOLD:
             self.vitality -= VITALITY_HUNGER_PENALTY_PER_UNIT * rate_scale
         if self.thirst > VITALITY_THIRST_THRESHOLD:
@@ -287,18 +392,18 @@ class Species:
         if self.fatigue > VITALITY_FATIGUE_THRESHOLD:
             self.vitality -= VITALITY_FATIGUE_PENALTY_PER_UNIT * rate_scale
 
-        # Regeneration si tous les indicateurs sont bas
+        # Un individu en bon etat recupere progressivement de la vitalite.
         if self.hunger < VITALITY_RECOVERY_HUNGER_MAX and self.thirst < VITALITY_RECOVERY_THIRST_MAX and self.fatigue < VITALITY_RECOVERY_FATIGUE_MAX:
             self.vitality += VITALITY_RECOVERY_RATE_PER_UNIT * rate_scale
 
-        # Recuperation plus rapide si repos
+        # Le repos accelere la recuperation et ralentit l'usure.
         if self.resting:
             self.fatigue = max(0.0, self.fatigue - REST_FATIGUE_RECOVERY_PER_UNIT * rate_scale)
             self.vitality += REST_VITALITY_RECOVERY_PER_UNIT * rate_scale
 
-        # Clamp final
+        # Bornage final pour conserver des valeurs metier coherentes.
         self.vitality = max(0.0, min(100.0, self.vitality))
-        self.hunger = min(100.0, self.hunger)
+        self.calories = max(0.0, min(self.max_calories, self.calories))
         self.thirst = min(100.0, self.thirst)
         self.fatigue = min(100.0, self.fatigue)
         self.alive = self.vitality > 0.0

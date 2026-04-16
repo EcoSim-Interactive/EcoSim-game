@@ -1,4 +1,4 @@
-"""WebSocket server exposing the simulation engine."""
+"""Serveur WebSocket qui expose le moteur de simulation au client Godot."""
 from __future__ import annotations
 
 import asyncio
@@ -17,7 +17,7 @@ from app.world_loader import load_world_and_species
 from domain import World
 from simulation import Simulation
 
-# Global state -----------------------------------------------------------------
+# Etat global du serveur pour la session courante --------------------------------
 
 logger = logging.getLogger(__name__)
 
@@ -140,11 +140,13 @@ def format_step_summary(step_data: Dict[str, Any]) -> str:
         x = after.get("x", before.get("x", 0.0))
         y = after.get("y", before.get("y", 0.0))
         vitality = after.get("vitality", before.get("vitality", 0))
+        calories = after.get("calories", before.get("calories"))
         hunger = after.get("hunger", before.get("hunger", 0))
         thirst = after.get("thirst", before.get("thirst", 0))
         fatigue = after.get("fatigue", before.get("fatigue", 0))
+        calories_fragment = f" calories={calories:.0f}" if isinstance(calories, (int, float)) else ""
         species_states.append(
-            f"{status.get('name', 'Inconnu')} pos=({x:.2f}, {y:.2f}) vitalite={vitality:.0f} faim={hunger:.0f} soif={thirst:.0f} fatigue={fatigue:.0f}"
+            f"{status.get('name', 'Inconnu')} pos=({x:.2f}, {y:.2f}) vitalite={vitality:.0f} faim={hunger:.0f} soif={thirst:.0f} fatigue={fatigue:.0f}{calories_fragment}"
         )
 
     return " | ".join(species_states) if species_states else "aucune espece"

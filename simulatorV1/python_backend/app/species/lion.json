@@ -6,8 +6,28 @@
   "diurnal": true,
   "temperament": "agite",
   "diet": "carnivore",
-  "body_nutrition": 110,
+  "body_nutrition": 180000,
   "traits": {
+    "metabolism": {
+      "body_mass_kg": 150,
+      "daily_food_intake_kg": 5.5,
+      "food_calories_per_kg": 1800,
+      "reserve_days": 5.5,
+      "meal_intake_kg": 6.5,
+      "carcass_edible_ratio": 0.58,
+      "carcass_calories_per_kg": 1900,
+      "sex_mass_scale": {
+        "male": 1.2,
+        "female": 1.0
+      },
+      "age_stage_mass_scale": {
+        "cub": 0.18,
+        "juvenile": 0.45,
+        "subadult": 0.72,
+        "adult": 1.0,
+        "senior": 0.9
+      }
+    },
     "naming": {
       "default": {
         "male": "Lion",

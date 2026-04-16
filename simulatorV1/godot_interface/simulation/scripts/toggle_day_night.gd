@@ -1,3 +1,4 @@
+## Active ou desactive l'habillage jour/nuit de la scene.
 extends CheckButton
 
 ## Chemin vers le node World qui contient world_lighting

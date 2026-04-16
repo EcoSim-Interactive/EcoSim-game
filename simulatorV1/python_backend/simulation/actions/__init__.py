@@ -1,4 +1,4 @@
-"""Reusable social and advanced behaviour helpers for animals."""
+"""Expose les comportements sociaux et avances reutilisables par les animaux."""
 
 from .grouping import maintain_group_cohesion
 from .territory import enforce_territory

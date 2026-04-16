@@ -1,4 +1,4 @@
-"""Core simulation engine orchestrating per-step behaviour."""
+"""Moteur principal qui orchestre les tours de simulation et la journalisation."""
 from __future__ import annotations
 
 import copy
@@ -34,7 +34,7 @@ from .step_context import (
 
 
 class SimulationEngine:
-    """High-level orchestrator for the ecosystem simulation."""
+    """Orchestrateur haut niveau de l'ecosysteme simule."""
 
     def __init__(
         self,
@@ -45,16 +45,22 @@ class SimulationEngine:
         verbose: bool = True,
         write_logs: bool = False,
         logs_dir: str = "logs",
+        seed: Optional[int] = None,
     ) -> None:
         self.world = world
+        Animal.reset_shared_states()
         converted_species: List[Animal] = []
         for candidate in species_list:
-            converted_species.append(Animal.from_species(candidate))
+            animal = Animal.from_species(candidate)
+            animal.set_group_id(getattr(animal, "group_id", None))
+            animal.set_pack_id(getattr(animal, "pack_id", None))
+            converted_species.append(animal)
         self.species_list = converted_species
         self._active_species: List[Animal] = [animal for animal in self.species_list if getattr(animal, "alive", True)]
         self.steps = steps
         self.write_logs = write_logs
         self.logs_dir = logs_dir
+        self.seed = seed
         self.current_step = 0
         self.logger = EventLogger(verbose=verbose)
         self._precomputed_steps: Optional[List[Dict[str, Any]]] = None
@@ -74,7 +80,7 @@ class SimulationEngine:
         return self.current_step >= self.steps
 
     # ------------------------------------------------------------------
-    # Execution helpers
+    # Execution pas a pas de la simulation
 
     def step_once(self) -> Optional[Dict[str, Any]]:
         if self.is_finished():
@@ -86,6 +92,16 @@ class SimulationEngine:
 
         for animal in list(self._active_species):
             if not getattr(animal, "alive", True):
+                status = initialize_species_status(animal)
+                predator_id = animal.recall_social("killed_by") if hasattr(animal, "recall_social") else None
+                if predator_id is not None:
+                    self.logger.log(f"{animal.name} a ete tue avant son tour par le predateur {predator_id}.")
+                    status["action"] = "killed_by_predation"
+                    status["motivation"] = f"attaque du predateur {predator_id}"
+                else:
+                    self._handle_exhaustion(animal, status)
+                finalize_species_status(animal, status)
+                step_data["species"].append(status)
                 try:
                     self._active_species.remove(animal)
                 except ValueError:
@@ -150,7 +166,7 @@ class SimulationEngine:
             steps_data = list(self._precomputed_steps)
 
         if self._summary_cache is None:
-            self._summary_cache = build_summary_payload(self.species_list, self.world)
+            self._summary_cache = self._build_summary()
 
         if self.write_logs and persist:
             run_index = self._run_index or log_writer.next_run_index(self.logs_dir)
@@ -179,11 +195,11 @@ class SimulationEngine:
         return steps_data
 
     # ------------------------------------------------------------------
-    # Reporting helpers
+    # Production des sorties et des resumes
 
     def save_summary(self) -> Dict[str, Any]:
         if self._summary_cache is None:
-            self._summary_cache = build_summary_payload(self.species_list, self.world)
+            self._summary_cache = self._build_summary()
         if self.write_logs:
             run_index = self._run_index or log_writer.next_run_index(self.logs_dir)
             self._run_index = run_index
@@ -203,11 +219,11 @@ class SimulationEngine:
 
     def to_json(self) -> str:
         if self._summary_cache is None:
-            self._summary_cache = build_summary_payload(self.species_list, self.world)
+            self._summary_cache = self._build_summary()
         return json.dumps(self._summary_cache, indent=2)
 
     # ------------------------------------------------------------------
-    # Internal helpers
+    # Helpers internes utilises pendant un run
 
     def _handle_exhaustion(self, animal: Animal, status: Dict[str, Any]) -> None:
         self.logger.log(f"{animal.name} est epuise.")
@@ -239,7 +255,14 @@ class SimulationEngine:
 
     def _build_world_snapshot(self) -> Dict[str, Any]:
         """Retourne l'etat initial du monde pour les fichiers de simulation."""
-        return copy.deepcopy(self._initial_world_snapshot)
+        snapshot = copy.deepcopy(self._initial_world_snapshot)
+        snapshot["seed"] = self.seed
+        return snapshot
+
+    def _build_summary(self) -> Dict[str, Any]:
+        summary = build_summary_payload(self.species_list, self.world)
+        summary["seed"] = self.seed
+        return summary
 
     def _snapshot_world(self, world: Any) -> Dict[str, Any]:
         """Capture le monde avant le run (evite les carcasses/post-mutations)."""

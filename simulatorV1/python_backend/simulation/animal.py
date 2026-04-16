@@ -1,4 +1,4 @@
-"""Animal entity enriched with behaviours and accessor helpers."""
+"""Specialisation de `Species` qui porte l'etat comportemental et social complet."""
 from __future__ import annotations
 
 import copy
@@ -14,7 +14,7 @@ LogFn = Callable[[str], None]
 
 
 class Animal(Species):
-    """Concrete animal carrying behaviour logic, accessors, and a unique identifier."""
+    """Animal concret enrichi avec l'IA, les identifiants et l'etat partage."""
 
     _id_sequence = itertools.count(1)
 
@@ -42,6 +42,7 @@ class Animal(Species):
     ) -> None:
         traits_copy: Dict[str, Any] = copy.deepcopy(traits) if isinstance(traits, dict) else {}
         initial_age = self._coerce_age_value(traits_copy.get("age_years", age_years))
+        metabolism_cfg = traits_copy.get("metabolism") if isinstance(traits_copy.get("metabolism"), dict) else {}
         super().__init__(
             name=name,
             position=position,
@@ -53,6 +54,12 @@ class Animal(Species):
             diet=diet,
             body_nutrition=body_nutrition,
             age_years=initial_age,
+            daily_calorie_need=self._resolve_daily_calorie_need(metabolism_cfg),
+            calorie_reserve_days=self._coerce_positive_float(metabolism_cfg.get("reserve_days"), fallback=3.0),
+            meal_calories=self._resolve_meal_calories(metabolism_cfg),
+            body_mass_kg=self._coerce_positive_float(metabolism_cfg.get("body_mass_kg"), fallback=0.0) or None,
+            carcass_edible_ratio=self._coerce_positive_float(metabolism_cfg.get("carcass_edible_ratio"), fallback=0.55),
+            carcass_calories_per_kg=self._coerce_positive_float(metabolism_cfg.get("carcass_calories_per_kg"), fallback=1800.0),
         )
         self.original_name = name
         self.animal_id = animal_id if animal_id is not None else next(self._id_sequence)
@@ -65,13 +72,15 @@ class Animal(Species):
         self.age_profile = self._normalize_age_profile(self.age_profile_spec)
         if self.age_profile_spec is not None:
             self.traits["age_profile"] = copy.deepcopy(self.age_profile_spec)
-        self.age_stage = self._compute_age_stage()
+        explicit_age_stage = self._normalize_stage(self.traits.get("age_stage")) if self.traits.get("age_stage") is not None else None
+        self.age_stage = explicit_age_stage or self._compute_age_stage()
         self.traits["age_stage"] = self.age_stage
         self.sex = self._normalize_sex(self.traits.get("sex"))
         self.traits["sex"] = self.sex
         self.display_name = self._compute_display_name()
         self.name = self.display_name
         self.traits["display_name"] = self.display_name
+        self.refresh_body_profile()
         self.group_id = group_id or self.traits.get("group_id")
         if self.group_id:
             self.group_state = self._group_states.setdefault(str(self.group_id), {})
@@ -130,7 +139,16 @@ class Animal(Species):
         instance.memory = species.memory
         instance.rest_steps = species.rest_steps
         instance.max_rest_steps = species.max_rest_steps
-        instance.hunger = species.hunger
+        instance.daily_calorie_need = getattr(species, "daily_calorie_need", instance.daily_calorie_need)
+        instance.calorie_reserve_days = getattr(species, "calorie_reserve_days", instance.calorie_reserve_days)
+        instance.max_calories = getattr(species, "max_calories", instance.max_calories)
+        instance.calories = getattr(species, "calories", instance.calories)
+        instance.meal_calories = getattr(species, "meal_calories", instance.meal_calories)
+        instance.base_body_mass_kg = getattr(species, "base_body_mass_kg", instance.base_body_mass_kg)
+        instance.body_mass_kg = getattr(species, "body_mass_kg", instance.body_mass_kg)
+        instance.carcass_edible_ratio = getattr(species, "carcass_edible_ratio", instance.carcass_edible_ratio)
+        instance.carcass_calories_per_kg = getattr(species, "carcass_calories_per_kg", instance.carcass_calories_per_kg)
+        instance.body_nutrition = getattr(species, "body_nutrition", instance.body_nutrition)
         instance.thirst = species.thirst
         instance.fatigue = species.fatigue
         instance.resting = species.resting
@@ -156,7 +174,7 @@ class Animal(Species):
         return instance
 
     # ------------------------------------------------------------------ #
-    # Characteristic accessors
+    # Accesseurs et synchronisation des caracteristiques
 
     def get_id(self) -> int:
         return self.animal_id
@@ -225,6 +243,14 @@ class Animal(Species):
     def set_body_nutrition(self, value: float) -> None:
         self.body_nutrition = value
 
+    def get_body_mass_kg(self) -> Optional[float]:
+        return self.body_mass_kg
+
+    def set_body_mass_kg(self, value: float) -> None:
+        coerced = self._coerce_positive_float(value, fallback=0.0)
+        self.base_body_mass_kg = coerced if coerced > 0.0 else None
+        self.refresh_body_profile()
+
     def get_vitality(self) -> float:
         return self.vitality
 
@@ -242,6 +268,15 @@ class Animal(Species):
 
     def set_hunger(self, value: float) -> None:
         self.hunger = value
+
+    def get_calories(self) -> float:
+        return self.calories
+
+    def set_calories(self, value: float) -> None:
+        try:
+            self.calories = max(0.0, min(self.max_calories, float(value)))
+        except (TypeError, ValueError):
+            return
 
     def get_thirst(self) -> float:
         return self.thirst
@@ -327,6 +362,7 @@ class Animal(Species):
             self.age_profile = self._normalize_age_profile(self.age_profile_spec)
             self.age_stage = self._compute_age_stage()
             self.traits["age_stage"] = self.age_stage
+            self.refresh_body_profile()
             self.display_name = self._compute_display_name()
             self.name = self.display_name
             self.traits["display_name"] = self.display_name
@@ -345,6 +381,13 @@ class Animal(Species):
             self.display_name = self._compute_display_name()
             self.name = self.display_name
             self.traits["display_name"] = self.display_name
+            return
+        if key == "metabolism":
+            if isinstance(value, dict):
+                self.traits[key] = copy.deepcopy(value)
+                self._apply_metabolism_profile(self.traits[key])
+            else:
+                self.traits[key] = value
             return
         if isinstance(value, dict):
             self.traits[key] = copy.deepcopy(value)
@@ -388,6 +431,31 @@ class Animal(Species):
         except (TypeError, ValueError):
             return
 
+    def remember_water_target(self, x: float, y: float) -> None:
+        """Memorise une case de rive precise a viser tant que la source reste valide."""
+        if not self.water_memory or self.water_memory_ttl <= 0:
+            return
+        try:
+            self.water_memory["target_x"] = float(x)
+            self.water_memory["target_y"] = float(y)
+        except (TypeError, ValueError):
+            return
+
+    def recall_water_target(self) -> Optional[Tuple[float, float]]:
+        if not self.water_memory or self.water_memory_ttl <= 0:
+            return None
+        target_x = self.water_memory.get("target_x")
+        target_y = self.water_memory.get("target_y")
+        if target_x is None or target_y is None:
+            return None
+        return (float(target_x), float(target_y))
+
+    def clear_water_target(self) -> None:
+        if not self.water_memory:
+            return
+        self.water_memory.pop("target_x", None)
+        self.water_memory.pop("target_y", None)
+
     def recall_water(self) -> Optional[Tuple[float, float]]:
         if not self.water_memory or self.water_memory_ttl <= 0:
             return None
@@ -407,8 +475,13 @@ class Animal(Species):
     def group_state_for(cls, group_id: str) -> Dict[str, Any]:
         return cls._group_states.setdefault(str(group_id), {})
 
+    @classmethod
+    def reset_shared_states(cls) -> None:
+        cls._pack_states.clear()
+        cls._group_states.clear()
+
     # ------------------------------------------------------------------ #
-    # Demographics helpers
+    # Helpers de demographie et de presentation
 
     def _normalize_sex(self, value: Any) -> str:
         if isinstance(value, str):
@@ -434,6 +507,75 @@ class Animal(Species):
         except (TypeError, ValueError):
             return 0.0
         return max(0.0, age)
+
+    def _coerce_positive_float(self, value: Any, *, fallback: float) -> float:
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            return fallback
+        return number if number > 0.0 else fallback
+
+    def _resolve_daily_calorie_need(self, metabolism_cfg: Dict[str, Any]) -> float:
+        explicit = self._coerce_positive_float(metabolism_cfg.get("daily_calorie_need"), fallback=0.0)
+        if explicit > 0.0:
+            return explicit
+        intake_kg = self._coerce_positive_float(metabolism_cfg.get("daily_food_intake_kg"), fallback=0.0)
+        calories_per_kg = self._coerce_positive_float(metabolism_cfg.get("food_calories_per_kg"), fallback=0.0)
+        if intake_kg > 0.0 and calories_per_kg > 0.0:
+            return intake_kg * calories_per_kg
+        return 2400.0
+
+    def _resolve_meal_calories(self, metabolism_cfg: Dict[str, Any]) -> float:
+        explicit = self._coerce_positive_float(metabolism_cfg.get("meal_calories"), fallback=0.0)
+        if explicit > 0.0:
+            return explicit
+        meal_kg = self._coerce_positive_float(metabolism_cfg.get("meal_intake_kg"), fallback=0.0)
+        calories_per_kg = self._coerce_positive_float(metabolism_cfg.get("food_calories_per_kg"), fallback=0.0)
+        if meal_kg > 0.0 and calories_per_kg > 0.0:
+            return meal_kg * calories_per_kg
+        return 60.0
+
+    def _mass_scale_for_stage(self) -> float:
+        metabolism_cfg = self.traits.get("metabolism")
+        if not isinstance(metabolism_cfg, dict):
+            return 1.0
+        scales = metabolism_cfg.get("age_stage_mass_scale")
+        if isinstance(scales, dict):
+            value = self._coerce_positive_float(scales.get(self.age_stage), fallback=1.0)
+            return value if value > 0.0 else 1.0
+        return 1.0
+
+    def _mass_scale_for_sex(self) -> float:
+        metabolism_cfg = self.traits.get("metabolism")
+        if not isinstance(metabolism_cfg, dict):
+            return 1.0
+        scales = metabolism_cfg.get("sex_mass_scale")
+        if isinstance(scales, dict):
+            value = self._coerce_positive_float(scales.get(self.sex), fallback=1.0)
+            return value if value > 0.0 else 1.0
+        return 1.0
+
+    def refresh_body_profile(self) -> None:
+        """Met a jour la masse et la valeur calorique du corps selon le profil reel."""
+        if self.base_body_mass_kg is None:
+            return
+        self.body_mass_kg = self.base_body_mass_kg * self._mass_scale_for_stage() * self._mass_scale_for_sex()
+        estimated = self.estimate_carcass_calories()
+        if estimated > 0.0:
+            self.body_nutrition = estimated
+
+    def _apply_metabolism_profile(self, metabolism_cfg: Dict[str, Any]) -> None:
+        self.daily_calorie_need = self._resolve_daily_calorie_need(metabolism_cfg)
+        self.calorie_reserve_days = self._coerce_positive_float(metabolism_cfg.get("reserve_days"), fallback=self.calorie_reserve_days)
+        self.max_calories = self.daily_calorie_need * self.calorie_reserve_days
+        self.calories = min(self.calories, self.max_calories)
+        self.meal_calories = self._resolve_meal_calories(metabolism_cfg)
+        body_mass = self._coerce_positive_float(metabolism_cfg.get("body_mass_kg"), fallback=0.0)
+        if body_mass > 0.0:
+            self.base_body_mass_kg = body_mass
+        self.carcass_edible_ratio = self._coerce_positive_float(metabolism_cfg.get("carcass_edible_ratio"), fallback=self.carcass_edible_ratio)
+        self.carcass_calories_per_kg = self._coerce_positive_float(metabolism_cfg.get("carcass_calories_per_kg"), fallback=self.carcass_calories_per_kg)
+        self.refresh_body_profile()
 
     def _normalize_age_profile(self, spec: Any) -> list[Dict[str, Any]]:
         stages: list[Dict[str, Any]] = []
@@ -512,6 +654,7 @@ class Animal(Species):
     def set_sex(self, value: str) -> None:
         self.sex = self._normalize_sex(value)
         self.traits["sex"] = self.sex
+        self.refresh_body_profile()
         self.display_name = self._compute_display_name()
         self.name = self.display_name
         self.traits["display_name"] = self.display_name
@@ -519,6 +662,7 @@ class Animal(Species):
     def set_age_stage(self, value: str) -> None:
         self.age_stage = self._normalize_stage(value)
         self.traits["age_stage"] = self.age_stage
+        self.refresh_body_profile()
         self.display_name = self._compute_display_name()
         self.name = self.display_name
         self.traits["display_name"] = self.display_name
@@ -529,6 +673,7 @@ class Animal(Species):
         self.traits["age_years"] = self.age_years
         self.age_stage = self._compute_age_stage()
         self.traits["age_stage"] = self.age_stage
+        self.refresh_body_profile()
         self.display_name = self._compute_display_name()
         self.name = self.display_name
         self.traits["display_name"] = self.display_name
@@ -550,7 +695,7 @@ class Animal(Species):
         self._tick_water_memory()
 
     # ------------------------------------------------------------------ #
-    # Behaviour routines
+    # Delegation vers les routines comportementales de l'IA
 
     def decide_idle_action(self) -> str:
         return ai_behavior.decide_idle_action(self)
@@ -572,7 +717,7 @@ class Animal(Species):
 
 
 # ---------------------------------------------------------------------- #
-# Backward-compatible helper wrappers
+# Wrappers conserves pour les anciens points d'appel
 
 
 def decide_idle_action(species: Animal) -> str:

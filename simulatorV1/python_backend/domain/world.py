@@ -1,4 +1,4 @@
-"""Domain entity representing the world hosting the species."""
+"""Entite de domaine qui porte la carte, l'eau, la nourriture et les contraintes du monde."""
 from __future__ import annotations
 
 from .constants import (
@@ -29,8 +29,12 @@ from .water_generation import (
     trace_line,
 )
 
+SPATIAL_INDEX_CELL_SIZE = 64
+
 
 class World:
+    """Conteneur central des ressources et des regles spatiales de la simulation."""
+
     def __init__(self, width: int = 1000, height: int = 1000, minutes_per_step: int = DEFAULT_MINUTES_PER_STEP) -> None:
         self.width = width
         self.height = height
@@ -46,9 +50,135 @@ class World:
         self._water_tile_lookup: Dict[tuple, Dict[str, Any]] = {}
         self._water_tile_depth: Dict[tuple, float] = {}
         self._water_depth_by_type = dict(DEFAULT_WATER_DEPTH_BY_TYPE)
+        self._spatial_cell_size = SPATIAL_INDEX_CELL_SIZE
+        self._food_lookup: Dict[str, Dict[str, Any]] = {}
+        self._water_lookup: Dict[str, Dict[str, Any]] = {}
+        self._food_spatial_index: Dict[Tuple[int, int], List[Dict[str, Any]]] = {}
+        self._water_spatial_index: Dict[Tuple[int, int], List[Dict[str, Any]]] = {}
+        self._shore_water_spatial_index: Dict[Tuple[int, int], List[Dict[str, Any]]] = {}
+        self._shore_water_dirty = True
+        self._shore_tiles_by_source: Dict[str, List[Tuple[int, int]]] = {}
+        self._shore_tiles_dirty = True
+
+    def _bucket_key(self, x: float, y: float) -> Tuple[int, int]:
+        size = max(1, int(self._spatial_cell_size))
+        return (int(float(x)) // size, int(float(y)) // size)
+
+    def _index_entry(
+        self,
+        index: Dict[Tuple[int, int], List[Dict[str, Any]]],
+        entry: Dict[str, Any],
+    ) -> None:
+        bucket = self._bucket_key(float(entry.get("x", 0.0)), float(entry.get("y", 0.0)))
+        index.setdefault(bucket, []).append(entry)
+
+    def _remove_index_entry(
+        self,
+        index: Dict[Tuple[int, int], List[Dict[str, Any]]],
+        entry: Dict[str, Any],
+    ) -> None:
+        bucket = self._bucket_key(float(entry.get("x", 0.0)), float(entry.get("y", 0.0)))
+        bucket_entries = index.get(bucket)
+        if not bucket_entries:
+            return
+        try:
+            bucket_entries.remove(entry)
+        except ValueError:
+            return
+        if not bucket_entries:
+            index.pop(bucket, None)
+
+    def _iter_bucket_ring(self, center_x: int, center_y: int, radius: int):
+        if radius <= 0:
+            yield (center_x, center_y)
+            return
+        for dx in range(-radius, radius + 1):
+            yield (center_x + dx, center_y - radius)
+            yield (center_x + dx, center_y + radius)
+        for dy in range(-radius + 1, radius):
+            yield (center_x - radius, center_y + dy)
+            yield (center_x + radius, center_y + dy)
+
+    def _search_spatial_index(
+        self,
+        index: Dict[Tuple[int, int], List[Dict[str, Any]]],
+        x: float,
+        y: float,
+        *,
+        predicate,
+        distance,
+    ) -> Optional[Dict[str, Any]]:
+        if not index:
+            return None
+        start_x, start_y = self._bucket_key(x, y)
+        max_radius = max(
+            1,
+            math.ceil(max(self.width, self.height) / max(1, int(self._spatial_cell_size))),
+        )
+        best: Optional[Dict[str, Any]] = None
+        best_dist: Optional[float] = None
+        cell_size = float(max(1, int(self._spatial_cell_size)))
+
+        for radius in range(0, max_radius + 1):
+            for bucket in self._iter_bucket_ring(start_x, start_y, radius):
+                for entry in index.get(bucket, ()):
+                    if not predicate(entry):
+                        continue
+                    dist_sq = float(distance(entry))
+                    if best_dist is None or dist_sq < best_dist:
+                        best = entry
+                        best_dist = dist_sq
+            if best_dist is not None and radius > 0 and best_dist <= (radius * cell_size) ** 2:
+                break
+        return best
+
+    def _rebuild_shore_water_index(self) -> None:
+        self._shore_water_spatial_index = {}
+        for water in self.water_sources:
+            if self._is_shore_water(water):
+                self._index_entry(self._shore_water_spatial_index, water)
+        self._shore_water_dirty = False
+
+    @staticmethod
+    def _shore_source_key(water: Dict[str, Any]) -> str:
+        body_id = water.get("body_id")
+        if body_id is not None:
+            return f"body:{body_id}"
+        return f"water:{water.get('id')}"
+
+    def _rebuild_shore_tile_cache(self) -> None:
+        cache: Dict[str, set[Tuple[int, int]]] = {}
+        for water in self.water_sources:
+            key = self._shore_source_key(water)
+            wx = int(round(float(water.get("x", 0.0))))
+            wy = int(round(float(water.get("y", 0.0))))
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    if dx == 0 and dy == 0:
+                        continue
+                    nx = wx + dx
+                    ny = wy + dy
+                    if nx < 0 or ny < 0 or nx >= self.width or ny >= self.height:
+                        continue
+                    if self.is_water_at(nx, ny):
+                        continue
+                    cache.setdefault(key, set()).add((nx, ny))
+        self._shore_tiles_by_source = {
+            key: sorted(tiles)
+            for key, tiles in cache.items()
+        }
+        self._shore_tiles_dirty = False
+
+    def _remove_food_source(self, food: Dict[str, Any]) -> None:
+        try:
+            self.food_sources.remove(food)
+        except ValueError:
+            pass
+        self._food_lookup.pop(str(food.get("id")), None)
+        self._remove_index_entry(self._food_spatial_index, food)
 
     # ------------------------------------------------------------------
-    # Food generation helpers
+    # Generation et gestion des ressources alimentaires
 
     def add_food(
         self,
@@ -110,7 +240,7 @@ class World:
             )
 
     # ------------------------------------------------------------------
-    # Water generation helpers
+    # Generation et gestion des points d'eau
 
     def add_water(
         self,
@@ -706,10 +836,13 @@ class World:
             )
 
     # ------------------------------------------------------------------
-    # Water management helpers
+    # Gestion de la capacite et du suivi des ressources en eau
 
     def water_has_supply(self, water: Dict[str, Any]) -> bool:
         """Return True if the source still provides drinkable water."""
+        water_id = water.get("id")
+        if water_id is not None and self._water_lookup.get(str(water_id)) is not water:
+            return False
         body_id = water.get("body_id")
         if body_id and body_id in self._water_bodies:
             capacity = self._water_bodies[body_id].get("capacity")
@@ -722,7 +855,8 @@ class World:
 
     def consume_water(self, water: Dict[str, Any], amount: float = 10.0) -> bool:
         """Consume water from the source, returning True if successful."""
-        if water not in self.water_sources:
+        water_id = water.get("id")
+        if water_id is not None and self._water_lookup.get(str(water_id)) is not water:
             return False
 
         body_id = water.get("body_id")
@@ -803,13 +937,10 @@ class World:
         return water
 
     def get_water_by_id(self, source_id: str) -> Optional[Dict[str, Any]]:
-        for water in self.water_sources:
-            if water.get("id") == source_id:
-                return water
-        return None
+        return self._water_lookup.get(str(source_id))
     
     # ------------------------------------------------------------------
-    # Terrain generation helpers
+    # Generation du terrain de base
     
     def generate_terrain(self, default_tile: int = 0) -> None:
         """Generate a simple terrain grid filled with a default tile type. In the futur we can expand this to more complex terrain generation. (Bruit de Perlin or Biome generation)"""
@@ -820,7 +951,7 @@ class World:
 
 
     # ------------------------------------------------------------------
-    # Lookup helpers
+    # Recherche spatiale et verification de franchissabilite
 
     def get_nearest_food(
         self,
@@ -829,14 +960,13 @@ class World:
         *,
         diet: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
-        candidates = [
-            food
-            for food in self.food_sources
-            if self.food_has_supply(food) and self._food_matches_diet(food, diet)
-        ]
-        if not candidates:
-            return None
-        return min(candidates, key=lambda food: (food["x"] - x) ** 2 + (food["y"] - y) ** 2)
+        return self._search_spatial_index(
+            self._food_spatial_index,
+            x,
+            y,
+            predicate=lambda food: self.food_has_supply(food) and self._food_matches_diet(food, diet),
+            distance=lambda food: (float(food["x"]) - x) ** 2 + (float(food["y"]) - y) ** 2,
+        )
 
     def water_depth_at(self, x: float, y: float) -> Optional[float]:
         key = (int(round(x)), int(round(y)))
@@ -1082,6 +1212,7 @@ class World:
         y: float,
         water: Dict[str, Any],
         *,
+        entity: Any = None,
         search_radius: int = DRINK_TARGET_SEARCH_RADIUS,
     ) -> Tuple[float, float]:
         """Return a reachable land tile close to the given water source."""
@@ -1090,86 +1221,63 @@ class World:
         if not self.is_water_at(wx, wy):
             return (float(water.get("x", 0.0)), float(water.get("y", 0.0)))
 
+        if self._shore_tiles_dirty:
+            self._rebuild_shore_tile_cache()
+
         max_radius = max(1, int(search_radius))
         best: Optional[Tuple[float, float]] = None
-        best_dist = None
-        for dx in range(-max_radius, max_radius + 1):
-            for dy in range(-max_radius, max_radius + 1):
-                if dx == 0 and dy == 0:
-                    continue
-                if dx * dx + dy * dy > max_radius * max_radius:
-                    continue
-                nx = wx + dx
-                ny = wy + dy
-                if nx < 0 or ny < 0 or nx >= self.width or ny >= self.height:
-                    continue
-                if self.is_water_at(nx, ny):
-                    continue
-                dist_sq = (nx - x) ** 2 + (ny - y) ** 2
-                if best is None or dist_sq < best_dist:
-                    best = (float(nx), float(ny))
-                    best_dist = dist_sq
+        best_score: Optional[Tuple[int, float, float]] = None
+        start_x = int(round(x))
+        start_y = int(round(y))
+        source_key = self._shore_source_key(water)
+        shoreline_tiles = self._shore_tiles_by_source.get(source_key, [])
+
+        for nx, ny in shoreline_tiles:
+            dx = nx - wx
+            dy = ny - wy
+            if dx == 0 and dy == 0:
+                continue
+            if dx * dx + dy * dy > max_radius * max_radius:
+                continue
+            if entity is not None and not self.can_entity_enter(entity, nx, ny):
+                continue
+            shoreline_gap = dx * dx + dy * dy
+            path_blocked = 1 if self._line_blocked_by_water(start_x, start_y, nx, ny) else 0
+            dist_sq = (nx - x) ** 2 + (ny - y) ** 2
+            score = (path_blocked, dist_sq, shoreline_gap)
+            if best_score is None or score < best_score:
+                best = (float(nx), float(ny))
+                best_score = score
         if best is None:
+            fallback = self.find_shore_tile(x, y, max_radius)
+            if fallback is not None:
+                return fallback
             return (float(water.get("x", 0.0)), float(water.get("y", 0.0)))
         return best
 
     def get_nearest_water(self, x: float, y: float) -> Optional[Dict[str, Any]]:
         if not self.water_sources:
             return None
+        if self._shore_water_dirty:
+            self._rebuild_shore_water_index()
 
-        max_radius = max(self.width, self.height)
-        start_x = int(round(x))
-        start_y = int(round(y))
-        for radius in range(0, max_radius + 1):
-            best = None
-            best_dist = None
-            # Top/bottom edges
-            for dx in range(-radius, radius + 1):
-                for dy in (-radius, radius):
-                    nx = start_x + dx
-                    ny = start_y + dy
-                    if nx < 0 or ny < 0 or nx >= self.width or ny >= self.height:
-                        continue
-                    key = (nx, ny)
-                    if key not in self._water_tiles:
-                        continue
-                    water = self._water_tile_lookup.get(key)
-                    if water is None or not self.water_has_supply(water):
-                        continue
-                    if not self._is_shore_water(water):
-                        continue
-                    dist_sq = (nx - x) ** 2 + (ny - y) ** 2
-                    if best is None or dist_sq < best_dist:
-                        best = water
-                        best_dist = dist_sq
-            # Left/right edges (skip corners already checked)
-            if radius > 0:
-                for dy in range(-radius + 1, radius):
-                    for dx in (-radius, radius):
-                        nx = start_x + dx
-                        ny = start_y + dy
-                        if nx < 0 or ny < 0 or nx >= self.width or ny >= self.height:
-                            continue
-                        key = (nx, ny)
-                        if key not in self._water_tiles:
-                            continue
-                        water = self._water_tile_lookup.get(key)
-                        if water is None or not self.water_has_supply(water):
-                            continue
-                        if not self._is_shore_water(water):
-                            continue
-                        dist_sq = (nx - x) ** 2 + (ny - y) ** 2
-                        if best is None or dist_sq < best_dist:
-                            best = water
-                            best_dist = dist_sq
-            if best is not None:
-                return best
+        nearest_shore = self._search_spatial_index(
+            self._shore_water_spatial_index,
+            x,
+            y,
+            predicate=self.water_has_supply,
+            distance=lambda water: (float(water["x"]) - x) ** 2 + (float(water["y"]) - y) ** 2,
+        )
+        if nearest_shore is not None:
+            return nearest_shore
 
-        # Fallback: any water source if shore search failed
-        drinkable = [water for water in self.water_sources if self.water_has_supply(water)]
-        if not drinkable:
-            return None
-        return min(drinkable, key=lambda water: self.distance_to_water(x, y, water))
+        return self._search_spatial_index(
+            self._water_spatial_index,
+            x,
+            y,
+            predicate=self.water_has_supply,
+            distance=lambda water: self.distance_to_water(x, y, water) ** 2,
+        )
 
     def get_time_info(self, step_index: int) -> Dict[str, int | bool]:
         total_minutes = step_index * self.minutes_per_step
@@ -1180,8 +1288,9 @@ class World:
         }
 
     def consume_food(self, food: Dict[str, Any], requested_amount: float) -> Dict[str, Any]:
-        """Consume a portion of a food source, returning metadata about the operation."""
-        if food not in self.food_sources:
+        """Consomme une portion d'une source de nourriture et renvoie le resultat detaille."""
+        food_id = food.get("id")
+        if food_id is not None and self._food_lookup.get(str(food_id)) is not food:
             return {"consumed": 0.0, "removed": False, "food": None}
 
         remaining = float(food.get("remaining_nutrition", food.get("nutrition", 0.0)))
@@ -1192,16 +1301,18 @@ class World:
         consumed = min(remaining, requested)
         new_remaining = remaining - consumed
         food["remaining_nutrition"] = new_remaining
+        food["remaining_calories"] = new_remaining
         removed = False
         if new_remaining <= 0.0:
-            self.food_sources.remove(food)
+            self._remove_food_source(food)
             removed = True
 
         snapshot = self._snapshot_food(food, override_remaining=new_remaining)
         return {"consumed": consumed, "removed": removed, "food": snapshot}
 
     def food_has_supply(self, food: Dict[str, Any]) -> bool:
-        if food not in self.food_sources:
+        food_id = food.get("id")
+        if food_id is not None and self._food_lookup.get(str(food_id)) is not food:
             return False
         return food.get("remaining_nutrition", food.get("nutrition", 0.0)) > 0.0
 
@@ -1209,7 +1320,7 @@ class World:
         return self._food_matches_diet(food, diet)
 
     # ------------------------------------------------------------------
-    # Internal helpers
+    # Helpers internes de creation et de serialisation
 
     def _register_water_source(
         self,
@@ -1243,6 +1354,10 @@ class World:
         if previous is None or depth > previous:
             self._water_tile_depth[key] = depth
         self.water_sources.append(water)
+        self._water_lookup[str(water["id"])] = water
+        self._index_entry(self._water_spatial_index, water)
+        self._shore_water_dirty = True
+        self._shore_tiles_dirty = True
         return water
 
     def _register_food_source(
@@ -1250,6 +1365,7 @@ class World:
         x: float,
         y: float,
         *,
+        food_id: Optional[str] = None,
         food_type: str,
         nutrition: Optional[float],
         metadata: Optional[Dict[str, Any]] = None,
@@ -1258,32 +1374,63 @@ class World:
         self._food_id_seq += 1
         nutrition_value = float(nutrition) if nutrition is not None else DEFAULT_FOOD_NUTRITION
         food: Dict[str, Any] = {
-            "id": f"food_{self._food_id_seq}",
+            "id": food_id or f"food_{self._food_id_seq}",
             "type": food_type,
             "food_class": food_class,
             "x": float(self._clamp_coordinate(x, self.width)),
             "y": float(self._clamp_coordinate(y, self.height)),
             "nutrition": nutrition_value,
+            "calories": nutrition_value,
             "remaining_nutrition": nutrition_value,
+            "remaining_calories": nutrition_value,
             "max_nutrition": nutrition_value,
+            "max_calories": nutrition_value,
         }
         metadata_payload = dict(metadata) if isinstance(metadata, dict) else None
         if metadata_payload:
             food["metadata"] = metadata_payload
         self.food_sources.append(food)
+        self._food_lookup[str(food["id"])] = food
+        self._index_entry(self._food_spatial_index, food)
         return food
 
     def add_carcass(self, species: Any) -> Dict[str, Any]:
         """Create a carnivore food source at the species position."""
-        nutrition_value = getattr(species, "body_nutrition", DEFAULT_CARCASS_NUTRITION)
+        nutrition_value = 0.0
+        if hasattr(species, "estimate_carcass_calories"):
+            nutrition_value = float(species.estimate_carcass_calories())
+        if nutrition_value <= 0.0:
+            nutrition_value = float(getattr(species, "body_nutrition", DEFAULT_CARCASS_NUTRITION))
+        animal_id = getattr(species, "animal_id", None)
+        source_name = getattr(species, "name", None)
+        source_original_name = getattr(species, "original_name", source_name)
+        source_species_type = getattr(species, "species_type", source_name)
+        source_body_mass = getattr(species, "body_mass_kg", None)
+        carcass_id = f"carcass_{animal_id}_{self._food_id_seq + 1}" if animal_id is not None else None
+        metadata = {
+            "source_species": source_name,
+            "source_original_name": source_original_name,
+            "source_species_type": source_species_type,
+            "source_animal_id": animal_id,
+            "source_group_id": getattr(species, "group_id", None),
+            "source_pack_id": getattr(species, "pack_id", None),
+            "source_body_mass_kg": source_body_mass,
+            "source_carcass_calories": nutrition_value,
+            "linked_animal": True,
+        }
         carcass = self._register_food_source(
             species.x,
             species.y,
+            food_id=carcass_id,
             food_type="carcass",
             nutrition=nutrition_value,
-            metadata={"source_species": species.name},
+            metadata=metadata,
             food_class="meat",
         )
+        carcass["source_animal_id"] = animal_id
+        carcass["source_species_type"] = source_species_type
+        carcass["source_original_name"] = source_original_name
+        carcass["source_body_mass_kg"] = source_body_mass
         return self._snapshot_food(carcass)
 
     @staticmethod
@@ -1318,11 +1465,20 @@ class World:
             "food_class": food.get("food_class"),
             "x": food.get("x"),
             "y": food.get("y"),
+            "source_animal_id": food.get("source_animal_id"),
+            "source_species_type": food.get("source_species_type"),
+            "source_original_name": food.get("source_original_name"),
+            "source_body_mass_kg": food.get("source_body_mass_kg"),
             "nutrition": food.get("nutrition"),
+            "calories": food.get("calories", food.get("nutrition")),
             "remaining_nutrition": override_remaining
             if override_remaining is not None
             else food.get("remaining_nutrition", food.get("nutrition")),
+            "remaining_calories": override_remaining
+            if override_remaining is not None
+            else food.get("remaining_calories", food.get("remaining_nutrition", food.get("nutrition"))),
             "max_nutrition": food.get("max_nutrition", food.get("nutrition")),
+            "max_calories": food.get("max_calories", food.get("max_nutrition", food.get("nutrition"))),
         }
         metadata = food.get("metadata")
         if metadata is not None:

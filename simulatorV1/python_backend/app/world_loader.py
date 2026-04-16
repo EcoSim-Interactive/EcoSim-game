@@ -1,4 +1,4 @@
-"""Helpers to construct world and species entities from JSON configuration files."""
+"""Charge le monde et les especes a partir des fichiers JSON de configuration."""
 from __future__ import annotations
 
 import copy
@@ -25,7 +25,7 @@ else:
 DEFAULT_CONFIG_PATH = APP_ROOT / "app" / "world_config.json"
 
 # ---------------------------------------------------------------------------
-# Public loading helpers
+# Fonctions publiques de chargement
 
 
 def load_world(
@@ -34,7 +34,7 @@ def load_world(
     fallback_food: int = 30,
     fallback_water: int = 10,
 ) -> World:
-    """Load a world using the provided configuration, falling back to defaults."""
+    """Charge un monde a partir d'une configuration, avec repli sur des valeurs par defaut."""
     try:
         config, base_dir = load_config(config_path)
         return build_world_from_config(config, base_dir=base_dir)
@@ -52,7 +52,7 @@ def load_world_and_species(
     fallback_food: int = 30,
     fallback_water: int = 10,
 ) -> Tuple[World, List[Animal]]:
-    """Load both world and species using the JSON configuration."""
+    """Charge simultanement le monde et la population depuis la configuration JSON."""
     try:
         config, base_dir = load_config(config_path)
         world = build_world_from_config(config, base_dir=base_dir)
@@ -71,7 +71,7 @@ def load_world_and_species(
 
 
 def load_world_from_file(config_path: Optional[str] = None) -> World:
-    """Load a world based on a configuration file."""
+    """Charge uniquement le monde a partir d'un fichier de configuration."""
     config, base_dir = load_config(config_path)
     return build_world_from_config(config, base_dir=base_dir)
 
@@ -91,11 +91,11 @@ def load_config(config_path: Optional[str] = None) -> Tuple[Dict[str, Any], Path
 
 
 # ---------------------------------------------------------------------------
-# Builders
+# Construction des objets de domaine
 
 
 def build_world_from_config(config: Dict[str, Any], *, base_dir: Optional[Path] = None) -> World:
-    """Construct a world instance from a configuration dictionary."""
+    """Construit l'instance `World` a partir du dictionnaire de configuration."""
     world_cfg = config.get("world", {})
     width = _positive_int(world_cfg.get("width")) or 1000
     height = _positive_int(world_cfg.get("height")) or 1000
@@ -114,7 +114,7 @@ def build_species_from_config(
     *,
     base_dir: Optional[Path] = None,
 ) -> List[Animal]:
-    """Build a list of Animal entities based on configuration."""
+    """Construit la liste des animaux a partir des presets et des overrides."""
     section = config.get("species")
     if not isinstance(section, dict):
         return []

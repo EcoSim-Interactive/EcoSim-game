@@ -1,4 +1,4 @@
-"""JSON persistence helpers for simulation logs."""
+"""Helpers de persistance JSON pour les sorties de simulation."""
 from __future__ import annotations
 
 import copy
@@ -14,6 +14,8 @@ _SAFE_SLUG = re.compile(r"[^a-z0-9_-]+")
 
 
 def ensure_logs_dir(logs_dir: str) -> None:
+    """Cree le dossier de logs s'il n'existe pas encore."""
+
     if logs_dir:
         os.makedirs(logs_dir, exist_ok=True)
 
@@ -166,6 +168,44 @@ def _serialize_meta(meta: Dict[str, Any]) -> Dict[str, Any]:
         else:
             serialized[key] = value
     return serialized
+
+
+def _compact_registry_entries(entries: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
+    """Produit un resume leger pour les vues derivees groupe/espece/regime."""
+    action_counts: Dict[str, int] = {}
+    total_entries = 0
+    alive_entries = 0
+    dead_entries = 0
+    first_step = None
+    last_step = None
+    last_entry = None
+
+    for entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        total_entries += 1
+        step = entry.get("step")
+        if first_step is None:
+            first_step = step
+        last_step = step
+        last_entry = entry
+        action = str(entry.get("action") or "unknown")
+        action_counts[action] = action_counts.get(action, 0) + 1
+        after = entry.get("after") or {}
+        if after.get("alive", True):
+            alive_entries += 1
+        else:
+            dead_entries += 1
+
+    return {
+        "entry_count": total_entries,
+        "first_step": first_step,
+        "last_step": last_step,
+        "alive_entries": alive_entries,
+        "dead_entries": dead_entries,
+        "action_counts": action_counts,
+        "last_entry": last_entry,
+    }
 
 
 def _collect_members(meta: Dict[str, Any], summary_lookup: Dict[str, Any]) -> Iterable[Dict[str, Any]]:
@@ -363,14 +403,21 @@ def write_entity_logs(
                 diet_bucket["meta"]["sexes"].add(status.get("sex"))
             diet_bucket["entries"].append(entry)
 
-    def _write_registry(directory: str, registry: Dict[str, Dict[str, Any]]) -> None:
+    def _write_registry(
+        directory: str,
+        registry: Dict[str, Dict[str, Any]],
+        *,
+        include_entries: bool,
+    ) -> None:
         used_slugs: set[str] = set()
         for key, payload in registry.items():
             meta = _serialize_meta(payload.get("meta", {}))
-            data: Dict[str, Any] = {
-                "meta": meta,
-                "entries": payload.get("entries", []),
-            }
+            entries = payload.get("entries", [])
+            data: Dict[str, Any] = {"meta": meta}
+            if include_entries:
+                data["entries"] = entries
+            else:
+                data["stats"] = _compact_registry_entries(entries)
             summary = None
             if meta.get("animal_id") is not None:
                 summary = summary_lookup.get(str(meta["animal_id"]))
@@ -407,7 +454,7 @@ def write_entity_logs(
             with open(filename, "w", encoding="utf-8") as handle:
                 json.dump(data, handle, indent=2)
 
-    _write_registry(animals_dir, animals)
-    _write_registry(groups_dir, groups)
-    _write_registry(species_dir, species_map)
-    _write_registry(diets_dir, diets)
+    _write_registry(animals_dir, animals, include_entries=True)
+    _write_registry(groups_dir, groups, include_entries=False)
+    _write_registry(species_dir, species_map, include_entries=False)
+    _write_registry(diets_dir, diets, include_entries=False)

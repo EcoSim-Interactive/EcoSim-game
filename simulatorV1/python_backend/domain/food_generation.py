@@ -1,4 +1,4 @@
-"""Food generation utilities for the world."""
+"""Outils de generation procedurale des ressources alimentaires."""
 from __future__ import annotations
 
 import random
@@ -7,17 +7,17 @@ from typing import Any, Dict, List, Optional, Tuple
 DEFAULT_FOOD_TYPE = "berries"
 DEFAULT_FOOD_PROFILES: Dict[str, Dict[str, Any]] = {
     "berries": {
-        "nutrition": 35.0,
+        "nutrition": 12000.0,
         "weight": 5,
         "metadata": {"category": "bush"},
     },
     "herbs": {
-        "nutrition": 20.0,
+        "nutrition": 28000.0,
         "weight": 3,
         "metadata": {"category": "ground"},
     },
     "fruit_tree": {
-        "nutrition": 55.0,
+        "nutrition": 42000.0,
         "weight": 2,
         "metadata": {"category": "tree"},
     },
@@ -85,7 +85,7 @@ def _build_random_food_spec(
         "food_class": "plant",
         "x": float(x),
         "y": float(y),
-        "nutrition": float(profile.get("nutrition", 35.0)),
+        "nutrition": float(profile.get("nutrition", 28000.0)),
         "metadata": dict(metadata) if isinstance(metadata, dict) else None,
     }
 

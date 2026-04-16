@@ -6,8 +6,28 @@
   "diurnal": true,
   "temperament": "prudent",
   "diet": "herbivore",
-  "body_nutrition": 220,
+  "body_nutrition": 1800000,
   "traits": {
+    "metabolism": {
+      "body_mass_kg": 4200,
+      "daily_food_intake_kg": 160,
+      "food_calories_per_kg": 550,
+      "reserve_days": 3.2,
+      "meal_intake_kg": 55,
+      "carcass_edible_ratio": 0.35,
+      "carcass_calories_per_kg": 1100,
+      "sex_mass_scale": {
+        "male": 1.0,
+        "female": 0.9
+      },
+      "age_stage_mass_scale": {
+        "calf": 0.08,
+        "juvenile": 0.2,
+        "adolescent": 0.5,
+        "adult": 1.0,
+        "senior": 0.85
+      }
+    },
     "naming": {
       "default": {
         "male": "Elephant",

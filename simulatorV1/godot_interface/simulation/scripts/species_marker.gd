@@ -1,3 +1,4 @@
+## Dessine un marqueur minimaliste pour representer une espece sur la carte.
 extends Node2D
 
 @export var radius: float = 6.0

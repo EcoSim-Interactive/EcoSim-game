@@ -1,3 +1,4 @@
+## Coordonne la communication WebSocket avec le backend et la mise a jour de la scene.
 extends Node2D
 class_name SimulationManager
 

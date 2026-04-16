@@ -1,9 +1,7 @@
+## Controle l'ecran d'accueil et l'affichage progressif des journaux de simulation.
 extends Control
 
 # --- Références aux nodes ---
-@onready var log_panel = $Logs/Panel
-@onready var scroll_container = $Logs/Panel/ScrollContainer
-@onready var log_text = $Logs/Panel/ScrollContainer/VBoxContainer/RichTextLabel
 @onready var export_button = $Boutton/VBoxContainer/ExportLog
 
 # --- Variables principales ---
@@ -20,8 +18,6 @@ var last_step_file_index := 0
 func _ready():
 	if export_button:
 		export_button.pressed.connect(_on_export_log_pressed)
-	log_text.bbcode_enabled = true
-	log_text.text = "[color=gray]En attente de simulation...[/color]"
 
 	if logs_folder == "":
 		if OS.has_feature("editor"):
@@ -64,7 +60,6 @@ func load_all_logs():
 	else:
 		print("%d logs chargés depuis %s" % [simulation_logs.size(), logs_folder])
 
-	update_log_display()
 
 # --- Charger le summary.json et simulation.json dans un sous-dossier ---
 func load_summary_in_folder(folder_path: String):
@@ -121,63 +116,6 @@ func load_simulation_json(json_path: String):
 func add_step_log(step_data: Dictionary):
 	simulation_logs.append(step_data)
 	current_step_data = step_data
-	update_log_display()
-
-# --- Mettre à jour l'affichage dans l'UI ---
-func update_log_display():
-	if simulation_logs.is_empty():
-		log_text.text = "[color=gray]Aucun log disponible[/color]"
-		return
-
-	var total_steps = simulation_logs.size()
-	var species_count = 0
-	var action_counter = {}
-
-	for step in simulation_logs:
-		if step.has("species"):
-			species_count += step["species"].size()
-			for s in step["species"]:
-				var action = s.get("action", "N/A")
-				action_counter[action] = action_counter.get(action, 0) + 1
-
-	var action_list = []
-	for key in action_counter.keys():
-		action_list.append({"action": key, "count": action_counter[key]})
-
-	action_list.sort_custom(Callable(func(a,b): return int(b["count"] - a["count"])))
-
-	var display_text = "[b][color=cyan]=== ECOSIM SUMMARY ===[/color][/b]\n"
-	display_text += "Total Steps: %d\n" % total_steps
-	display_text += "Total Species: %d\n" % species_count
-	display_text += "Top Actions:\n"
-
-	var top_n = min(5, action_list.size())
-	for i in range(top_n):
-		display_text += "  %s : %d\n" % [action_list[i]["action"], action_list[i]["count"]]
-
-	display_text += "\n[b]Derniers steps :[/b]\n"
-	var start_index = max(0, total_steps - 5)
-	for i in range(start_index, total_steps):
-		var step = simulation_logs[i]
-		display_text += "[b]Step %d[/b] (%02d:%02d %s): " % [
-			step.get("step", 0),
-			step.get("hour", 0),
-			step.get("minute", 0),
-			step.get("time_label", "")
-		]
-		if step.has("species"):
-			var species_names = []
-			for s in step["species"]:
-				species_names.append(s.get("name", "Inconnu"))
-			display_text += ", ".join(species_names)
-		display_text += "\n"
-
-	log_text.text = display_text
-
-	await get_tree().process_frame
-	if log_text.get_parent() is ScrollContainer:
-		var scroll = log_text.get_parent() as ScrollContainer
-		scroll.scroll_vertical = scroll.get_v_scroll_bar().max_value
 
 # --- Générer un résumé global pour le fichier TXT ---
 func generate_summary_text() -> String:
@@ -249,7 +187,6 @@ func generate_summary_text() -> String:
 
 # --- Exporter en TXT ---
 func _on_export_log_pressed():
-	load_all_logs()
 	if simulation_logs.is_empty():
 		push_warning("Aucun log à exporter")
 		return
@@ -267,7 +204,6 @@ func _on_export_log_pressed():
 	file.close()
 
 	print("✓ Résumé exporté dans: %s" % file_path)
-	log_text.text += "\n[color=green][b]✓ Résumé exporté ![/b][/color]\n"
 
 # --- Fonctions utilitaires ---
 func log_simulation_step(step_data: Dictionary):
@@ -275,4 +211,3 @@ func log_simulation_step(step_data: Dictionary):
 
 func clear_logs():
 	simulation_logs.clear()
-	log_text.text = "[color=gray]Logs effacés[/color]"

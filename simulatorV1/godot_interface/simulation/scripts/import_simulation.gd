@@ -1,3 +1,4 @@
+## Ouvre la fenetre de selection de fichier pour importer une simulation.
 extends Button
 
 @export var dialog_path: NodePath

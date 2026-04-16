@@ -1,4 +1,4 @@
-"""Utility script to remove logs directories from the workspace."""
+"""Script utilitaire pour nettoyer les journaux generes dans le workspace."""
 from __future__ import annotations
 
 import logging
@@ -11,6 +11,8 @@ logger = logging.getLogger(__name__)
 
 
 def delete_logs_dirs(base_path: str = ".") -> int:
+    """Supprime recursivement tous les dossiers `logs` sous le chemin donne."""
+
     deleted = 0
     for root, dirs, _ in os.walk(base_path):
         for directory in dirs:

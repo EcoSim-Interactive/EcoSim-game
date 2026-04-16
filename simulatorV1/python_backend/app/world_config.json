@@ -10,7 +10,7 @@
         "type": "herbs",
         "x": 286.67,
         "y": 713.33,
-        "nutrition": 42,
+        "nutrition": 28000,
         "metadata": {
           "label": "prairie_centrale"
         }
@@ -19,7 +19,7 @@
         "type": "herbs",
         "x": 440.0,
         "y": 846.67,
-        "nutrition": 58,
+        "nutrition": 32000,
         "metadata": {
           "label": "prairie_elephants"
         }
@@ -28,7 +28,7 @@
         "type": "berries",
         "x": 753.33,
         "y": 313.33,
-        "nutrition": 30,
+        "nutrition": 12000,
         "metadata": {
           "label": "buisson_nord"
         }
@@ -37,7 +37,7 @@
         "type": "fruit_tree",
         "x": 636.67,
         "y": 246.67,
-        "nutrition": 92,
+        "nutrition": 42000,
         "metadata": {
           "label": "bosquet_acacias"
         }
@@ -46,7 +46,7 @@
         "type": "fruit_tree",
         "x": 156.67,
         "y": 540.0,
-        "nutrition": 85,
+        "nutrition": 38000,
         "metadata": {
           "label": "bois_ouest"
         }
@@ -55,7 +55,7 @@
         "type": "herbs",
         "x": 843.33,
         "y": 570.0,
-        "nutrition": 48,
+        "nutrition": 26000,
         "metadata": {
           "label": "prairie_est"
         }
@@ -64,7 +64,7 @@
         "type": "berries",
         "x": 350.0,
         "y": 460.0,
-        "nutrition": 34,
+        "nutrition": 14000,
         "metadata": {
           "label": "fourre_central"
         }
@@ -297,6 +297,111 @@
         ]
       },
       {
+        "preset": "species/gazelle.json",
+        "overrides": {
+          "group_id": "herd_gazelles_3",
+          "traits": {
+            "sex": "female",
+            "herd_behavior": {
+              "radius": 560,
+              "cohesion": 0.68,
+              "alignment": 0.48,
+              "spacing": 90
+            }
+          }
+        },
+        "instances": [
+          {
+            "name": "Gazelle_11",
+            "species_type": "gazelle",
+            "position": [
+              210.0,
+              735.0
+            ],
+            "traits": {
+              "age_years": 2.0
+            }
+          },
+          {
+            "name": "Gazelle_12",
+            "species_type": "gazelle",
+            "position": [
+              235.0,
+              760.0
+            ],
+            "traits": {
+              "age_years": 2.3
+            }
+          },
+          {
+            "name": "Gazelle_13",
+            "species_type": "gazelle",
+            "position": [
+              305.0,
+              748.0
+            ],
+            "traits": {
+              "age_years": 1.8
+            }
+          },
+          {
+            "name": "Gazelle_14",
+            "species_type": "gazelle",
+            "position": [
+              342.0,
+              774.0
+            ],
+            "traits": {
+              "age_years": 2.6
+            }
+          },
+          {
+            "name": "Gazelle_15",
+            "species_type": "gazelle",
+            "position": [
+              380.0,
+              740.0
+            ],
+            "traits": {
+              "age_years": 3.1
+            }
+          },
+          {
+            "name": "Gazelle_16",
+            "species_type": "gazelle",
+            "position": [
+              412.0,
+              708.0
+            ],
+            "traits": {
+              "age_years": 2.4
+            }
+          },
+          {
+            "name": "Gazelle_17",
+            "species_type": "gazelle",
+            "position": [
+              286.0,
+              782.0
+            ],
+            "traits": {
+              "age_years": 1.6
+            }
+          },
+          {
+            "name": "Gazelle_18",
+            "species_type": "gazelle",
+            "position": [
+              430.0,
+              760.0
+            ],
+            "traits": {
+              "age_years": 2.9
+            }
+          }
+        ]
+      },
+      {
         "preset": "species/lion.json",
         "overrides": {
           "pack_id": "pride_central",
@@ -324,7 +429,8 @@
               "role": "leader",
               "hunt": {
                 "attack_range": 70,
-                "success_rate": 0.45,
+                "success_rate": 0.38,
+                "hunger_threshold": 80,
                 "feed_priority": 10,
                 "feed_radius": 65,
                 "guard_radius": 110,
@@ -347,7 +453,8 @@
               "role": "hunter",
               "hunt": {
                 "attack_range": 85,
-                "success_rate": 0.65,
+                "success_rate": 0.52,
+                "hunger_threshold": 72,
                 "feed_priority": 30,
                 "feed_radius": 60,
                 "wait_for_priorities": [
@@ -372,12 +479,12 @@
               "role": "sentinel",
               "hunt": {
                 "attack_range": 75,
-                "success_rate": 0.55,
+                "success_rate": 0.42,
+                "hunger_threshold": 75,
                 "feed_priority": 40,
                 "feed_radius": 60,
                 "wait_for_priorities": [
-                  10,
-                  30
+                  10
                 ],
                 "targets": [
                   "gazelle"
@@ -398,7 +505,8 @@
               "role": "hunter",
               "hunt": {
                 "attack_range": 90,
-                "success_rate": 0.6,
+                "success_rate": 0.5,
+                "hunger_threshold": 72,
                 "feed_priority": 30,
                 "feed_radius": 60,
                 "wait_for_priorities": [
@@ -421,15 +529,13 @@
           "traits": {
             "scavenger": {
               "range": 780,
-              "memory_ttl": 6,
+              "memory_ttl": 12,
+              "hunger_threshold": 15,
               "follow_packs": [
                 "pride_central"
               ],
-              "wait_for_priorities": [
-                10,
-                30
-              ],
-              "wait_distance": 200
+              "wait_for_priorities": [],
+              "wait_distance": 80
             }
           }
         },

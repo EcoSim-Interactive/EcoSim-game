@@ -1,3 +1,4 @@
+## Dialogue d'import permettant de recharger une simulation JSON existante.
 extends FileDialog
 
 @export var simulation_manager_path: NodePath

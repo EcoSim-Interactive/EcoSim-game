@@ -1,4 +1,4 @@
-"""Backward compatible import shim for the WebSocket server."""
+"""Point d'entree de compatibilite pour lancer le serveur WebSocket."""
 from __future__ import annotations
 
 import asyncio

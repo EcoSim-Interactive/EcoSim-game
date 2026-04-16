@@ -1,4 +1,4 @@
-"""Territory management utilities for territorial species."""
+"""Gestion des deplacements lies au territoire des especes territoriales."""
 from __future__ import annotations
 
 from typing import Dict, Tuple
@@ -11,7 +11,14 @@ def enforce_territory(
     territory: Dict[str, object],
     world=None,
 ) -> Tuple[bool, str]:
-    """Ensure the animal stays within its territory radius, patrolling if needed."""
+    """Force l'animal a rester dans son territoire ou a y revenir si besoin."""
+    def _attempt_move(target: Dict[str, float], action: str) -> Tuple[bool, str]:
+        if animal.move_towards(target, world):
+            return True, action
+        if animal.random_move(world):
+            return True, "territory_reposition"
+        return False, ""
+
     radius = float(territory.get("radius", 800.0))
     margin = float(territory.get("margin", radius * 0.15))
     center_raw = territory.get("center")
@@ -24,15 +31,13 @@ def enforce_territory(
 
     distance = animal.distance_to(center)
     if distance > radius:
-        animal.move_towards(center, world)
-        return True, "territory_return"
+        return _attempt_move(center, "territory_return")
 
     if distance > radius - margin:
         patrol_target = {
             "x": center["x"] + (animal.x - center["x"]) * 0.5,
             "y": center["y"] + (animal.y - center["y"]) * 0.5,
         }
-        animal.move_towards(patrol_target, world)
-        return True, "territory_patrol"
+        return _attempt_move(patrol_target, "territory_patrol")
 
     return False, ""

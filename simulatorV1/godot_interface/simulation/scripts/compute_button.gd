@@ -1,3 +1,4 @@
+## Bouton de lancement du pre-calcul de simulation via le manager reseau.
 extends Button
 
 @export var socket_path: NodePath
