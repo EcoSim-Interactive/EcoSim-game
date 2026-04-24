@@ -13,7 +13,8 @@ from math import ceil
 
 
 from app.config import DEFAULT_SETTINGS
-from app.world_loader import load_world_and_species
+from app.species_catalog import SpeciesCatalogStore
+from app.world_loader import build_species_from_config, build_world_from_config, load_config
 from domain import World
 from simulation import Simulation
 
@@ -35,6 +36,11 @@ steps_file: Optional[str] = None
 summary_file: Optional[str] = None
 step_cursor: int = 0
 generation_duration: Optional[float] = None
+species_catalog_cache: Optional[Dict[str, Any]] = None
+species_selection_cache: Optional[List[Dict[str, Any]]] = None
+species_store = SpeciesCatalogStore(
+    legacy_selection_file=(Path(__file__).resolve().parents[2] / "app" / "species_selection.json")
+)
 
 
 def _reset_runtime_state(*, clear_events: bool = True) -> None:
@@ -73,11 +79,96 @@ def _coerce_positive_int(value: Any) -> Optional[int]:
     return number if number > 0 else None
 
 
+def _load_catalog_with_selection() -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+    global species_catalog_cache, species_selection_cache
+
+    if species_catalog_cache is None:
+        species_catalog_cache = species_store.load_catalog()
+
+    if species_selection_cache is None:
+        species_selection_cache = species_store.build_selection_from_catalog(species_catalog_cache)
+
+    return species_catalog_cache, species_selection_cache
+
+
+def _build_config_with_species_selection(base_config: Dict[str, Any]) -> Dict[str, Any]:
+    catalog, selection = _load_catalog_with_selection()
+    _ = catalog  # garde la reference explicite pour lisibilite
+    config = dict(base_config)
+    config["species"] = species_store.selection_to_species_config(selection)
+    return config
+
+
+async def _send_species_catalog(websocket: websockets.WebSocketServerProtocol) -> None:
+    catalog, _ = _load_catalog_with_selection()
+    config, _ = load_config(DEFAULT_SETTINGS.world_config_path)
+    world_section = config.get("world", {}) if isinstance(config, dict) else {}
+    world_width = int(world_section.get("width", 1000)) if isinstance(world_section, dict) else 1000
+    world_height = int(world_section.get("height", 1000)) if isinstance(world_section, dict) else 1000
+    await websocket.send(
+        json.dumps(
+            {
+                "type": "species_catalog",
+                "data": {
+                    "templates": catalog.get("templates", []),
+                    "selection": catalog.get("default_selection", []),
+                    "world_width": world_width,
+                    "world_height": world_height,
+                },
+            }
+        )
+    )
+
+
+async def _configure_species_selection(
+    websocket: websockets.WebSocketServerProtocol,
+    obj: Dict[str, Any],
+) -> None:
+    global sim, world, species_selection_cache
+
+    payload = obj.get("value") if isinstance(obj.get("value"), dict) else obj.get("data")
+    if not isinstance(payload, dict):
+        await websocket.send(json.dumps({"type": "error", "message": "configure_species : payload manquant"}))
+        return
+
+    raw_selection = payload.get("selection")
+    if not isinstance(raw_selection, list):
+        await websocket.send(json.dumps({"type": "error", "message": "configure_species : selection invalide"}))
+        return
+
+    catalog, _ = _load_catalog_with_selection()
+    sanitized = species_store.sanitize_selection(raw_selection, catalog)
+
+    species_selection_cache = sanitized
+
+    await _cancel_runner_task()
+    _reset_runtime_state(clear_events=True)
+    sim = None
+    world = None
+
+    await websocket.send(
+        json.dumps(
+            {
+                "type": "species_configuration_saved",
+                "data": {
+                    "ok": True,
+                    "species_count": len(sanitized),
+                },
+            }
+        )
+    )
+    logger.info("Configuration especes enregistree (%s templates actifs).", len(sanitized))
+
+
 async def get_world(websocket: websockets.WebSocketServerProtocol) -> None:
     """Initialise le monde et envoie ses donnees au client."""
     global sim, world
     logger.info("Initialisation du monde...")
-    world, species_list = load_world_and_species(DEFAULT_SETTINGS.world_config_path)
+    config, base_dir = load_config(DEFAULT_SETTINGS.world_config_path)
+    config_with_species = _build_config_with_species_selection(config)
+
+    world = build_world_from_config(config_with_species, base_dir=base_dir)
+    species_list = build_species_from_config(config_with_species, world, base_dir=base_dir)
     world.generate_terrain() # TODO: to move
 
     sim = Simulation(
@@ -474,6 +565,14 @@ async def handle_command(websocket: websockets.WebSocketServerProtocol, message:
 
     if cmd == "get_world":
         await get_world(websocket)
+        return
+
+    if cmd == "get_species_catalog":
+        await _send_species_catalog(websocket)
+        return
+
+    if cmd == "configure_species":
+        await _configure_species_selection(websocket, obj)
         return
 
     if cmd in ("compute", "prepare", "precompute"):

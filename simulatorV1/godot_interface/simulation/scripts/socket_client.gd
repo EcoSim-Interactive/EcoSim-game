@@ -2,11 +2,18 @@
 extends Node2D
 class_name SimulationManager
 
+signal species_configuration_required
+signal species_catalog_ready(payload)
+signal species_configuration_saved(ok, payload)
+signal world_loaded
+
 var socket := WebSocketPeer.new()
 var connected := false
 var running := false   # false = pause par defaut
 var precompute_ready := false
 var precompute_pending := false
+var species_configured := false
+var pending_start_after_species_save := false
 
 @export var animal_path: NodePath
 @export var water_path: NodePath
@@ -67,6 +74,7 @@ func _process(_delta):
 		connected = true
 		print("[CLIENT] Connecte au serveur")
 		_send_cmd("get_world")
+		_send_cmd("get_species_catalog")
 
 	if state == WebSocketPeer.STATE_OPEN:
 		while socket.get_available_packet_count() > 0:
@@ -83,6 +91,8 @@ func _process(_delta):
 		running = false
 		precompute_ready = false
 		precompute_pending = false
+		species_configured = false
+		pending_start_after_species_save = false
 
 func _on_message(msg: String):
 	var data = JSON.parse_string(msg)
@@ -118,6 +128,7 @@ func _on_message(msg: String):
 				_spawn_world(world_meta)
 				print("[CLIENT] Monde complet chargé")
 				world_ready = true
+				emit_signal("world_loaded")
 				if start_after_world_ready:
 					_request_precompute()
 					_send_cmd("start")
@@ -155,6 +166,22 @@ func _on_message(msg: String):
 			resume_after_world_ready = false
 		"error":
 			print("[CLIENT] Erreur serveur :", data)
+			var message = String(data.get("message", ""))
+			if message.find("configure_species") != -1:
+				species_configured = false
+				pending_start_after_species_save = false
+				emit_signal("species_configuration_saved", false, data)
+		"species_catalog":
+			var payload = data.get("data", {})
+			emit_signal("species_catalog_ready", payload)
+		"species_configuration_saved":
+			var payload = data.get("data", {})
+			species_configured = bool(payload.get("ok", false))
+			emit_signal("species_configuration_saved", species_configured, payload)
+			_send_cmd("get_world")
+			if species_configured and pending_start_after_species_save:
+				pending_start_after_species_save = false
+				start_simulation()
 
 func _handle_status(payload):
 	match typeof(payload):
@@ -235,7 +262,22 @@ func _request_precompute(force: bool = false):
 func compute_simulation():
 	_request_precompute(true)
 
+func request_species_catalog() -> void:
+	if connected:
+		_send_cmd("get_species_catalog")
+
+func apply_species_configuration(selection: Array, start_after_apply: bool = false) -> void:
+	if not connected:
+		return
+	species_configured = false
+	pending_start_after_species_save = start_after_apply
+	_send_cmd("configure_species", {"selection": selection})
+
 func start_simulation():
+	if not species_configured:
+		request_species_catalog()
+		emit_signal("species_configuration_required")
+		return
 	if connected and not running:
 		if run_completed:
 			_reset_visuals()
@@ -258,6 +300,9 @@ func start_simulation():
 			running = true
 			run_completed = false
 			print("[CLIENT] Start envoye")
+
+func is_running() -> bool:
+	return running
 
 func pause_simulation():
 	if connected and running:

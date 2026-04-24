@@ -4,6 +4,8 @@ from __future__ import annotations
 import copy
 import json
 import logging
+import math
+import random
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -198,6 +200,15 @@ def build_species_from_config(
         )
         diet = _coerce_str(entry.get("diet")) or _resolve_str_from_chain("diet", default_chain) or "omnivore"
         body_nutrition = _resolve_float_attr("body_nutrition", entry, default_chain, fallback=80.0)
+        body_nutrition_range = _resolve_float_range_attr("body_nutrition", entry, default_chain)
+
+        requested_count = _positive_int(entry.get("count"))
+        if requested_count is None:
+            for defaults_source in default_chain:
+                requested_count = _positive_int(_extract_from_dict(defaults_source, "count"))
+                if requested_count:
+                    break
+        count = requested_count or 1
 
         explicit_positions = _extract_positions(world, entry.get("positions"))
         if not explicit_positions:
@@ -212,15 +223,12 @@ def build_species_from_config(
         if explicit_positions:
             positions = explicit_positions
         else:
-            positions = [base_position]
+            positions = _build_spawn_positions(world, base_position, count)
 
-        requested_count = _positive_int(entry.get("count"))
-        if requested_count is None:
-            for defaults_source in default_chain:
-                requested_count = _positive_int(_extract_from_dict(defaults_source, "count"))
-                if requested_count:
-                    break
-        count = requested_count or len(positions) or 1
+        if len(positions) > count:
+            positions = positions[:count]
+        elif len(positions) < count and positions:
+            positions.extend([positions[-1]] * (count - len(positions)))
 
         species_type = (
             _coerce_str(entry.get("species_type"))
@@ -247,6 +255,9 @@ def build_species_from_config(
             final_name = name_base if count == 1 else f"{name_base}_{offset + 1}"
             position = positions[offset] if offset < len(positions) else positions[-1]
             traits_payload = copy.deepcopy(traits)
+            nutrition_value = body_nutrition
+            if body_nutrition_range is not None:
+                nutrition_value = random.uniform(body_nutrition_range[0], body_nutrition_range[1])
             if sex_value and "sex" not in traits_payload:
                 traits_payload["sex"] = sex_value
             if age_stage_value and "age_stage" not in traits_payload:
@@ -261,7 +272,7 @@ def build_species_from_config(
                     diurnal=diurnal,
                     temperament=temperament,
                     diet=diet,
-                    body_nutrition=body_nutrition,
+                    body_nutrition=nutrition_value,
                     species_type=species_type,
                     traits=traits_payload,
                     group_id=group_id,
@@ -361,6 +372,25 @@ def _extract_positions(world: World, value: Any) -> List[Tuple[float, float]]:
         coords = _coerce_position(item)
         if coords is not None:
             positions.append(_clamp_position(coords, world))
+    return positions
+
+
+def _build_spawn_positions(world: World, anchor: Tuple[float, float], count: int) -> List[Tuple[float, float]]:
+    if count <= 1:
+        return [_clamp_position(anchor, world)]
+
+    radius = max(18.0, min(float(world.width), float(world.height)) * 0.04)
+    positions: List[Tuple[float, float]] = []
+    for index in range(count):
+        if index == 0:
+            offset_x = 0.0
+            offset_y = 0.0
+        else:
+            angle = random.uniform(0.0, 2.0 * 3.141592653589793)
+            distance = random.uniform(radius * 0.25, radius)
+            offset_x = math.cos(angle) * distance
+            offset_y = math.sin(angle) * distance
+        positions.append(_clamp_position((anchor[0] + offset_x, anchor[1] + offset_y), world))
     return positions
 
 
@@ -520,6 +550,40 @@ def _resolve_traits(entry: Dict[str, Any], default_chain: List[Dict[str, Any]]) 
     if entry_traits:
         merged.update(entry_traits)
     return merged
+
+
+def _coerce_range(value: Any) -> Optional[Tuple[float, float]]:
+    if isinstance(value, (list, tuple)) and len(value) >= 2:
+        lower = _coerce_float(value[0])
+        upper = _coerce_float(value[1])
+    elif isinstance(value, dict):
+        lower = _coerce_float(value.get("min"))
+        upper = _coerce_float(value.get("max"))
+    else:
+        return None
+
+    if lower is None or upper is None:
+        return None
+    if lower <= 0 or upper <= 0:
+        return None
+    return (min(lower, upper), max(lower, upper))
+
+
+def _resolve_float_range_attr(
+    key: str,
+    entry: Dict[str, Any],
+    default_chain: List[Dict[str, Any]],
+) -> Optional[Tuple[float, float]]:
+    range_key = f"{key}_range"
+    resolved = _coerce_range(entry.get(range_key))
+    if resolved is not None:
+        return resolved
+
+    for defaults_source in default_chain:
+        resolved = _coerce_range(_extract_from_dict(defaults_source, range_key))
+        if resolved is not None:
+            return resolved
+    return None
 
 
 def _extract_distribution(value: Any) -> Dict[str, int]:

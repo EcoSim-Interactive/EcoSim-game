@@ -1,0 +1,36 @@
+{
+  "selection": [
+    {
+      "diet": "herbivore",
+      "diurnal": true,
+      "temperament": "prudent",
+      "nutrition_range": {
+        "min": 70001.0,
+        "max": 120001.0
+      },
+      "id": "gazelle",
+      "display_name": "Gazelle de Thomson",
+      "species_type": "gazelle",
+      "vision": 140.0,
+      "smell_range": 260.0,
+      "speed": 21.0,
+      "traits": {
+        "metabolism": {
+          "body_mass_kg": 24.0,
+          "daily_food_intake_kg": 4.0,
+          "food_calories_per_kg": 700.0,
+          "reserve_days": 3.0,
+          "meal_intake_kg": 2.4,
+          "carcass_edible_ratio": 0.58,
+          "carcass_calories_per_kg": 1400.0,
+          "sex_mass_scale": {
+            "male": 1.15,
+            "female": 1.0
+          }
+        }
+      },
+      "count": 1,
+      "template_id": "gazelle"
+    }
+  ]
+}

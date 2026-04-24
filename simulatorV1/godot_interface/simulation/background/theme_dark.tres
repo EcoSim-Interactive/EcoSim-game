@@ -1,6 +1,6 @@
-[gd_resource type="Theme" load_steps=10 format=3 uid="uid://c05i4bhxyffka"]
+[gd_resource type="Theme" format=3 uid="uid://c05i4bhxyffka"]
 
-[ext_resource type="FontFile" uid="uid://cuoym0re7npvh" path="res://UI/Vogue.ttf" id="1_fry0u"]
+[ext_resource type="FontFile" uid="uid://co4dtpakhdbuq" path="res://UI/Vogue.ttf" id="1_fry0u"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fry0u"]
 bg_color = Color(0.0588235, 0.0901961, 0.164706, 1)
@@ -39,6 +39,20 @@ corner_radius_bottom_right = 12
 corner_radius_bottom_left = 12
 
 [sub_resource type="FontFile" id="FontFile_fry0u"]
+cache/0/variation_coordinates = {}
+cache/0/face_index = 0
+cache/0/embolden = 0.0
+cache/0/transform = Transform2D(1, 0, 0, 1, 0, 0)
+cache/0/spacing_top = 0
+cache/0/spacing_bottom = 0
+cache/0/spacing_space = 0
+cache/0/spacing_glyph = 0
+cache/0/baseline_offset = 0.0
+cache/0/16/0/ascent = 0.0
+cache/0/16/0/descent = 0.0
+cache/0/16/0/underline_position = 0.0
+cache/0/16/0/underline_thickness = 0.0
+cache/0/16/0/scale = 1.0
 cache/0/60/0/ascent = 0.0
 cache/0/60/0/descent = 0.0
 cache/0/60/0/underline_position = 0.0
@@ -54,11 +68,6 @@ cache/0/24/0/descent = 0.0
 cache/0/24/0/underline_position = 0.0
 cache/0/24/0/underline_thickness = 0.0
 cache/0/24/0/scale = 1.0
-cache/0/16/0/ascent = 0.0
-cache/0/16/0/descent = 0.0
-cache/0/16/0/underline_position = 0.0
-cache/0/16/0/underline_thickness = 0.0
-cache/0/16/0/scale = 1.0
 cache/0/120/0/ascent = 0.0
 cache/0/120/0/descent = 0.0
 cache/0/120/0/underline_position = 0.0

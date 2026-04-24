@@ -16,6 +16,10 @@ func _on_toggled(pressed_state: bool) -> void:
 
 	if pressed_state:
 		world.start_simulation()
+		if world.has_method("is_running") and not world.is_running():
+			set_pressed_no_signal(false)
+			text = "Marche/Arrêt"
+			return
 		text = "Start"
 	else:
 		world.pause_simulation()
