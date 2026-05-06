@@ -82,6 +82,10 @@ border_color = Color(0.2, 0.254902, 0.333333, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_scp28"]
 bg_color = Color(0.14902, 0.203922, 0.286275, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
 border_color = Color(0.2, 0.254902, 0.333333, 1)
 corner_radius_top_left = 8
 corner_radius_top_right = 8

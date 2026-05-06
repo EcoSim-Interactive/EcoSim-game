@@ -311,10 +311,10 @@ world_path = NodePath("../../Simulateur/Panel/SubViewportContainer/SubViewport/W
 
 [node name="PanelContainer" type="PanelContainer" parent="." unique_id=1824479893]
 layout_mode = 0
-offset_left = -816.0
-offset_top = -60.4166
-offset_right = -416.0
-offset_bottom = 339.583
+offset_left = -825.0
+offset_top = -57.292
+offset_right = -346.0
+offset_bottom = 292.708
 scale = Vector2(1, 1.33333)
 theme = ExtResource("2_gmipm")
 
@@ -326,7 +326,7 @@ theme = ExtResource("2_gmipm")
 layout_mode = 2
 theme = ExtResource("2_gmipm")
 theme_override_font_sizes/font_size = 24
-text = "SPECIES"
+text = "Espèce"
 horizontal_alignment = 1
 
 [node name="ScrollContainer" type="ScrollContainer" parent="PanelContainer/VBoxContainer" unique_id=359598251]
@@ -338,3 +338,81 @@ layout_mode = 2
 [node name="SpeciesConfigurator" type="CanvasLayer" parent="." unique_id=941361684]
 script = ExtResource("7_speciescfg")
 world_path = NodePath("../Simulateur/Panel/SubViewportContainer/SubViewport/World")
+
+[node name="Climat" type="PanelContainer" parent="." unique_id=2126025409]
+layout_mode = 0
+offset_left = -825.0
+offset_top = 450.0
+offset_right = -346.0
+offset_bottom = 750.0
+scale = Vector2(1, 1.0833303)
+theme = ExtResource("2_gmipm")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Climat" unique_id=9119494]
+layout_mode = 2
+theme = ExtResource("2_gmipm")
+
+[node name="Label" type="Label" parent="Climat/VBoxContainer" unique_id=1570899280]
+layout_mode = 2
+theme = ExtResource("2_gmipm")
+theme_override_font_sizes/font_size = 24
+text = "Climat"
+horizontal_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Climat/VBoxContainer" unique_id=1671602933]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Climat/VBoxContainer/ScrollContainer" unique_id=768445579]
+layout_mode = 2
+
+[node name="Controles status" type="PanelContainer" parent="." unique_id=1820014903]
+layout_mode = 0
+offset_left = -825.0
+offset_top = 820.0
+offset_right = -346.0
+offset_bottom = 1120.0
+scale = Vector2(1, 1.0833303)
+theme = ExtResource("2_gmipm")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Controles status" unique_id=851255562]
+layout_mode = 2
+theme = ExtResource("2_gmipm")
+
+[node name="Label" type="Label" parent="Controles status/VBoxContainer" unique_id=2000180916]
+layout_mode = 2
+theme = ExtResource("2_gmipm")
+theme_override_font_sizes/font_size = 24
+text = "Contrôleur statut"
+horizontal_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Controles status/VBoxContainer" unique_id=2119747977]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Controles status/VBoxContainer/ScrollContainer" unique_id=1032709830]
+layout_mode = 2
+
+[node name="Simulation" type="PanelContainer" parent="." unique_id=1642821269]
+layout_mode = 0
+offset_left = -825.0
+offset_top = 1182.291
+offset_right = -346.0
+offset_bottom = 1482.291
+scale = Vector2(1, 1.0833303)
+theme = ExtResource("2_gmipm")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Simulation" unique_id=1315321564]
+layout_mode = 2
+theme = ExtResource("2_gmipm")
+
+[node name="Label" type="Label" parent="Simulation/VBoxContainer" unique_id=1208706082]
+layout_mode = 2
+theme = ExtResource("2_gmipm")
+theme_override_font_sizes/font_size = 24
+text = "Simulation"
+horizontal_alignment = 1
+
+[node name="ScrollContainer" type="ScrollContainer" parent="Simulation/VBoxContainer" unique_id=433140446]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Simulation/VBoxContainer/ScrollContainer" unique_id=823890126]
+layout_mode = 2
