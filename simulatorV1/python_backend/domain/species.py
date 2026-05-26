@@ -58,10 +58,12 @@ class Species:
         calorie_reserve_days: float = DEFAULT_CALORIE_RESERVE_DAYS,
         meal_calories: float = DEFAULT_MEAL_CALORIES,
         body_mass_kg: Optional[float] = None,
+        sprite_name: Optional[str] = None,
         carcass_edible_ratio: float = 0.55,
         carcass_calories_per_kg: float = 1800.0,
     ) -> None:
         self.name = name
+        self.sprite_name = sprite_name or name.lower()
         self.x, self.y = position
         self.vision = vision
         self.smell_range = smell_range

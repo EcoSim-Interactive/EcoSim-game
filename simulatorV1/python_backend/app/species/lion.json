@@ -1,5 +1,6 @@
 {
   "name": "LionDAfrique",
+  "sprite_name": "lion",
   "vision": 120,
   "smell_range": 180,
   "speed": 18,

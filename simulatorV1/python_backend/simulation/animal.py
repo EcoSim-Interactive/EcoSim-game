@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, Iterable, Optional, Tuple
 
 from domain import Species
 from domain.constants import WATER_MEMORY_TTL_STEPS, WATER_MEMORY_SEARCH_RADIUS
+from domain.animal_components import AgeComponent, MetabolismComponent
 from .ai import behavior as ai_behavior
 
 LogFn = Callable[[str], None]
@@ -43,6 +44,7 @@ class Animal(Species):
         traits_copy: Dict[str, Any] = copy.deepcopy(traits) if isinstance(traits, dict) else {}
         initial_age = self._coerce_age_value(traits_copy.get("age_years", age_years))
         metabolism_cfg = traits_copy.get("metabolism") if isinstance(traits_copy.get("metabolism"), dict) else {}
+        temp_metabolism = MetabolismComponent(metabolism_cfg, initial_body_nutrition=body_nutrition)
         super().__init__(
             name=name,
             position=position,
@@ -54,13 +56,15 @@ class Animal(Species):
             diet=diet,
             body_nutrition=body_nutrition,
             age_years=initial_age,
-            daily_calorie_need=self._resolve_daily_calorie_need(metabolism_cfg),
-            calorie_reserve_days=self._coerce_positive_float(metabolism_cfg.get("reserve_days"), fallback=3.0),
-            meal_calories=self._resolve_meal_calories(metabolism_cfg),
-            body_mass_kg=self._coerce_positive_float(metabolism_cfg.get("body_mass_kg"), fallback=0.0) or None,
-            carcass_edible_ratio=self._coerce_positive_float(metabolism_cfg.get("carcass_edible_ratio"), fallback=0.55),
-            carcass_calories_per_kg=self._coerce_positive_float(metabolism_cfg.get("carcass_calories_per_kg"), fallback=1800.0),
+            daily_calorie_need=temp_metabolism.daily_calorie_need,
+            calorie_reserve_days=temp_metabolism.calorie_reserve_days,
+            meal_calories=temp_metabolism.meal_calories,
+            body_mass_kg=temp_metabolism.base_body_mass_kg or None,
+            carcass_edible_ratio=temp_metabolism.carcass_edible_ratio,
+            carcass_calories_per_kg=temp_metabolism.carcass_calories_per_kg,
+            sprite_name=traits_copy.get("sprite_name"),
         )
+        self._metabolism_comp = temp_metabolism
         self.original_name = name
         self.animal_id = animal_id if animal_id is not None else next(self._id_sequence)
         self.species_type = species_type or name
@@ -515,114 +519,42 @@ class Animal(Species):
             return fallback
         return number if number > 0.0 else fallback
 
-    def _resolve_daily_calorie_need(self, metabolism_cfg: Dict[str, Any]) -> float:
-        explicit = self._coerce_positive_float(metabolism_cfg.get("daily_calorie_need"), fallback=0.0)
-        if explicit > 0.0:
-            return explicit
-        intake_kg = self._coerce_positive_float(metabolism_cfg.get("daily_food_intake_kg"), fallback=0.0)
-        calories_per_kg = self._coerce_positive_float(metabolism_cfg.get("food_calories_per_kg"), fallback=0.0)
-        if intake_kg > 0.0 and calories_per_kg > 0.0:
-            return intake_kg * calories_per_kg
-        return 2400.0
-
-    def _resolve_meal_calories(self, metabolism_cfg: Dict[str, Any]) -> float:
-        explicit = self._coerce_positive_float(metabolism_cfg.get("meal_calories"), fallback=0.0)
-        if explicit > 0.0:
-            return explicit
-        meal_kg = self._coerce_positive_float(metabolism_cfg.get("meal_intake_kg"), fallback=0.0)
-        calories_per_kg = self._coerce_positive_float(metabolism_cfg.get("food_calories_per_kg"), fallback=0.0)
-        if meal_kg > 0.0 and calories_per_kg > 0.0:
-            return meal_kg * calories_per_kg
-        return 60.0
-
-    def _mass_scale_for_stage(self) -> float:
-        metabolism_cfg = self.traits.get("metabolism")
-        if not isinstance(metabolism_cfg, dict):
-            return 1.0
-        scales = metabolism_cfg.get("age_stage_mass_scale")
-        if isinstance(scales, dict):
-            value = self._coerce_positive_float(scales.get(self.age_stage), fallback=1.0)
-            return value if value > 0.0 else 1.0
-        return 1.0
-
-    def _mass_scale_for_sex(self) -> float:
-        metabolism_cfg = self.traits.get("metabolism")
-        if not isinstance(metabolism_cfg, dict):
-            return 1.0
-        scales = metabolism_cfg.get("sex_mass_scale")
-        if isinstance(scales, dict):
-            value = self._coerce_positive_float(scales.get(self.sex), fallback=1.0)
-            return value if value > 0.0 else 1.0
-        return 1.0
-
     def refresh_body_profile(self) -> None:
         """Met a jour la masse et la valeur calorique du corps selon le profil reel."""
-        if self.base_body_mass_kg is None:
-            return
-        self.body_mass_kg = self.base_body_mass_kg * self._mass_scale_for_stage() * self._mass_scale_for_sex()
-        estimated = self.estimate_carcass_calories()
-        if estimated > 0.0:
-            self.body_nutrition = estimated
+        if not hasattr(self, "_metabolism_comp"):
+            metabolism_cfg = self.traits.get("metabolism", {}) if hasattr(self, "traits") and isinstance(self.traits, dict) else {}
+            self._metabolism_comp = MetabolismComponent(metabolism_cfg, initial_calories=self.calories, initial_max=getattr(self, "max_calories", 0.0))
+        self._metabolism_comp.refresh_body_profile(self.age_stage, self.sex, getattr(self, "traits", {}))
+        self.body_mass_kg = self._metabolism_comp.body_mass_kg
+        self.body_nutrition = self._metabolism_comp.body_nutrition
 
     def _apply_metabolism_profile(self, metabolism_cfg: Dict[str, Any]) -> None:
-        self.daily_calorie_need = self._resolve_daily_calorie_need(metabolism_cfg)
-        self.calorie_reserve_days = self._coerce_positive_float(metabolism_cfg.get("reserve_days"), fallback=self.calorie_reserve_days)
-        self.max_calories = self.daily_calorie_need * self.calorie_reserve_days
-        self.calories = min(self.calories, self.max_calories)
-        self.meal_calories = self._resolve_meal_calories(metabolism_cfg)
-        body_mass = self._coerce_positive_float(metabolism_cfg.get("body_mass_kg"), fallback=0.0)
-        if body_mass > 0.0:
-            self.base_body_mass_kg = body_mass
-        self.carcass_edible_ratio = self._coerce_positive_float(metabolism_cfg.get("carcass_edible_ratio"), fallback=self.carcass_edible_ratio)
-        self.carcass_calories_per_kg = self._coerce_positive_float(metabolism_cfg.get("carcass_calories_per_kg"), fallback=self.carcass_calories_per_kg)
-        self.refresh_body_profile()
+        if not hasattr(self, "_metabolism_comp"):
+            self._metabolism_comp = MetabolismComponent(metabolism_cfg, initial_calories=self.calories, initial_max=getattr(self, "max_calories", 0.0))
+        
+        current_percent = self.calories / self.max_calories if getattr(self, "max_calories", 0.0) > 0 else 1.0
+        
+        self._metabolism_comp.apply_profile(metabolism_cfg, self.age_stage, self.sex, getattr(self, "traits", {}))
+        self.daily_calorie_need = self._metabolism_comp.daily_calorie_need
+        self.calorie_reserve_days = self._metabolism_comp.calorie_reserve_days
+        self.max_calories = self._metabolism_comp.max_calories
+        self.calories = min(self.max_calories, self.max_calories * current_percent)
+        self.meal_calories = self._metabolism_comp.meal_calories
+        self.base_body_mass_kg = self._metabolism_comp.base_body_mass_kg
+        self.carcass_edible_ratio = self._metabolism_comp.carcass_edible_ratio
+        self.carcass_calories_per_kg = self._metabolism_comp.carcass_calories_per_kg
+        self.body_mass_kg = self._metabolism_comp.body_mass_kg
+        self.body_nutrition = self._metabolism_comp.body_nutrition
 
     def _normalize_age_profile(self, spec: Any) -> list[Dict[str, Any]]:
-        stages: list[Dict[str, Any]] = []
-        units = "years"
-        raw_entries: Iterable[Any] = []
-        if isinstance(spec, dict):
-            units = spec.get("units", "years") if isinstance(spec.get("units"), str) else "years"
-            raw_entries = spec.get("stages", []) if isinstance(spec.get("stages"), list) else []
-        elif isinstance(spec, list):
-            raw_entries = spec
-        for entry in raw_entries:
-            if not isinstance(entry, dict):
-                continue
-            name_value = entry.get("name") or entry.get("label")
-            if not isinstance(name_value, str):
-                continue
-            name = name_value.strip().lower()
-            if not name:
-                continue
-            try:
-                minimum = float(entry.get("min", 0.0))
-            except (TypeError, ValueError):
-                minimum = 0.0
-            maximum = None
-            if "max" in entry and entry["max"] is not None:
-                try:
-                    maximum = float(entry["max"])
-                except (TypeError, ValueError):
-                    maximum = None
-            stages.append({"name": name, "min": minimum, "max": maximum})
-        if not stages:
-            stages = [
-                {"name": "juvenile", "min": 0.0, "max": 1.0},
-                {"name": "adult", "min": 1.0, "max": None},
-            ]
-        stages.sort(key=lambda item: item["min"])
-        self.age_units = units if isinstance(units, str) else "years"
-        return stages
+        self._age_comp = AgeComponent(getattr(self, "age_years", 0.0), spec)
+        self.age_units = self._age_comp.age_units
+        return self._age_comp.age_profile
 
     def _compute_age_stage(self) -> str:
-        age = getattr(self, "age_years", 0.0)
-        for stage in self.age_profile:
-            minimum = stage.get("min", 0.0)
-            maximum = stage.get("max")
-            if age >= minimum and (maximum is None or age < maximum):
-                return stage["name"]
-        return self.age_profile[-1]["name"] if self.age_profile else "adult"
+        if hasattr(self, "_age_comp"):
+            return self._age_comp.age_stage
+        return "adult"
 
     def _extract_label(self, source: Any) -> Optional[str]:
         if isinstance(source, str):
@@ -673,10 +605,35 @@ class Animal(Species):
         self.traits["age_years"] = self.age_years
         self.age_stage = self._compute_age_stage()
         self.traits["age_stage"] = self.age_stage
-        self.refresh_body_profile()
-        self.display_name = self._compute_display_name()
-        self.name = self.display_name
-        self.traits["display_name"] = self.display_name
+    def set_age_years(self, value: float) -> None:
+        try:
+            new_val = max(0.0, float(value))
+        except (TypeError, ValueError):
+            return
+        if new_val <= self.age_years:
+            return
+            
+        delta = new_val - self.age_years
+            
+        if not hasattr(self, "_age_comp"):
+            self._age_comp = AgeComponent(self.age_years, self.age_profile_spec)
+            
+        is_dead, metabolism_cfg = self._age_comp.tick_age(delta)
+        
+        self.age_years = self._age_comp.age_years
+        old_stage = self.age_stage
+        self.age_stage = self._age_comp.age_stage
+        
+        if is_dead:
+            self.alive = False
+            return
+            
+        if old_stage != self.age_stage:
+            self.traits["age_stage"] = self.age_stage
+            if metabolism_cfg:
+                self._apply_metabolism_profile(metabolism_cfg)
+            else:
+                self.refresh_body_profile()
 
     def advance_age(self, minutes_per_step: float) -> None:
         try:

@@ -160,6 +160,64 @@ async def _configure_species_selection(
     logger.info("Configuration especes enregistree (%s templates actifs).", len(sanitized))
 
 
+async def _send_world_config(websocket: websockets.WebSocketServerProtocol) -> None:
+    from app.world_loader import _resolve_config_path
+    
+    config_path = _resolve_config_path(DEFAULT_SETTINGS.world_config_path)
+    try:
+        with config_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        await websocket.send(
+            json.dumps(
+                {
+                    "type": "world_config",
+                    "data": data,
+                }
+            )
+        )
+    except Exception as exc:
+        await websocket.send(json.dumps({"type": "error", "message": f"Erreur lecture config: {exc}"}))
+
+
+async def _configure_world(
+    websocket: websockets.WebSocketServerProtocol,
+    obj: Dict[str, Any],
+) -> None:
+    global sim, world
+    from app.world_loader import _resolve_config_path
+
+    payload = obj.get("value") if isinstance(obj.get("value"), dict) else obj.get("data")
+    if not isinstance(payload, dict):
+        await websocket.send(json.dumps({"type": "error", "message": "configure_world : payload manquant"}))
+        return
+
+    config_path = _resolve_config_path(DEFAULT_SETTINGS.world_config_path)
+    
+    try:
+        with config_path.open("w", encoding="utf-8") as f:
+            json.dump(payload, f, indent=2, ensure_ascii=False)
+            
+        await _cancel_runner_task()
+        _reset_runtime_state(clear_events=True)
+        sim = None
+        world = None
+
+        await websocket.send(
+            json.dumps(
+                {
+                    "type": "world_configuration_saved",
+                    "data": {
+                        "ok": True,
+                    },
+                }
+            )
+        )
+        logger.info("Configuration du monde enregistree avec succes.")
+    except Exception as exc:
+        logger.exception("Erreur ecriture config")
+        await websocket.send(json.dumps({"type": "error", "message": f"Erreur ecriture config: {exc}"}))
+
+
 async def get_world(websocket: websockets.WebSocketServerProtocol) -> None:
     """Initialise le monde et envoie ses donnees au client."""
     global sim, world
@@ -573,6 +631,14 @@ async def handle_command(websocket: websockets.WebSocketServerProtocol, message:
 
     if cmd == "configure_species":
         await _configure_species_selection(websocket, obj)
+        return
+
+    if cmd == "get_world_config":
+        await _send_world_config(websocket)
+        return
+
+    if cmd == "configure_world":
+        await _configure_world(websocket, obj)
         return
 
     if cmd in ("compute", "prepare", "precompute"):

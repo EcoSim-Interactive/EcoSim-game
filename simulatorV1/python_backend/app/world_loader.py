@@ -250,6 +250,7 @@ def build_species_from_config(
         traits = _resolve_traits(entry, default_chain)
         sex_value = _coerce_str(entry.get("sex")) or _resolve_str_from_chain("sex", default_chain)
         age_stage_value = _coerce_str(entry.get("age_stage")) or _resolve_str_from_chain("age_stage", default_chain)
+        sprite_name_value = _coerce_str(entry.get("sprite_name")) or _resolve_str_from_chain("sprite_name", default_chain)
 
         for offset in range(count):
             final_name = name_base if count == 1 else f"{name_base}_{offset + 1}"
@@ -262,6 +263,8 @@ def build_species_from_config(
                 traits_payload["sex"] = sex_value
             if age_stage_value and "age_stage" not in traits_payload:
                 traits_payload["age_stage"] = age_stage_value
+            if sprite_name_value and "sprite_name" not in traits_payload:
+                traits_payload["sprite_name"] = sprite_name_value
             species_list.append(
                 Animal(
                     name=final_name,
@@ -290,21 +293,40 @@ def apply_food_config(world: World, section: Any) -> None:
     if not isinstance(section, dict):
         return
 
+    from domain.food_generation import DEFAULT_FOOD_PROFILES
+    import copy
+    profiles = copy.deepcopy(DEFAULT_FOOD_PROFILES)
+    presets = section.get("presets")
+    if isinstance(presets, dict):
+        base_dir = Path(__file__).parent.resolve()
+        for key, val in presets.items():
+            preset_data = val
+            if isinstance(val, str):
+                loaded = _load_species_preset(val, base_dir)
+                if loaded:
+                    preset_data = loaded
+            
+            if isinstance(preset_data, dict):
+                if key in profiles:
+                    profiles[key].update(preset_data)
+                else:
+                    profiles[key] = preset_data
+
     placements = section.get("placements")
     if isinstance(placements, list):
-        world.add_food_placements(placements)
+        world.add_food_placements(placements, profiles=profiles)
 
     distribution = _extract_distribution(section.get("distribution"))
     if distribution:
-        world.add_food(distribution=distribution)
+        world.add_food(distribution=distribution, profiles=profiles)
 
     quantity_value = _positive_int(section.get("quantity"))
     type_weights = _extract_type_weights(section.get("type_weights"))
     if quantity_value:
-        world.add_food(quantity=quantity_value, type_weights=type_weights)
+        world.add_food(quantity=quantity_value, type_weights=type_weights, profiles=profiles)
     elif type_weights:
         # Allow pure weight-based generation by falling back to default quantity.
-        world.add_food(type_weights=type_weights)
+        world.add_food(type_weights=type_weights, profiles=profiles)
 
 
 def apply_water_config(world: World, section: Any) -> None:

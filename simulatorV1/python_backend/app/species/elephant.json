@@ -1,5 +1,6 @@
 {
   "name": "ElephantDeSavane",
+  "sprite_name": "elephant",
   "vision": 110,
   "smell_range": 280,
   "speed": 11,

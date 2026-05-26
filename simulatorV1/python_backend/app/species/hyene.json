@@ -1,5 +1,6 @@
 {
   "name": "HyeneTachetee",
+  "sprite_name": "hyene",
   "vision": 90,
   "smell_range": 320,
   "speed": 16,

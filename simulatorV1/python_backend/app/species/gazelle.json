@@ -1,5 +1,6 @@
 {
   "name": "GazelleDeThomson",
+  "sprite_name": "gazelle",
   "vision": 140,
   "smell_range": 260,
   "speed": 21,

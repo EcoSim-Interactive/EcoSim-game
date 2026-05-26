@@ -5,12 +5,16 @@
     "minutes_per_step": 5
   },
   "food": {
+    "presets": {
+      "herbs": "food/herbs.json",
+      "berries": "food/berries.json",
+      "fruit_tree": "food/fruit_tree.json"
+    },
     "placements": [
       {
         "type": "herbs",
         "x": 286.67,
         "y": 713.33,
-        "nutrition": 28000,
         "metadata": {
           "label": "prairie_centrale"
         }
@@ -19,7 +23,6 @@
         "type": "herbs",
         "x": 440.0,
         "y": 846.67,
-        "nutrition": 32000,
         "metadata": {
           "label": "prairie_elephants"
         }
@@ -28,7 +31,6 @@
         "type": "berries",
         "x": 753.33,
         "y": 313.33,
-        "nutrition": 12000,
         "metadata": {
           "label": "buisson_nord"
         }
@@ -37,7 +39,6 @@
         "type": "fruit_tree",
         "x": 636.67,
         "y": 246.67,
-        "nutrition": 42000,
         "metadata": {
           "label": "bosquet_acacias"
         }
@@ -46,7 +47,6 @@
         "type": "fruit_tree",
         "x": 156.67,
         "y": 540.0,
-        "nutrition": 38000,
         "metadata": {
           "label": "bois_ouest"
         }
@@ -55,7 +55,6 @@
         "type": "herbs",
         "x": 843.33,
         "y": 570.0,
-        "nutrition": 26000,
         "metadata": {
           "label": "prairie_est"
         }
@@ -64,7 +63,6 @@
         "type": "berries",
         "x": 350.0,
         "y": 460.0,
-        "nutrition": 14000,
         "metadata": {
           "label": "fourre_central"
         }

@@ -7,17 +7,17 @@ from typing import Any, Dict, List, Optional, Tuple
 DEFAULT_FOOD_TYPE = "berries"
 DEFAULT_FOOD_PROFILES: Dict[str, Dict[str, Any]] = {
     "berries": {
-        "nutrition": 12000.0,
+        "nutrition_range": [10000.0, 14000.0],
         "weight": 5,
         "metadata": {"category": "bush"},
     },
     "herbs": {
-        "nutrition": 28000.0,
+        "nutrition_range": [25000.0, 31000.0],
         "weight": 3,
         "metadata": {"category": "ground"},
     },
     "fruit_tree": {
-        "nutrition": 42000.0,
+        "nutrition_range": [38000.0, 46000.0],
         "weight": 2,
         "metadata": {"category": "tree"},
     },
@@ -80,12 +80,19 @@ def _build_random_food_spec(
     x = random.randint(0, width)
     y = random.randint(0, height)
     metadata = profile.get("metadata")
+    
+    nutrition_range = profile.get("nutrition_range")
+    if isinstance(nutrition_range, (list, tuple)) and len(nutrition_range) >= 2:
+        nutrition_value = random.uniform(nutrition_range[0], nutrition_range[1])
+    else:
+        nutrition_value = float(profile.get("nutrition", 28000.0))
+        
     return {
         "type": food_type,
         "food_class": "plant",
         "x": float(x),
         "y": float(y),
-        "nutrition": float(profile.get("nutrition", 28000.0)),
+        "nutrition": float(nutrition_value),
         "metadata": dict(metadata) if isinstance(metadata, dict) else None,
     }
 

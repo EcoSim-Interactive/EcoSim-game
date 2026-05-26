@@ -28,6 +28,7 @@ from .water_generation import (
     generate_stagnant_pool_specs,
     trace_line,
 )
+from .spatial_index import SpatialIndex
 
 SPATIAL_INDEX_CELL_SIZE = 64
 
@@ -53,90 +54,18 @@ class World:
         self._spatial_cell_size = SPATIAL_INDEX_CELL_SIZE
         self._food_lookup: Dict[str, Dict[str, Any]] = {}
         self._water_lookup: Dict[str, Dict[str, Any]] = {}
-        self._food_spatial_index: Dict[Tuple[int, int], List[Dict[str, Any]]] = {}
-        self._water_spatial_index: Dict[Tuple[int, int], List[Dict[str, Any]]] = {}
-        self._shore_water_spatial_index: Dict[Tuple[int, int], List[Dict[str, Any]]] = {}
+        self._food_spatial_index = SpatialIndex(self._spatial_cell_size, self.width, self.height)
+        self._water_spatial_index = SpatialIndex(self._spatial_cell_size, self.width, self.height)
+        self._shore_water_spatial_index = SpatialIndex(self._spatial_cell_size, self.width, self.height)
         self._shore_water_dirty = True
         self._shore_tiles_by_source: Dict[str, List[Tuple[int, int]]] = {}
         self._shore_tiles_dirty = True
 
-    def _bucket_key(self, x: float, y: float) -> Tuple[int, int]:
-        size = max(1, int(self._spatial_cell_size))
-        return (int(float(x)) // size, int(float(y)) // size)
-
-    def _index_entry(
-        self,
-        index: Dict[Tuple[int, int], List[Dict[str, Any]]],
-        entry: Dict[str, Any],
-    ) -> None:
-        bucket = self._bucket_key(float(entry.get("x", 0.0)), float(entry.get("y", 0.0)))
-        index.setdefault(bucket, []).append(entry)
-
-    def _remove_index_entry(
-        self,
-        index: Dict[Tuple[int, int], List[Dict[str, Any]]],
-        entry: Dict[str, Any],
-    ) -> None:
-        bucket = self._bucket_key(float(entry.get("x", 0.0)), float(entry.get("y", 0.0)))
-        bucket_entries = index.get(bucket)
-        if not bucket_entries:
-            return
-        try:
-            bucket_entries.remove(entry)
-        except ValueError:
-            return
-        if not bucket_entries:
-            index.pop(bucket, None)
-
-    def _iter_bucket_ring(self, center_x: int, center_y: int, radius: int):
-        if radius <= 0:
-            yield (center_x, center_y)
-            return
-        for dx in range(-radius, radius + 1):
-            yield (center_x + dx, center_y - radius)
-            yield (center_x + dx, center_y + radius)
-        for dy in range(-radius + 1, radius):
-            yield (center_x - radius, center_y + dy)
-            yield (center_x + radius, center_y + dy)
-
-    def _search_spatial_index(
-        self,
-        index: Dict[Tuple[int, int], List[Dict[str, Any]]],
-        x: float,
-        y: float,
-        *,
-        predicate,
-        distance,
-    ) -> Optional[Dict[str, Any]]:
-        if not index:
-            return None
-        start_x, start_y = self._bucket_key(x, y)
-        max_radius = max(
-            1,
-            math.ceil(max(self.width, self.height) / max(1, int(self._spatial_cell_size))),
-        )
-        best: Optional[Dict[str, Any]] = None
-        best_dist: Optional[float] = None
-        cell_size = float(max(1, int(self._spatial_cell_size)))
-
-        for radius in range(0, max_radius + 1):
-            for bucket in self._iter_bucket_ring(start_x, start_y, radius):
-                for entry in index.get(bucket, ()):
-                    if not predicate(entry):
-                        continue
-                    dist_sq = float(distance(entry))
-                    if best_dist is None or dist_sq < best_dist:
-                        best = entry
-                        best_dist = dist_sq
-            if best_dist is not None and radius > 0 and best_dist <= (radius * cell_size) ** 2:
-                break
-        return best
-
     def _rebuild_shore_water_index(self) -> None:
-        self._shore_water_spatial_index = {}
+        self._shore_water_spatial_index.clear()
         for water in self.water_sources:
             if self._is_shore_water(water):
-                self._index_entry(self._shore_water_spatial_index, water)
+                self._shore_water_spatial_index.insert(water)
         self._shore_water_dirty = False
 
     @staticmethod
@@ -175,7 +104,7 @@ class World:
         except ValueError:
             pass
         self._food_lookup.pop(str(food.get("id")), None)
-        self._remove_index_entry(self._food_spatial_index, food)
+        self._food_spatial_index.remove(food)
 
     # ------------------------------------------------------------------
     # Generation et gestion des ressources alimentaires
@@ -186,6 +115,7 @@ class World:
         *,
         distribution: Optional[Dict[str, int]] = None,
         type_weights: Optional[Dict[str, float]] = None,
+        profiles: Optional[Dict[str, Dict[str, Any]]] = None,
     ) -> None:
         """Populate the world with randomly placed food sources of various vegetal types."""
         specs = generate_food_sources(
@@ -194,7 +124,7 @@ class World:
             quantity,
             distribution=distribution,
             type_weights=type_weights,
-            profiles=DEFAULT_FOOD_PROFILES,
+            profiles=profiles or DEFAULT_FOOD_PROFILES,
         )
         for spec in specs:
             position = self._relocate_off_water(spec["x"], spec["y"])
@@ -207,10 +137,12 @@ class World:
                 nutrition=spec.get("nutrition"),
                 metadata=spec.get("metadata"),
                 food_class=spec.get("food_class", "plant"),
+                sprite_name=spec.get("sprite_name"),
             )
 
-    def add_food_placements(self, placements: List[Dict[str, Any]]) -> None:
+    def add_food_placements(self, placements: List[Dict[str, Any]], profiles: Optional[Dict[str, Dict[str, Any]]] = None) -> None:
         """Add explicit food positions defined in configuration files."""
+        profiles = profiles or DEFAULT_FOOD_PROFILES
         for placement in placements or []:
             if not isinstance(placement, dict):
                 continue
@@ -219,8 +151,14 @@ class World:
             if x is None or y is None:
                 continue
             raw_type = placement.get("type")
-            food_type, profile = resolve_food_profile(raw_type, DEFAULT_FOOD_PROFILES)
+            food_type, profile = resolve_food_profile(raw_type, profiles)
             nutrition_override = self._to_optional_float(placement.get("nutrition"))
+            if nutrition_override is None:
+                nutrition_range = profile.get("nutrition_range")
+                if isinstance(nutrition_range, (list, tuple)) and len(nutrition_range) >= 2:
+                    nutrition_override = random.uniform(nutrition_range[0], nutrition_range[1])
+                else:
+                    nutrition_override = profile.get("nutrition", 28000.0)
             metadata = placement.get("metadata")
             if not isinstance(metadata, dict):
                 default_metadata = profile.get("metadata")
@@ -234,9 +172,10 @@ class World:
                 position[0],
                 position[1],
                 food_type=food_type,
-                nutrition=nutrition_override if nutrition_override is not None else profile.get("nutrition"),
+                nutrition=nutrition_override,
                 metadata=metadata,
                 food_class=placement.get("food_class", "plant"),
+                sprite_name=placement.get("sprite_name") or profile.get("sprite_name"),
             )
 
     # ------------------------------------------------------------------
@@ -960,12 +899,11 @@ class World:
         *,
         diet: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
-        return self._search_spatial_index(
-            self._food_spatial_index,
+        return self._food_spatial_index.search_nearest(
             x,
             y,
             predicate=lambda food: self.food_has_supply(food) and self._food_matches_diet(food, diet),
-            distance=lambda food: (float(food["x"]) - x) ** 2 + (float(food["y"]) - y) ** 2,
+            distance_fn=lambda food: (float(food["x"]) - x) ** 2 + (float(food["y"]) - y) ** 2,
         )
 
     def water_depth_at(self, x: float, y: float) -> Optional[float]:
@@ -1261,22 +1199,20 @@ class World:
         if self._shore_water_dirty:
             self._rebuild_shore_water_index()
 
-        nearest_shore = self._search_spatial_index(
-            self._shore_water_spatial_index,
+        nearest_shore = self._shore_water_spatial_index.search_nearest(
             x,
             y,
             predicate=self.water_has_supply,
-            distance=lambda water: (float(water["x"]) - x) ** 2 + (float(water["y"]) - y) ** 2,
+            distance_fn=lambda water: (float(water["x"]) - x) ** 2 + (float(water["y"]) - y) ** 2,
         )
         if nearest_shore is not None:
             return nearest_shore
 
-        return self._search_spatial_index(
-            self._water_spatial_index,
+        return self._water_spatial_index.search_nearest(
             x,
             y,
             predicate=self.water_has_supply,
-            distance=lambda water: self.distance_to_water(x, y, water) ** 2,
+            distance_fn=lambda water: self.distance_to_water(x, y, water) ** 2,
         )
 
     def get_time_info(self, step_index: int) -> Dict[str, int | bool]:
@@ -1355,7 +1291,7 @@ class World:
             self._water_tile_depth[key] = depth
         self.water_sources.append(water)
         self._water_lookup[str(water["id"])] = water
-        self._index_entry(self._water_spatial_index, water)
+        self._water_spatial_index.insert(water)
         self._shore_water_dirty = True
         self._shore_tiles_dirty = True
         return water
@@ -1370,6 +1306,7 @@ class World:
         nutrition: Optional[float],
         metadata: Optional[Dict[str, Any]] = None,
         food_class: str = "plant",
+        sprite_name: Optional[str] = None,
     ) -> Dict[str, Any]:
         self._food_id_seq += 1
         nutrition_value = float(nutrition) if nutrition is not None else DEFAULT_FOOD_NUTRITION
@@ -1377,6 +1314,7 @@ class World:
             "id": food_id or f"food_{self._food_id_seq}",
             "type": food_type,
             "food_class": food_class,
+            "sprite_name": sprite_name or food_type.lower(),
             "x": float(self._clamp_coordinate(x, self.width)),
             "y": float(self._clamp_coordinate(y, self.height)),
             "nutrition": nutrition_value,
@@ -1391,7 +1329,7 @@ class World:
             food["metadata"] = metadata_payload
         self.food_sources.append(food)
         self._food_lookup[str(food["id"])] = food
-        self._index_entry(self._food_spatial_index, food)
+        self._food_spatial_index.insert(food)
         return food
 
     def add_carcass(self, species: Any) -> Dict[str, Any]:
@@ -1418,6 +1356,7 @@ class World:
             "source_carcass_calories": nutrition_value,
             "linked_animal": True,
         }
+        carcass_sprite = f"carcass_{species.sprite_name}" if getattr(species, "sprite_name", None) else "carcass"
         carcass = self._register_food_source(
             species.x,
             species.y,
@@ -1426,6 +1365,7 @@ class World:
             nutrition=nutrition_value,
             metadata=metadata,
             food_class="meat",
+            sprite_name=carcass_sprite,
         )
         carcass["source_animal_id"] = animal_id
         carcass["source_species_type"] = source_species_type
@@ -1463,6 +1403,7 @@ class World:
             "id": food.get("id"),
             "type": food.get("type"),
             "food_class": food.get("food_class"),
+            "sprite_name": food.get("sprite_name"),
             "x": food.get("x"),
             "y": food.get("y"),
             "source_animal_id": food.get("source_animal_id"),
