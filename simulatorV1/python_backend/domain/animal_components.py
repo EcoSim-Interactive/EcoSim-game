@@ -1,6 +1,5 @@
 """Composants encapsulant les logiques vitales complexes de l'Animal."""
-from typing import Any, Dict, Iterable, Optional
-import math
+from typing import Any, Dict, Optional
 import random
 
 
@@ -65,7 +64,7 @@ class AgeComponent:
             return str(self.age_profile[-1]["name"])
         return "adult"
 
-    def tick_age(self, delta_years: float) -> Tuple[bool, Optional[Dict[str, Any]]]:
+    def tick_age(self, delta_years: float) -> tuple[bool, Optional[Dict[str, Any]]]:
         """Vieillit l'entité. Retourne (is_dead_from_old_age, new_stage_metabolism_cfg)."""
         if delta_years <= 0:
             return False, None
