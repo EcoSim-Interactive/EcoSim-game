@@ -5,8 +5,8 @@ import sys
 import platform
 
 # ================= CONFIGURATION =================
-PROJECT_PATH = "./godot_interface/simulation/project.godot"
-SERVER_SCRIPT = "./python_backend/server.py"
+PROJECT_PATH = "./simulatorV1/godot_interface/simulation/project.godot"
+SERVER_SCRIPT = "./simulatorV1/python_backend/server.py"
 BUILD_DIR = os.path.abspath("./dist_final")
 
 # Détection de l'OS
