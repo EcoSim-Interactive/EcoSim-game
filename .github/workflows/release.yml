@@ -24,11 +24,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 1. Setup Python & UV
       - name: Install UV
         uses: astral-sh/setup-uv@v5
         
       - name: Setup Python
-        run: uv python install 3.12 # Choisis ta version
+        run: uv python install 3.12
 
       - name: Install Python Dependencies
         run: |
@@ -36,12 +37,13 @@ jobs:
           uv sync
           uv add pyinstaller
 
-      # 2. Setup Godot (Action officielle)
+      # 2. Setup Godot (La bonne action cette fois)
       - name: Setup Godot
-        uses: godotengine/setup-godot@v3
+        uses: chickensoft-games/setup-godot@v2
         with:
-          version: 4.6 # Utilise la version ciblée
-          export-templates: true
+          version: 4.6
+          use-dotnet: false
+          include-templates: true
 
       # 3. Lancer notre script Python de build multiplateforme
       - name: Run Build Script
@@ -56,7 +58,7 @@ jobs:
 
   release:
     name: Create GitHub Release
-    needs: build # Attend que les 3 builds soient terminés
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -81,4 +83,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: artifacts/*.zip
-          generate_release_notes: true # Magie : Génère le changelog tout seul !
+          generate_release_notes: true
