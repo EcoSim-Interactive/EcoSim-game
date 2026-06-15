@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+/* Configuration du mode sombre alternatif pour Tailwind CSS v4 */
+@variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 300ms;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+  }
+}
+
+/* Custom transitions and scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-slate-50 dark:bg-[#0b0f19] transition-colors duration-300;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 dark:bg-slate-800 rounded-full transition-colors duration-300;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-300 dark:bg-slate-700;
+}
+
+/* Custom soft animated glow for forest theme */
+@keyframes forest-pulse {
+  0%, 100% {
+    opacity: 0.15;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.25;
+    transform: scale(1.03);
+  }
+}
+
+.ambient-forest {
+  background: radial-gradient(circle, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0) 70%);
+  animation: forest-pulse 8s infinite ease-in-out;
+}
+
+.ambient-warm {
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0) 70%);
+  animation: forest-pulse 12s infinite ease-in-out 2s;
+}
