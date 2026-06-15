@@ -42,8 +42,12 @@ def run_cmd(cmd, force_bash=False):
     print(f"[CMD] {cmd}")
     try:
         if force_bash and IS_WIN:
-            # Si on est sur Windows, on court-circuite cmd.exe en lançant explicitement dans bash
-            subprocess.run(["bash", "-c", cmd], check=True)
+            git_bash_path = r"C:\Program Files\Git\bin\bash.exe"
+            
+            if os.path.exists(git_bash_path):
+                subprocess.run([git_bash_path, "-c", cmd], check=True)
+            else:
+                subprocess.run(["sh", "-c", cmd], check=True)
         else:
             subprocess.run(cmd, check=True, shell=True)
     except subprocess.CalledProcessError:
