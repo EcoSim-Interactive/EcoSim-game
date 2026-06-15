@@ -1,0 +1,89 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        include:
+          - os: windows-latest
+            artifact_name: EcoSim-Windows
+          - os: ubuntu-latest
+            artifact_name: EcoSim-Linux
+          - os: macos-latest
+            artifact_name: EcoSim-macOS
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 1. Setup Python & UV
+      - name: Install UV
+        uses: astral-sh/setup-uv@v5
+        
+      - name: Setup Python
+        run: uv python install 3.12
+
+      - name: Install Python Dependencies
+        run: |
+          cd simulatorV1/python_backend
+          uv sync
+          uv add pyinstaller
+
+      # 2. Setup Godot (La bonne action cette fois)
+      - name: Setup Godot
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.6.2
+          use-dotnet: false
+          include-templates: true
+
+      # 3. Lancer notre script Python de build multiplateforme
+      - name: Run Build Script
+        shell: bash
+        run: |
+          cd simulatorV1
+          uv run python build.py
+
+      # 4. Sauvegarder le résultat temporairement
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: simulatorV1/dist_final/
+
+  release:
+    name: Create GitHub Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Télécharger les fichiers des 3 OS
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      # Compresser les dossiers pour la release
+      - name: Zip Artifacts
+        run: |
+          cd artifacts
+          zip -r EcoSim-Windows.zip EcoSim-Windows
+          zip -r EcoSim-Linux.zip EcoSim-Linux
+          zip -r EcoSim-macOS.zip EcoSim-macOS
+
+      # Créer la Release avec auto-changelog
+      - name: Publish Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*.zip
+          generate_release_notes: true
