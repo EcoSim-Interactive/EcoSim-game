@@ -5,8 +5,9 @@ import sys
 import platform
 
 # ================= CONFIGURATION =================
-PROJECT_PATH = "./simulatorV1/godot_interface/simulation/project.godot"
-SERVER_SCRIPT = "./simulatorV1/python_backend/server.py"
+# On est DÉJÀ dans simulatorV1 au moment où le script tourne.
+PROJECT_PATH = "./godot_interface/simulation/project.godot"
+SERVER_SCRIPT = "./python_backend/server.py"
 BUILD_DIR = os.path.abspath("./dist_final")
 
 # Détection de l'OS
@@ -17,7 +18,7 @@ EXT = ".exe" if IS_WIN else ""
 # Presets attendus dans project.godot (export_presets.cfg)
 PRESETS = {
     "Windows": "Windows Desktop",
-    "Linux": "Linux",
+    "Linux": "Linux/X11",
     "Darwin": "macOS"
 }
 EXPORT_PRESET = PRESETS.get(SYSTEM, "Linux/X11")
@@ -25,9 +26,13 @@ EXPORT_PRESET = PRESETS.get(SYSTEM, "Linux/X11")
 GAME_OUTPUTS = {
     "Windows": "game.exe",
     "Linux": "game.x86_64",
-    "Darwin": "game.zip" # MacOS exporte souvent en zip ou .app
+    "Darwin": "game.zip"
 }
 GAME_OUTPUT_NAME = GAME_OUTPUTS.get(SYSTEM, "game.x86_64")
+
+# MAGIE MULTIPLATEFORME : On cible directement le bon exécutable du Venv
+VENV_BIN = "Scripts" if IS_WIN else "bin"
+VENV_PYTHON = os.path.abspath(f"./python_backend/.venv/{VENV_BIN}/python{EXT}")
 # =================================================
 
 def run_cmd(cmd):
@@ -49,13 +54,12 @@ def main():
         shutil.rmtree(BUILD_DIR)
     os.makedirs(os.path.join(BUILD_DIR, "data"), exist_ok=True)
 
-    # 1. Compilation du Serveur (PyInstaller via UV)
-    # Dans la CI, 'uv run' s'assure d'utiliser l'environnement correctement
+    # 1. Compilation du Serveur avec le VENV direct
     backend_dir = os.path.dirname(SERVER_SCRIPT)
     server_dist_parent = os.path.join(BUILD_DIR, "data")
     
     cmd_server = (
-        f'uv run pyinstaller --onedir --contents-directory "." '
+        f'"{VENV_PYTHON}" -m PyInstaller --onedir --contents-directory "." '
         f'--hidden-import websockets --collect-all websockets '
         f'--distpath "{server_dist_parent}" --workpath "./temp/server" '
         f'--specpath "./temp" --paths "{backend_dir}" --name "server" "{SERVER_SCRIPT}"'
@@ -63,18 +67,18 @@ def main():
     run_cmd(cmd_server)
     copy_resources(backend_dir, os.path.join(server_dist_parent, "server"))
 
-    # 2. Export Godot (utilise l'exécutable 'godot' injecté par la CI)
+    # 2. Export Godot
     game_output = os.path.join(BUILD_DIR, "data", GAME_OUTPUT_NAME)
     project_dir = os.path.dirname(PROJECT_PATH)
     cmd_godot = f'godot --headless --path "{project_dir}" --export-release "{EXPORT_PRESET}" "{game_output}"'
     run_cmd(cmd_godot)
 
-    # 3. Compilation du Launcher
+    # 3. Compilation du Launcher avec le VENV direct
     icon_path = os.path.abspath("./assets/app_icon.ico")
     icon_cmd = f'--icon "{icon_path}" ' if os.path.exists(icon_path) and IS_WIN else ""
 
     cmd_launcher = (
-        f'uv run pyinstaller --onefile {icon_cmd}'
+        f'"{VENV_PYTHON}" -m PyInstaller --onefile {icon_cmd}'
         f'--distpath "{BUILD_DIR}" --workpath "./temp/launcher" '
         f'--specpath "./temp" --name "EcoSim_Interactive" launcher.py'
     )
