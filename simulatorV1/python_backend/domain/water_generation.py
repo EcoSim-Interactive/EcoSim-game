@@ -40,59 +40,59 @@ def generate_river_segments(
     x = random.randint(0, width - 1)
     y = random.randint(0, height - 1)
     segments = [{"x": float(x), "y": float(y)}]
-    
+
     # 2. DEFINIR LE FLUX GÉNÉRAL (L'astuce est ici)
     # On choisit une destination générale loin du point de départ
     # Par exemple, si on est à gauche (x < width/2), le flux va vers la droite (+1)
     flow_x = 1 if x < width / 2 else -1
     flow_y = 1 if y < height / 2 else -1
-    
-    # On peut ajouter un peu d'aléatoire au flux pour qu'il ne soit pas parfaitement diagonal
-    if random.random() < 0.5: flow_y = 0 # Flux principalement horizontal
-    elif random.random() < 0.5: flow_x = 0 # Flux principalement vertical
 
-    # Normalisation simple du vecteur de flux pour l'utiliser plus tard
-    general_flow = (flow_x, flow_y)
+    # On peut ajouter un peu d'aléatoire au flux pour qu'il ne soit pas parfaitement diagonal
+    if random.random() < 0.5:
+        flow_y = 0  # Flux principalement horizontal
+    elif random.random() < 0.5:
+        flow_x = 0  # Flux principalement vertical
 
     attempts = 0
     max_attempts = max(length * max_attempts_multiplier, 100)
 
     while len(segments) < length and attempts < max_attempts:
         attempts += 1
-        
+
         # On va avancer de 'key_point_step' pixels
         # Mais on doit choisir un angle qui respecte le FLUX GÉNÉRAL
-        
+
         # Liste des mouvements possibles (dx, dy) pour un segment
         # On favorise ceux qui vont dans le sens du flux
         candidates = []
-        
+
         # On regarde les 8 directions possibles
         for dx in [-1, 0, 1]:
             for dy in [-1, 0, 1]:
-                if dx == 0 and dy == 0: continue
-                
+                if dx == 0 and dy == 0:
+                    continue
+
                 # PRODUIT SCALAIRE : Si le mouvement va à l'opposé du flux général, on l'ignore ou on le pénalise
                 # Score > 0 : va dans le bon sens. Score < 0 : va en arrière (interdit)
                 score = (dx * flow_x) + (dy * flow_y)
-                
+
                 if score >= 0: # On accepte seulement si ça ne recule pas par rapport au flux global
                     # On ajoute ce candidat (dx, dy) à la liste
                     # On l'ajoute plusieurs fois si le score est bon pour augmenter ses chances
                     weight = 1 + (score * 2) # Poids: 1 (neutre) ou 3 (très bon sens)
                     for _ in range(weight):
                         candidates.append((dx, dy))
-        
+
         if not candidates:
             break # Coincé
 
         # Choix d'une direction parmi les candidats validés
         move_dx, move_dy = random.choice(candidates)
-        
+
         # Calcul du point d'arrivée
         target_x = x + (move_dx * key_point_step)
         target_y = y + (move_dy * key_point_step)
-        
+
         # Clamp aux limites
         target_x = max(0, min(width - 1, target_x))
         target_y = max(0, min(height - 1, target_y))
@@ -108,7 +108,7 @@ def generate_river_segments(
              target_x += wobble
         elif move_dy == 0: # Mouvement horizontal -> wobble vertical
              target_y += wobble
-             
+
         # Re-clamp après wobble
         target_x = max(0, min(width - 1, target_x))
         target_y = max(0, min(height - 1, target_y))
@@ -129,7 +129,7 @@ def trace_line(x1: int, y1: int, x2: int, y2: int) -> List[Tuple[int, int]]:
     err = dx - dy
 
     cx, cy = x1, y1
-    
+
     while True:
         points.append((cx, cy))
         if cx == x2 and cy == y2:
@@ -141,7 +141,7 @@ def trace_line(x1: int, y1: int, x2: int, y2: int) -> List[Tuple[int, int]]:
         if e2 < dx:
             err += dx
             cy += sy
-            
+
     return points
 
 def generate_stagnant_pool_specs(

@@ -5,12 +5,11 @@ import asyncio
 import errno
 import json
 import logging
+from math import ceil
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import websockets
-from math import ceil
-
 
 from app.config import DEFAULT_SETTINGS
 from app.species_catalog import SpeciesCatalogStore
@@ -162,7 +161,7 @@ async def _configure_species_selection(
 
 async def _send_world_config(websocket: websockets.WebSocketServerProtocol) -> None:
     from app.world_loader import _resolve_config_path
-    
+
     config_path = _resolve_config_path(DEFAULT_SETTINGS.world_config_path)
     try:
         with config_path.open("r", encoding="utf-8") as f:
@@ -192,11 +191,11 @@ async def _configure_world(
         return
 
     config_path = _resolve_config_path(DEFAULT_SETTINGS.world_config_path)
-    
+
     try:
         with config_path.open("w", encoding="utf-8") as f:
             json.dump(payload, f, indent=2, ensure_ascii=False)
-            
+
         await _cancel_runner_task()
         _reset_runtime_state(clear_events=True)
         sim = None

@@ -3,12 +3,12 @@ from __future__ import annotations
 
 import copy
 import itertools
-import random
-from typing import Any, Callable, Dict, Iterable, Optional, Tuple
+from typing import Any, Callable, Dict, Optional, Tuple
 
 from domain import Species
-from domain.constants import WATER_MEMORY_TTL_STEPS, WATER_MEMORY_SEARCH_RADIUS
 from domain.animal_components import AgeComponent, MetabolismComponent
+from domain.constants import WATER_MEMORY_TTL_STEPS
+
 from .ai import behavior as ai_behavior
 
 LogFn = Callable[[str], None]
@@ -531,9 +531,9 @@ class Animal(Species):
     def _apply_metabolism_profile(self, metabolism_cfg: Dict[str, Any]) -> None:
         if not hasattr(self, "_metabolism_comp"):
             self._metabolism_comp = MetabolismComponent(metabolism_cfg, initial_calories=self.calories, initial_max=getattr(self, "max_calories", 0.0))
-        
+
         current_percent = self.calories / self.max_calories if getattr(self, "max_calories", 0.0) > 0 else 1.0
-        
+
         self._metabolism_comp.apply_profile(metabolism_cfg, self.age_stage, self.sex, getattr(self, "traits", {}))
         self.daily_calorie_need = self._metabolism_comp.daily_calorie_need
         self.calorie_reserve_days = self._metabolism_comp.calorie_reserve_days
@@ -599,12 +599,6 @@ class Animal(Species):
         self.name = self.display_name
         self.traits["display_name"] = self.display_name
 
-    def set_age_years(self, value: Any) -> None:
-        age = self._coerce_age_value(value)
-        self.age_years = age
-        self.traits["age_years"] = self.age_years
-        self.age_stage = self._compute_age_stage()
-        self.traits["age_stage"] = self.age_stage
     def set_age_years(self, value: float) -> None:
         try:
             new_val = max(0.0, float(value))
@@ -612,22 +606,22 @@ class Animal(Species):
             return
         if new_val <= self.age_years:
             return
-            
+
         delta = new_val - self.age_years
-            
+
         if not hasattr(self, "_age_comp"):
             self._age_comp = AgeComponent(self.age_years, self.age_profile_spec)
-            
+
         is_dead, metabolism_cfg = self._age_comp.tick_age(delta)
-        
+
         self.age_years = self._age_comp.age_years
         old_stage = self.age_stage
         self.age_stage = self._age_comp.age_stage
-        
+
         if is_dead:
             self.alive = False
             return
-            
+
         if old_stage != self.age_stage:
             self.traits["age_stage"] = self.age_stage
             if metabolism_cfg:

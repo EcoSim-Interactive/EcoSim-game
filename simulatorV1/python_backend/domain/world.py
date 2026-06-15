@@ -1,26 +1,26 @@
 """Entite de domaine qui porte la carte, l'eau, la nourriture et les contraintes du monde."""
 from __future__ import annotations
 
+import math
+import random
+from typing import Any, Dict, List, Optional, Tuple
+
 from .constants import (
     DAY_END_HOUR,
     DAY_START_HOUR,
     DEFAULT_CARCASS_NUTRITION,
     DEFAULT_FOOD_NUTRITION,
     DEFAULT_MINUTES_PER_STEP,
-    DRINK_TARGET_SEARCH_RADIUS,
     DEFAULT_WATER_DEPTH,
     DEFAULT_WATER_DEPTH_BY_TYPE,
+    DRINK_TARGET_SEARCH_RADIUS,
     RELOCATE_OFF_WATER_ATTEMPTS,
-    RELOCATE_OFF_WATER_RADIUS,
     RELOCATE_OFF_WATER_FALLBACK_ATTEMPTS,
     RELOCATE_OFF_WATER_FALLBACK_RADIUS,
+    RELOCATE_OFF_WATER_RADIUS,
 )
-
-from typing import Any, Dict, List, Optional, Tuple
-import math
-import random
-
 from .food_generation import DEFAULT_FOOD_PROFILES, generate_food_sources, resolve_food_profile
+from .spatial_index import SpatialIndex
 from .water_generation import (
     generate_lake_specs,
     generate_oasis_specs,
@@ -28,7 +28,6 @@ from .water_generation import (
     generate_stagnant_pool_specs,
     trace_line,
 )
-from .spatial_index import SpatialIndex
 
 SPATIAL_INDEX_CELL_SIZE = 64
 
@@ -211,7 +210,7 @@ class World:
                 return
 
             river_label = f"river_{self._water_id_seq + 1}"
-            
+
             # 1. Générer les points clés (éloignés les uns des autres)
             key_segments = generate_river_segments(
                 self.width,
@@ -219,7 +218,7 @@ class World:
                 length,
                 key_point_step=15,
             )
-            
+
             if not key_segments:
                 return
 
@@ -229,10 +228,10 @@ class World:
             for i in range(len(key_segments) - 1):
                 p1 = key_segments[i]
                 p2 = key_segments[i+1]
-                
+
                 # C'est ici que la magie opère : on remplit le vide
                 segment_pixels = trace_line(
-                    int(p1["x"]), int(p1["y"]), 
+                    int(p1["x"]), int(p1["y"]),
                     int(p2["x"]), int(p2["y"])
                 )
                 full_path_coords.extend(segment_pixels)
@@ -255,7 +254,7 @@ class World:
             for i, (cx, cy) in enumerate(unique_path):
                 # Progression de 0.0 à 1.0 le long de la rivière
                 progress = i / max(1, total_len)
-                
+
                 # Largeur variable
                 current_width = MIN_WIDTH + (MAX_WIDTH - MIN_WIDTH) * progress
                 radius = max(1, int(current_width / 2))
@@ -266,7 +265,7 @@ class World:
                         # Astuce: (dx*dx + dy*dy) <= radius*radius fait un cercle au lieu d'un carré
                         # mais un carré est plus simple et suffit souvent.
                         nx, ny = cx + dx, cy + dy
-                        
+
                         if 0 <= nx < self.width and 0 <= ny < self.height:
                             if (nx, ny) in registered:
                                 continue
@@ -877,10 +876,10 @@ class World:
 
     def get_water_by_id(self, source_id: str) -> Optional[Dict[str, Any]]:
         return self._water_lookup.get(str(source_id))
-    
+
     # ------------------------------------------------------------------
     # Generation du terrain de base
-    
+
     def generate_terrain(self, default_tile: int = 0) -> None:
         """Generate a simple terrain grid filled with a default tile type. In the futur we can expand this to more complex terrain generation. (Bruit de Perlin or Biome generation)"""
         self.terrain = [

@@ -1,6 +1,6 @@
 """Composants encapsulant les logiques vitales complexes de l'Animal."""
-from typing import Any, Dict, Optional
 import random
+from typing import Any, Dict, Optional
 
 
 class AgeComponent:
@@ -41,7 +41,7 @@ class AgeComponent:
                 death_prob = float(entry.get("death_prob_per_year", 0.0))
             except (TypeError, ValueError):
                 death_prob = 0.0
-            
+
             stages.append({
                 "name": name,
                 "min": max(0.0, minimum),
@@ -49,7 +49,7 @@ class AgeComponent:
                 "death_prob": max(0.0, min(1.0, death_prob)),
                 "metabolism": entry.get("metabolism"),
             })
-        
+
         stages.sort(key=lambda s: float(s["min"]))
         return stages
 
@@ -68,11 +68,11 @@ class AgeComponent:
         """Vieillit l'entité. Retourne (is_dead_from_old_age, new_stage_metabolism_cfg)."""
         if delta_years <= 0:
             return False, None
-            
+
         old_stage = self.age_stage
         self.age_years += delta_years
         self.age_stage = self._compute_age_stage()
-        
+
         # Determine if death from old age occurs
         prob = 0.0
         current_cfg = None
@@ -81,12 +81,12 @@ class AgeComponent:
                 prob = float(stage.get("death_prob", 0.0))
                 current_cfg = stage.get("metabolism")
                 break
-        
+
         if prob > 0.0:
             daily_prob = prob / 365.25
             if random.random() < daily_prob:
                 return True, current_cfg
-                
+
         if old_stage != self.age_stage:
             return False, current_cfg
         return False, None
@@ -99,12 +99,12 @@ class MetabolismComponent:
         self.daily_calorie_need = self._resolve_daily_calorie_need(cfg)
         self.calorie_reserve_days = self._coerce_positive_float(cfg.get("reserve_days"), fallback=3.0)
         self.max_calories = self.daily_calorie_need * self.calorie_reserve_days
-        
+
         if initial_max > 0:
             self.calories = (initial_calories / initial_max) * self.max_calories
         else:
             self.calories = self.max_calories
-            
+
         self.meal_calories = self._resolve_meal_calories(cfg)
         self.base_body_mass_kg = self._coerce_positive_float(cfg.get("body_mass_kg"), fallback=0.0)
         self.body_mass_kg = self.base_body_mass_kg
@@ -156,22 +156,22 @@ class MetabolismComponent:
     def refresh_body_profile(self, age_stage: str, sex: str, traits: Dict[str, Any]) -> None:
         if self.base_body_mass_kg <= 0.0:
             return
-            
+
         stage_scale = 1.0
         sex_scale = 1.0
         metabolism_cfg = traits.get("metabolism", {})
-        
+
         if isinstance(metabolism_cfg, dict):
             stage_scales = metabolism_cfg.get("age_stage_mass_scale")
             if isinstance(stage_scales, dict):
                 stage_scale = self._coerce_positive_float(stage_scales.get(age_stage), fallback=1.0)
-                
+
             sex_scales = metabolism_cfg.get("sex_mass_scale")
             if isinstance(sex_scales, dict):
                 sex_scale = self._coerce_positive_float(sex_scales.get(sex), fallback=1.0)
-                
+
         self.body_mass_kg = self.base_body_mass_kg * stage_scale * sex_scale
-        
+
         estimated = max(0.0, self.body_mass_kg * self.carcass_edible_ratio * self.carcass_calories_per_kg)
         if estimated > 0.0:
             self.body_nutrition = estimated

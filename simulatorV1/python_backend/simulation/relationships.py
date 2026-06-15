@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from typing import Iterable, Tuple
 
-from .animal import Animal
 from .ai import relationships as ai_relationships
+from .animal import Animal
 
 __all__ = ["handle_species_relationships"]
 

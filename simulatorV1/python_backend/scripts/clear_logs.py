@@ -4,8 +4,6 @@ from __future__ import annotations
 import logging
 import os
 import shutil
-from typing import Iterable
-
 
 logger = logging.getLogger(__name__)
 

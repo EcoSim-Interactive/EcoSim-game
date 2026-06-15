@@ -3,12 +3,13 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional, Set, Tuple
 
-from ..animal import Animal
 from domain.constants import (
     CARNIVORE_EAT_DISTANCE,
     HUNGER_CRITICAL_FEED_OVERRIDE,
     SCAVENGE_WAIT_LIMIT_STEPS,
 )
+
+from ..animal import Animal
 
 SCAVENGE_FAIL_LIMIT = 4
 SCAVENGE_BLOCK_TTL = 48

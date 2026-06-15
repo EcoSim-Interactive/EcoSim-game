@@ -6,7 +6,6 @@ from typing import Any, Dict, List
 
 from .species_catalog import SpeciesCatalogStore
 
-
 _store = SpeciesCatalogStore(
     legacy_selection_file=Path(__file__).parent.resolve() / "species_selection.json"
 )

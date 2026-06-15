@@ -5,13 +5,13 @@ from typing import Iterable, Tuple
 
 from domain.constants import HUNGER_CRITICAL_FEED_OVERRIDE, THIRST_MODERATE_THRESHOLD
 
-from ..animal import Animal
 from ..actions import (
     enforce_territory,
     execute_predation_cycle,
     maintain_group_cohesion,
     seek_carcass_opportunity,
 )
+from ..animal import Animal
 
 
 def _territory_can_wait(animal: Animal) -> bool:

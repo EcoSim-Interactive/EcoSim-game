@@ -7,20 +7,7 @@ import time
 from typing import Any, Dict, List, Optional
 
 from infrastructure.persistence import log_writer
-from domain.constants import (
-    EXPLORE_HUNGER_THRESHOLD,
-    EXPLORE_THIRST_THRESHOLD,
-    FATIGUE_CRITICAL_THRESHOLD,
-    FATIGUE_MODERATE_THRESHOLD,
-    HUNGER_MODERATE_THRESHOLD,
-    HUNGER_OVERRIDES_THIRST_THRESHOLD,
-    THIRST_BLOCKS_REST_THRESHOLD,
-    THIRST_CRITICAL_THRESHOLD,
-    THIRST_FORCED_EXPLORATION_THRESHOLD,
-    THIRST_MODERATE_THRESHOLD,
-)
 
-from .action_executor import resolve_consumption
 from .ai import decision as ai_decision
 from .animal import Animal
 from .event_log import EventLogger

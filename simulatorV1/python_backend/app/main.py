@@ -11,16 +11,17 @@ from pathlib import Path
 
 if __package__ in {None, ""}:  # Autorise l'execution directe du fichier en mode script.
     sys.path.append(str(Path(__file__).resolve().parents[1]))
-    from domain import World  # type: ignore  # pylint: disable=import-error
-    from simulation import Simulation  # type: ignore  # pylint: disable=import-error
     from app.config import DEFAULT_SETTINGS  # type: ignore  # pylint: disable=import-error
     from app.world_loader import (  # type: ignore  # pylint: disable=import-error
         load_world,
         load_world_and_species,
     )
+    from domain import World  # type: ignore  # pylint: disable=import-error
+    from simulation import Simulation  # type: ignore  # pylint: disable=import-error
 else:
     from domain import World
     from simulation import Simulation
+
     from .config import DEFAULT_SETTINGS
     from .world_loader import load_world, load_world_and_species
 

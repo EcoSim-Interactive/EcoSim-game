@@ -4,13 +4,14 @@ from __future__ import annotations
 import random
 from typing import Any, Iterable, Optional, Set, Tuple
 
-from ..animal import Animal
 from domain.constants import (
     CARNIVORE_EAT_DISTANCE,
     HUNGER_CRITICAL_FEED_OVERRIDE,
     PACK_FEED_WAIT_LIMIT_STEPS,
     PACK_KILL_STALE_STEPS,
 )
+
+from ..animal import Animal
 
 PACK_TARGET_STALE_STEPS = 45  # Delai max avant d'abandonner une cible de meute devenue obsolesce.
 

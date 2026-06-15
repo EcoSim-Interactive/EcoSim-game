@@ -6,15 +6,13 @@ import json
 import logging
 import math
 import random
+import sys
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from domain import World
 from simulation.animal import Animal
-import sys
-import json
-from pathlib import Path
-from typing import Optional, Tuple, Dict, Any
+
 logger = logging.getLogger(__name__)
 
 SPECIES_PRESETS_DIR = Path(__file__).with_name("species")
@@ -80,15 +78,15 @@ def load_world_from_file(config_path: Optional[str] = None) -> World:
 
 def load_config(config_path: Optional[str] = None) -> Tuple[Dict[str, Any], Path]:
     resolved = _resolve_config_path(config_path)
-    
+
     print(f"DEBUG: Chargement JSON depuis : {resolved}")
-    
+
     with resolved.open("r", encoding="utf-8") as handle:
         data = json.load(handle)
-        
+
     if not isinstance(data, dict):
         raise ValueError(f"Le fichier {resolved.name} doit contenir un objet JSON.")
-        
+
     return data, resolved.parent
 
 
@@ -293,8 +291,9 @@ def apply_food_config(world: World, section: Any) -> None:
     if not isinstance(section, dict):
         return
 
-    from domain.food_generation import DEFAULT_FOOD_PROFILES
     import copy
+
+    from domain.food_generation import DEFAULT_FOOD_PROFILES
     profiles = copy.deepcopy(DEFAULT_FOOD_PROFILES)
     presets = section.get("presets")
     if isinstance(presets, dict):
@@ -305,7 +304,7 @@ def apply_food_config(world: World, section: Any) -> None:
                 loaded = _load_species_preset(val, base_dir)
                 if loaded:
                     preset_data = loaded
-            
+
             if isinstance(preset_data, dict):
                 if key in profiles:
                     profiles[key].update(preset_data)
@@ -456,7 +455,7 @@ def _resolve_config_path(config_path: Optional[str]) -> Path:
         return candidate.resolve()
 
     # 3. Si c'est relatif, on teste deux endroits :
-    
+
     # Tentative A : Directement à la racine (ex: dist_final/data/server/mon_fichier.json)
     path_at_root = APP_ROOT / candidate
     if path_at_root.exists():

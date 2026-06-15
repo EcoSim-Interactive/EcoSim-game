@@ -11,7 +11,6 @@ import time
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
 
-
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_WORLD_CONFIG = BACKEND_ROOT / "app" / "world_config.json"
 if str(BACKEND_ROOT) not in sys.path:

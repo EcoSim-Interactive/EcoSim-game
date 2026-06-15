@@ -1,21 +1,21 @@
 from __future__ import annotations
 
 import itertools
-from pathlib import Path
 import random
 import unittest
+from pathlib import Path
 
 from app.main import parse_args
 from app.world_loader import load_world_and_species
 from domain import World
 from simulation import SimulationEngine
 from simulation.action_executor import resolve_consumption
-from simulation.ai.behavior import handle_thirst
-from simulation.ai.decision import process_species
-from simulation.ai.relationships import handle_species_relationships
 from simulation.actions.grouping import maintain_group_cohesion
 from simulation.actions.predation import _nearest_prey, execute_predation_cycle
 from simulation.actions.scavenging import seek_carcass_opportunity
+from simulation.ai.behavior import handle_thirst
+from simulation.ai.decision import process_species
+from simulation.ai.relationships import handle_species_relationships
 from simulation.animal import Animal
 from simulation.step_context import finalize_species_status, initialize_species_status
 
@@ -305,7 +305,7 @@ class PackAITestCase(unittest.TestCase):
 
     def test_thirst_drinks_immediately_when_already_on_shore(self) -> None:
         world = World(width=20, height=20)
-        water = world._register_water_source(5.0, 5.0, water_type="stagnant", capacity=None, max_capacity=None)
+        world._register_water_source(5.0, 5.0, water_type="stagnant", capacity=None, max_capacity=None)
         animal = Animal("Gazelle", (4.0, 5.0), speed=4, vision=20, smell_range=20, diet="herbivore")
         animal.thirst = 40.0
 

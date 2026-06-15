@@ -1,10 +1,11 @@
 """Composant gérant l'indexation spatiale des entités du monde."""
-from typing import Any, Callable, Dict, List, Optional, Tuple
 import math
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
 
 class SpatialIndex:
     """Index spatial 2D basé sur une grille (buckets) pour des recherches de proximité rapides."""
-    
+
     def __init__(self, cell_size: int, world_width: int, world_height: int):
         self.cell_size = max(1, int(cell_size))
         self.world_width = world_width
@@ -59,7 +60,7 @@ class SpatialIndex:
         """Cherche l'entité la plus proche vérifiant le prédicat."""
         if not self._index:
             return None
-            
+
         start_x, start_y = self._bucket_key(x, y)
         best: Optional[Dict[str, Any]] = None
         best_dist: Optional[float] = None

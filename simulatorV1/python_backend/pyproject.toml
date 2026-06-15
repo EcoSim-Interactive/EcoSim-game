@@ -8,3 +8,19 @@ dependencies = [
     "pyinstaller>=6.17.0",
     "websockets>=15.0.1",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.3.0",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]
+fixable = ["ALL"]
+unfixable = []
+

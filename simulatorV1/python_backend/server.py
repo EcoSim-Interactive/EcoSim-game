@@ -6,7 +6,6 @@ import logging
 
 from infrastructure.http.server import main
 
-
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG, force=True)
     asyncio.run(main())

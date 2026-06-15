@@ -1,7 +1,7 @@
 """Routines comportementales elementaires separees du modele de donnees."""
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, Optional, Tuple, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple
 
 from domain.constants import WATER_MEMORY_SEARCH_RADIUS
 

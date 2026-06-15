@@ -80,13 +80,13 @@ def _build_random_food_spec(
     x = random.randint(0, width)
     y = random.randint(0, height)
     metadata = profile.get("metadata")
-    
+
     nutrition_range = profile.get("nutrition_range")
     if isinstance(nutrition_range, (list, tuple)) and len(nutrition_range) >= 2:
         nutrition_value = random.uniform(nutrition_range[0], nutrition_range[1])
     else:
         nutrition_value = float(profile.get("nutrition", 28000.0))
-        
+
     return {
         "type": food_type,
         "food_class": "plant",
