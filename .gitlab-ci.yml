@@ -1,0 +1,27 @@
+stages:
+  - lint
+  - test
+  - build
+
+lint-python:
+  stage: lint
+  image: python:3.12-slim
+  before_script:
+    - pip install ruff
+  script:
+    - ruff check simulatorV1/python_backend/
+
+lint-react:
+  stage: lint
+  image: node:20-slim
+  cache:
+    key:
+      files:
+        - site-vitrine/package-lock.json
+    paths:
+      - site-vitrine/.npm/
+  before_script:
+    - cd site-vitrine
+  script:
+    - npm ci --cache .npm --prefer-offline
+    - npm run lint
