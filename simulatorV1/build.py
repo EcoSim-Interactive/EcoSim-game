@@ -16,9 +16,6 @@ SYSTEM = platform.system()
 IS_WIN = SYSTEM == "Windows"
 EXT = ".exe" if IS_WIN else ""
 
-if IS_WIN and not GODOT_BIN.lower().endswith(".exe"):
-    GODOT_BIN += ".exe"
-
 # Presets attendus dans project.godot (export_presets.cfg)
 PRESETS = {
     "Windows": "Windows Desktop",
@@ -74,7 +71,8 @@ def main():
     # 2. Export Godot
     game_output = os.path.join(BUILD_DIR, "data", GAME_OUTPUT_NAME)
     project_dir = os.path.dirname(PROJECT_PATH)
-    cmd_godot = f'"{GODOT_BIN}" --headless --path "{project_dir}" --export-release "{EXPORT_PRESET}" "{game_output}"'
+    
+    cmd_godot = f'{GODOT_BIN} --headless --path "{project_dir}" --export-release "{EXPORT_PRESET}" "{game_output}"'
     run_cmd(cmd_godot)
 
     # 3. Compilation du Launcher avec le VENV direct
