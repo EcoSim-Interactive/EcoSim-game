@@ -9,6 +9,7 @@ import platform
 PROJECT_PATH = "./godot_interface/simulation/project.godot"
 SERVER_SCRIPT = "./python_backend/server.py"
 BUILD_DIR = os.path.abspath("./dist_final")
+GODOT_BIN = os.environ.get("GODOT", "godot")
 
 # Détection de l'OS
 SYSTEM = platform.system()
@@ -70,7 +71,7 @@ def main():
     # 2. Export Godot
     game_output = os.path.join(BUILD_DIR, "data", GAME_OUTPUT_NAME)
     project_dir = os.path.dirname(PROJECT_PATH)
-    cmd_godot = f'godot --headless --path "{project_dir}" --export-release "{EXPORT_PRESET}" "{game_output}"'
+    cmd_godot = f'"{GODOT_BIN}" --headless --path "{project_dir}" --export-release "{EXPORT_PRESET}" "{game_output}"'
     run_cmd(cmd_godot)
 
     # 3. Compilation du Launcher avec le VENV direct
