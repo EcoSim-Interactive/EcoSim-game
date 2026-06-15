@@ -18,10 +18,10 @@ EXT = ".exe" if IS_WIN else ""
 # Presets attendus dans project.godot (export_presets.cfg)
 PRESETS = {
     "Windows": "Windows Desktop",
-    "Linux": "Linux/X11",
+    "Linux": "Linux",
     "Darwin": "macOS"
 }
-EXPORT_PRESET = PRESETS.get(SYSTEM, "Linux/X11")
+EXPORT_PRESET = PRESETS.get(SYSTEM, "Linux")
 
 GAME_OUTPUTS = {
     "Windows": "game.exe",
