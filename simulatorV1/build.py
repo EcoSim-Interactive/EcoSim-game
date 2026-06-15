@@ -16,6 +16,9 @@ SYSTEM = platform.system()
 IS_WIN = SYSTEM == "Windows"
 EXT = ".exe" if IS_WIN else ""
 
+if IS_WIN and not GODOT_BIN.lower().endswith(".exe"):
+    GODOT_BIN += ".exe"
+
 # Presets attendus dans project.godot (export_presets.cfg)
 PRESETS = {
     "Windows": "Windows Desktop",
