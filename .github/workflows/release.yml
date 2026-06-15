@@ -47,6 +47,7 @@ jobs:
 
       # 3. Lancer notre script Python de build multiplateforme
       - name: Run Build Script
+        shell: bash
         run: |
           cd simulatorV1
           uv run python build.py
