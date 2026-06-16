@@ -24,19 +24,23 @@ export default function Changelog() {
             
             <div className="flex flex-col sm:flex-row gap-4 items-center pt-2">
               <a 
-                href="https://github.com/ThomasBoulard/EcoSim-Interactive/releases"
+                href="https://github.com/EcoSim-Interactive/EcoSim-game/releases/latest/download/EcoSim-Windows.zip"
                 target="_blank"
                 rel="noreferrer"
                 id="direct-download-github"
                 className="w-full sm:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 shadow-md active:scale-95 text-base"
               >
                 <Download className="w-5 h-5" />
-                <span>Obtenir EcoSim sur GitHub</span>
+                <span>Télécharger (Dernière version Windows)</span>
               </a>
-              
-              <span className="text-xs text-slate-500 font-mono">
-                Compatible Windows (x64) • ~105 Mo
-              </span>
+              <a
+                href="https://github.com/EcoSim-Interactive/EcoSim-game/releases/tag/v1.0.0"
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+              >
+                Voir d'autres versions (ex: v1.0.0)
+              </a>
             </div>
           </div>
 
@@ -96,7 +100,7 @@ export default function Changelog() {
 
           <div className="pt-4 text-center border-t border-slate-100 dark:border-slate-850">
             <a 
-              href="https://github.com/ThomasBoulard/EcoSim-Interactive" 
+              href="https://github.com/EcoSim-Interactive/EcoSim-game" 
               target="_blank"
               rel="noreferrer"
               id="btn-git-repo"

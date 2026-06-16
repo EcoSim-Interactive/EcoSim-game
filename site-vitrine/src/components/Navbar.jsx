@@ -33,7 +33,7 @@ export default function Navbar({ isDarkMode, onToggleTheme }) {
         </button>
 
         <a 
-          href="https://github.com/ThomasBoulard/EcoSim-Interactive/releases"
+          href="https://github.com/EcoSim-Interactive/EcoSim-game/releases/latest/download/EcoSim-Windows.zip"
           target="_blank"
           rel="noreferrer"
           id="nav-download-github"

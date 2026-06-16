@@ -8,25 +8,34 @@ import Team from './components/Team';
 import Footer from './components/Footer';
 
 export default function App() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      return savedTheme === 'dark';
+    }
+    // Par défaut, se baser sur les préférences système du navigateur
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
 
   useEffect(() => {
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
 
   return (
-    <div className="min-h-screen transition-colors duration-300 bg-[#fcfbfa] text-slate-800 dark:bg-[#070b13] dark:text-slate-200 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col transition-colors duration-300 bg-[#fcfbfa] text-slate-800 dark:bg-[#070b13] dark:text-slate-200 relative overflow-hidden">
       {/* Nature ambient light gradients */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] rounded-full ambient-forest pointer-events-none z-0"></div>
       <div className="absolute bottom-[-15%] right-[-10%] w-[60%] h-[60%] rounded-full ambient-warm pointer-events-none z-0"></div>
 
       <Navbar isDarkMode={isDarkMode} onToggleTheme={() => setIsDarkMode(!isDarkMode)} />
 
-      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-32">
+      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-32 flex-grow">
         <Hero />
         <Screenshots />
         <Architecture />

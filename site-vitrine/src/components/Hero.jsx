@@ -22,16 +22,24 @@ export default function Hero() {
           Découvrez les secrets de l'équilibre naturel. <strong>EcoSim Interactive</strong> modélise les comportements d'animaux virtuels au sein d'une forêt en 3D. Observez comment les populations de lapins et de loups évoluent, s'alimentent et interagissent avec leur environnement en temps réel.
         </p>
 
-        <div className="flex flex-col sm:flex-row gap-4 pt-4">
+        <div className="flex flex-col sm:flex-row gap-4 pt-4 items-center">
           <a 
-            href="https://github.com/ThomasBoulard/EcoSim-Interactive/releases"
+            href="https://github.com/EcoSim-Interactive/EcoSim-game/releases/latest/download/EcoSim-Windows.zip"
             target="_blank"
             rel="noreferrer"
             id="hero-download-btn"
             className="flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 shadow-lg shadow-emerald-600/10 active:scale-95 text-base"
           >
             <Download className="w-5 h-5" />
-            <span>Télécharger le simulateur (GitHub)</span>
+            <span>Télécharger la dernière version</span>
+          </a>
+          <a 
+            href="https://github.com/EcoSim-Interactive/EcoSim-game/releases/tag/v1.0.0"
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm font-semibold text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+          >
+            Voir la version v1.0.0 ou autres
           </a>
         </div>
 

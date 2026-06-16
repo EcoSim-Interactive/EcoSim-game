@@ -18,7 +18,7 @@ export default function Footer() {
 
         <div className="flex gap-4">
           <a 
-            href="https://github.com/ThomasBoulard/EcoSim-Interactive" 
+            href="https://github.com/EcoSim-Interactive/EcoSim-game" 
             target="_blank" 
             rel="noreferrer"
             className="text-slate-400 hover:text-slate-650 dark:text-slate-500 dark:hover:text-white transition-colors"
