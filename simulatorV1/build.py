@@ -9,7 +9,9 @@ import platform
 PROJECT_PATH = "./godot_interface/simulation/project.godot"
 SERVER_SCRIPT = "./python_backend/server.py"
 BUILD_DIR = os.path.abspath("./dist_final")
-GODOT_BIN = os.environ.get("GODOT", "godot")
+
+# RUSTINE BASH : On remplace les "\" par des "/" pour que Bash les lise correctement
+GODOT_BIN = os.environ.get("GODOT", "godot").replace("\\", "/")
 
 # Détection de l'OS
 SYSTEM = platform.system()
@@ -36,10 +38,18 @@ VENV_BIN = "Scripts" if IS_WIN else "bin"
 VENV_PYTHON = os.path.abspath(f"./python_backend/.venv/{VENV_BIN}/python{EXT}")
 # =================================================
 
-def run_cmd(cmd):
+def run_cmd(cmd, force_bash=False):
     print(f"[CMD] {cmd}")
     try:
-        subprocess.run(cmd, check=True, shell=True)
+        if force_bash and IS_WIN:
+            git_bash_path = r"C:\Program Files\Git\bin\bash.exe"
+            
+            if os.path.exists(git_bash_path):
+                subprocess.run([git_bash_path, "-c", cmd], check=True)
+            else:
+                subprocess.run(["sh", "-c", cmd], check=True)
+        else:
+            subprocess.run(cmd, check=True, shell=True)
     except subprocess.CalledProcessError:
         print(f"ERREUR CRITIQUE sur la commande : {cmd}")
         exit(1)
@@ -68,12 +78,14 @@ def main():
     run_cmd(cmd_server)
     copy_resources(backend_dir, os.path.join(server_dist_parent, "server"))
 
-    # 2. Export Godot
-    game_output = os.path.join(BUILD_DIR, "data", GAME_OUTPUT_NAME)
-    project_dir = os.path.dirname(PROJECT_PATH)
+    # 2. Export Godot (Formaté avec des / pour Bash)
+    game_output = os.path.join(BUILD_DIR, "data", GAME_OUTPUT_NAME).replace("\\", "/")
+    project_dir = os.path.dirname(PROJECT_PATH).replace("\\", "/")
     
-    cmd_godot = f'{GODOT_BIN} --headless --path "{project_dir}" --export-release "{EXPORT_PRESET}" "{game_output}"'
-    run_cmd(cmd_godot)
+    cmd_godot = f'"{GODOT_BIN}" --headless --path "{project_dir}" --export-release "{EXPORT_PRESET}" "{game_output}"'
+    
+    # LA MAGIE EST ICI : On passe force_bash=True pour contourner cmd.exe sur Windows
+    run_cmd(cmd_godot, force_bash=True)
 
     # 3. Compilation du Launcher avec le VENV direct
     icon_path = os.path.abspath("./assets/app_icon.ico")
