@@ -215,8 +215,12 @@ func _on_species_configuration_required() -> void:
 	open_modal()
 
 func open_modal() -> void:
-	if world and world.has_method("request_species_catalog"):
-		world.request_species_catalog()
+	if world:
+		if world.get("connected") == false:
+			status_label.text = "Serveur Python déconnecté ! Lancez le backend."
+		elif world.has_method("request_species_catalog"):
+			status_label.text = "Chargement du catalogue..."
+			world.request_species_catalog()
 	dialog.popup_centered_ratio(0.72)
 
 func _on_species_catalog_ready(payload) -> void:

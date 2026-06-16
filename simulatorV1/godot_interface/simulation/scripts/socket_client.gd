@@ -5,7 +5,10 @@ class_name SimulationManager
 signal species_configuration_required
 signal species_catalog_ready(payload)
 signal species_configuration_saved(ok, payload)
+signal world_loading
 signal world_loaded
+signal simulation_computing
+signal simulation_computed
 
 var socket := WebSocketPeer.new()
 var connected := false
@@ -101,6 +104,7 @@ func _on_message(msg: String):
 
 	match data.get("type", ""):
 		"world_meta":
+			emit_signal("world_loading")
 			_reset_visuals()
 			world_ready = false
 			resume_after_world_ready = running
@@ -188,9 +192,12 @@ func _handle_status(payload):
 		TYPE_STRING:
 			print("[CLIENT] Etat serveur :", payload)
 			var status_str := String(payload)
+			if status_str == "computing":
+				emit_signal("simulation_computing")
 			if status_str.find("started") != -1 or status_str.find("resumed") != -1:
 				running = true
 				run_completed = false
+				emit_signal("simulation_computed")
 			if status_str.find("paused") != -1:
 				running = false
 			if status_str.find("stopped") != -1:
@@ -203,6 +210,7 @@ func _handle_status(payload):
 				precompute_ready = true
 				precompute_pending = false
 				print("[CLIENT] Pre-calcul termine :", payload)
+				emit_signal("simulation_computed")
 			else:
 				print("[CLIENT] Etat serveur :", payload)
 		_:

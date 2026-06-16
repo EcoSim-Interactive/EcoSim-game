@@ -3,6 +3,12 @@ extends Control
 
 # --- Références aux nodes ---
 @onready var export_button = $Boutton/VBoxContainer/ExportLog
+@onready var settings_btn = $Header/SettingsBtn
+@onready var quit_btn = $Header/QuitBtn
+@onready var settings_panel = $SettingsPanel
+@onready var mode_option = $SettingsPanel/VBoxContainer/ModeOption
+@onready var loading_overlay = $Simulateur/Panel/LoadingOverlay
+@onready var world = $Simulateur/Panel/SubViewportContainer/SubViewport/World
 
 # --- Variables principales ---
 var simulation_logs = []          # Données chargées depuis summary.json
@@ -18,6 +24,35 @@ var last_step_file_index := 0
 func _ready():
 	if export_button:
 		export_button.pressed.connect(_on_export_log_pressed)
+	if settings_btn:
+		settings_btn.pressed.connect(_on_settings_pressed)
+	if quit_btn:
+		quit_btn.pressed.connect(_on_quit_pressed)
+	if mode_option:
+		var popup = mode_option.get_popup()
+		popup.add_theme_font_size_override("font_size", 35)
+		
+		mode_option.item_selected.connect(_on_mode_selected)
+		mode_option.add_item("Plein écran", 0)
+		mode_option.add_item("Fenêtré", 1)
+		mode_option.add_item("Maximisé", 2)
+		var current_mode = DisplayServer.window_get_mode()
+		if current_mode == DisplayServer.WINDOW_MODE_FULLSCREEN or current_mode == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN:
+			mode_option.select(0)
+		elif current_mode == DisplayServer.WINDOW_MODE_MAXIMIZED:
+			mode_option.select(2)
+		else:
+			mode_option.select(1)
+			
+	if world:
+		world.world_loading.connect(_on_world_loading)
+		world.world_loaded.connect(_on_world_loaded)
+		if world.has_signal("simulation_computing"):
+			world.simulation_computing.connect(_on_simulation_computing)
+		if world.has_signal("simulation_computed"):
+			world.simulation_computed.connect(_on_simulation_computed)
+		if not world.world_ready:
+			loading_overlay.visible = true
 
 	if logs_folder == "":
 		if OS.has_feature("editor"):
@@ -211,3 +246,48 @@ func log_simulation_step(step_data: Dictionary):
 
 func clear_logs():
 	simulation_logs.clear()
+
+# --- Gestion du Header ---
+func _on_settings_pressed():
+	if settings_panel:
+		settings_panel.visible = !settings_panel.visible
+
+func _on_quit_pressed():
+	get_tree().quit()
+
+func _on_mode_selected(index: int):
+	var id = mode_option.get_item_id(index)
+	match id:
+		0:
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_FULLSCREEN)
+		1:
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_WINDOWED)
+			var screen_idx = DisplayServer.window_get_current_screen()
+			var screen_size = DisplayServer.screen_get_size(screen_idx)
+			# Reduce size slightly so the title bar isn't off-screen on 1080p
+			var target_size = Vector2i(screen_size.x - 100, screen_size.y - 100)
+			if target_size.x > 1600: target_size = Vector2i(1600, 900)
+			DisplayServer.window_set_size(target_size)
+			DisplayServer.window_set_position((screen_size - target_size) / 2)
+		2:
+			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
+
+func _on_world_loading():
+	if loading_overlay:
+		if loading_overlay.has_node("Label"):
+			loading_overlay.get_node("Label").text = "Génération du monde en cours..."
+		loading_overlay.visible = true
+
+func _on_world_loaded():
+	if loading_overlay:
+		loading_overlay.visible = false
+
+func _on_simulation_computing():
+	if loading_overlay:
+		if loading_overlay.has_node("Label"):
+			loading_overlay.get_node("Label").text = "Génération de la simulation en cours..."
+		loading_overlay.visible = true
+
+func _on_simulation_computed():
+	if loading_overlay:
+		loading_overlay.visible = false

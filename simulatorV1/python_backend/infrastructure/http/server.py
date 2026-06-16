@@ -232,7 +232,7 @@ async def get_world(websocket: websockets.WebSocketServerProtocol) -> None:
         world,
         species_list,
         steps=DEFAULT_SETTINGS.steps,
-        verbose=DEFAULT_SETTINGS.verbose,
+        verbose=False,  # Désactivé en mode serveur
         write_logs=True,
         logs_dir=DEFAULT_SETTINGS.logs_dir,
     )

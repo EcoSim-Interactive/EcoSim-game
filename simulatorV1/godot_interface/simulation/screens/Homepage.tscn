@@ -28,6 +28,68 @@ corner_radius_top_right = 16
 corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Settings"]
+bg_color = Color(0.12, 0.14, 0.18, 0.95)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.2, 0.6, 0.4, 1)
+corner_radius_top_left = 16
+corner_radius_top_right = 16
+corner_radius_bottom_right = 16
+corner_radius_bottom_left = 16
+shadow_color = Color(0, 0, 0, 0.5)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_StartNormal"]
+bg_color = Color(0.102, 0.125, 0.173, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.192, 0.51, 0.808, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 15.0
+content_margin_top = 10.0
+content_margin_right = 15.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_StartHover"]
+bg_color = Color(0.176, 0.216, 0.282, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.231, 0.612, 0.97, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 15.0
+content_margin_top = 10.0
+content_margin_right = 15.0
+content_margin_bottom = 10.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_StartPressed"]
+bg_color = Color(0.067, 0.082, 0.11, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.154, 0.408, 0.646, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+content_margin_left = 15.0
+content_margin_top = 10.0
+content_margin_right = 15.0
+content_margin_bottom = 10.0
+
 [node name="Homepage" type="Control" unique_id=1607099367]
 layout_mode = 3
 anchor_left = -0.262
@@ -265,6 +327,27 @@ handle_input_locally = false
 size = Vector2i(1475, 1000)
 render_target_update_mode = 4
 
+[node name="LoadingOverlay" type="Control" parent="Simulateur/Panel" unique_id=1067205850]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="Simulateur/Panel/LoadingOverlay" unique_id=1067205851]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 60
+text = "Génération de la simulation en cours..."
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="World" parent="Simulateur/Panel/SubViewportContainer/SubViewport" unique_id=1002459072 instance=ExtResource("2_1n0mb")]
 z_index = 1
 
@@ -274,18 +357,24 @@ zoom = Vector2(0.505, 0.523)
 
 [node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1464508810]
 layout_mode = 0
-offset_left = 2524.0
+offset_left = 2460.0
 offset_top = -77.0833
-offset_right = 2824.0
+offset_right = 2660.0
 offset_bottom = 22.9167
 scale = Vector2(0.80001, 1)
 theme = ExtResource("2_gmipm")
 
-[node name="CheckButton" type="CheckButton" parent="VBoxContainer" unique_id=96596973]
+[node name="CheckButton" type="Button" parent="VBoxContainer" unique_id=96596973]
 z_index = 1
 layout_mode = 2
-theme_override_font_sizes/font_size = 40
-text = "Marche/Arrêt"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 32
+theme_override_styles/normal = SubResource("StyleBoxFlat_StartNormal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_StartHover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_StartPressed")
+text = "Start"
 script = ExtResource("4_1wvxa")
 world_path = NodePath("../../Simulateur/Panel/SubViewportContainer/SubViewport/World")
 
@@ -416,3 +505,58 @@ layout_mode = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="Simulation/VBoxContainer/ScrollContainer" unique_id=823890126]
 layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="." unique_id=9999901]
+layout_mode = 0
+offset_left = 2480.0
+offset_top = -520.0
+offset_right = 2880.0
+offset_bottom = -440.0
+theme = ExtResource("2_gmipm")
+alignment = 2
+theme_override_constants/separation = 20
+
+[node name="SettingsBtn" type="Button" parent="Header" unique_id=9999902]
+custom_minimum_size = Vector2(180, 70)
+layout_mode = 2
+theme = ExtResource("2_gmipm")
+text = "Paramètres"
+
+[node name="QuitBtn" type="Button" parent="Header" unique_id=9999903]
+custom_minimum_size = Vector2(180, 70)
+layout_mode = 2
+theme = ExtResource("2_gmipm")
+text = "Quitter"
+
+[node name="SettingsPanel" type="Panel" parent="." unique_id=9999904]
+visible = false
+z_index = 10
+layout_mode = 0
+offset_left = 2380.0
+offset_top = -420.0
+offset_right = 2880.0
+offset_bottom = -120.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_Settings")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="SettingsPanel" unique_id=9999905]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = 40.0
+offset_right = -40.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 40
+
+[node name="Label" type="Label" parent="SettingsPanel/VBoxContainer" unique_id=9999906]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "Mode d'affichage"
+
+[node name="ModeOption" type="OptionButton" parent="SettingsPanel/VBoxContainer" unique_id=9999907]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+theme_override_font_sizes/font_size = 35
