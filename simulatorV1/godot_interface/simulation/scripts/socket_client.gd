@@ -359,13 +359,20 @@ func _update_species_markers(step_data: Dictionary) -> void:
 		return
 
 	var active_names: Array = []
-	for entry in species_states:
+
+	for i in range(species_states.size()):
+		var entry = species_states[i]
 		if typeof(entry) != TYPE_DICTIONARY:
 			continue
-		var species_name := String(entry.get("name", ""))
-		if species_name.is_empty():
+
+	
+		var base_name := String(entry.get("name", ""))
+		if base_name.is_empty():
 			continue
-		active_names.append(species_name)
+
+	# ✅ ID unique (obligatoire)
+		var id = str(i) + "_" + base_name
+		active_names.append(id)
 
 		var pos_data: Dictionary = {}
 		if entry.has("after") and typeof(entry["after"]) == TYPE_DICTIONARY:
@@ -373,11 +380,17 @@ func _update_species_markers(step_data: Dictionary) -> void:
 		elif entry.has("before") and typeof(entry["before"]) == TYPE_DICTIONARY:
 			pos_data = entry["before"]
 
-		var marker = _ensure_species_marker(species_name)
+		var marker = _ensure_species_marker(id)
 		if marker and pos_data.size() > 0:
-			var px = float(pos_data.get("x", marker.position.x))
-			var py = float(pos_data.get("y", marker.position.y))
-			marker.position = Vector2(px, py)
+			marker.color = _get_species_color(entry.get("species_type", ""))
+			marker.queue_redraw()
+			if pos_data.size() > 0:
+					var target = Vector2(
+					float(pos_data.get("x", marker.position.x)),
+					float(pos_data.get("y", marker.position.y))
+					)
+					marker.position = marker.position.lerp(target, 0.3)
+
 
 	_remove_inactive_species_markers(active_names)
 
@@ -409,6 +422,18 @@ func _spawn_or_update_food(food_data: Dictionary) -> void:
 	if marker.has_method("update_state"):
 		var color = _color_for_food_class(String(food_data.get("food_class", "plant")))
 		marker.update_state(food_data, null, color)
+func _get_species_color(type: String) -> Color:
+	match type:
+		"gazelle":
+			return Color(1, 1, 0) # jaune
+		"lion":
+			return Color(1, 0, 0) # rouge
+		"hyene":
+			return Color(1, 0.5, 0) # orange
+		"elephant":
+			return Color(0.6, 0.6, 0.6) # gris
+		_:
+			return Color(1, 1, 1) # blanc
 
 func _create_food_marker(food_data: Dictionary) -> Node2D:
 	var template := _get_food_template(String(food_data.get("food_class", "plant")))
@@ -517,6 +542,7 @@ func _ensure_species_marker(species_name: String) -> Node2D:
 		var existing = species_markers[species_name]
 		if is_instance_valid(existing):
 			return existing
+
 
 	var marker = species_marker_template.duplicate()
 	marker.visible = true
