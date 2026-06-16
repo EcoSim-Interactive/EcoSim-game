@@ -8,7 +8,7 @@ export default function Architecture() {
         <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Fonctionnement</span>
         <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Comment fonctionne le simulateur ?</h2>
         <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
-          L'application se compose de trois éléments simples qui collaborent pour donner vie à la forêt virtuelle.
+          L'application se compose de trois éléments simples qui collaborent pour donner vie à la savane virtuelle.
         </p>
       </div>
 
@@ -21,7 +21,7 @@ export default function Architecture() {
             </div>
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">Le Cerveau Écologique (Python)</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-              C'est lui qui calcule de manière scientifique toutes les actions des animaux. Il calcule si un lapin a faim, s'il trouve de l'herbe ou s'il se fait chasser par un loup. Il utilise des formules mathématiques pour garantir le réalisme de la simulation.
+              C'est lui qui calcule de manière scientifique toutes les actions des animaux. Il calcule si une gazelle a faim, si elle trouve de l'herbe, s'il y a un point d'eau à proximité, ou si elle se fait chasser par un lion ou une hyène. Il utilise des formules mathématiques pour garantir le réalisme de la simulation.
             </p>
           </div>
           <span className="text-[10px] font-bold text-slate-400 dark:text-slate-600 mt-6 tracking-widest uppercase text-left">MOTEUR LOGIQUE</span>
@@ -49,7 +49,7 @@ export default function Architecture() {
             </div>
             <h3 className="text-lg font-bold text-slate-900 dark:text-white">La Fenêtre Visuelle (Godot 3D)</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-              C'est la partie ludique du logiciel. Il affiche la forêt en 3D avec des graphismes épurés, anime les animaux selon les informations reçues et fournit une interface avec des boutons pour contrôler l'écoulement du temps.
+              C'est la partie ludique du logiciel. Il affiche la savane en 3D avec des graphismes épurés, anime les animaux selon les informations reçues et fournit une interface avec des boutons pour contrôler l'écoulement du temps.
             </p>
           </div>
           <span className="text-[10px] font-bold text-slate-400 dark:text-slate-600 mt-6 tracking-widest uppercase text-left">INTERFACE GRAPHIQUE</span>

@@ -19,7 +19,7 @@ export default function Hero() {
         </h1>
 
         <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-light">
-          Découvrez les secrets de l'équilibre naturel. <strong>EcoSim Interactive</strong> modélise les comportements d'animaux virtuels au sein d'une forêt en 3D. Observez comment les populations de lapins et de loups évoluent, s'alimentent et interagissent avec leur environnement en temps réel.
+          Découvrez les secrets de l'équilibre naturel. <strong>EcoSim Interactive</strong> modélise les comportements d'animaux virtuels au sein d'une savane en 3D. Observez comment les populations de lions, d'hyènes, de gazelles et d'éléphants évoluent, s'alimentent et interagissent avec leur environnement en temps réel.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 pt-4 items-center">

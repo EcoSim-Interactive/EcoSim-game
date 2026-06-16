@@ -4,7 +4,7 @@ import GithubIcon from './GithubIcon';
 
 const DISCOVER_UPDATES = [
   { version: 'v1.0.0', title: 'Version finale stable', date: 'Juin 2026', details: 'Lancement public avec simulation optimisée des plantes et animaux.' },
-  { version: 'v0.9.0', title: 'Amélioration de l\'intelligence animale', date: 'Mai 2026', details: 'Les renards chassent désormais de manière coopérative et les lapins fuient plus intelligemment.' },
+  { version: 'v0.9.0', title: 'Amélioration de l\'intelligence animale', date: 'Mai 2026', details: 'Les hyènes chassent désormais en groupe et les gazelles fuient de manière coopérative.' },
   { version: 'v0.8.0', title: 'Rendu graphique 3D enrichi', date: 'Avril 2026', details: 'Nouveaux arbres en basse résolution (low-poly), effets météo et cycle jour/nuit.' }
 ];
 
