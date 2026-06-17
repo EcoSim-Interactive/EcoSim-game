@@ -1,7 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Download, Sun, Moon } from 'lucide-react';
 
 export default function Navbar({ isDarkMode, onToggleTheme }) {
+  const [os, setOs] = useState('Windows');
+
+  useEffect(() => {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    if (userAgent.includes('mac')) {
+      setOs('Mac');
+    } else if (userAgent.includes('linux')) {
+      setOs('Linux');
+    } else {
+      setOs('Windows');
+    }
+  }, []);
+
+  const downloadLink = `https://github.com/EcoSim-Interactive/EcoSim-game/releases/latest/download/EcoSim-${os}.zip`;
+
   return (
     <header className="sticky top-0 z-50 bg-[#fcfbfa]/85 dark:bg-[#070b13]/85 backdrop-blur-md border-b border-slate-200/60 dark:border-slate-800/40 py-4 px-6 md:px-12 flex justify-between items-center transition-colors">
       <div className="flex items-center gap-3">
@@ -33,7 +48,7 @@ export default function Navbar({ isDarkMode, onToggleTheme }) {
         </button>
 
         <a 
-          href="https://github.com/EcoSim-Interactive/EcoSim-game/releases/latest/download/EcoSim-Windows.zip"
+          href={downloadLink}
           target="_blank"
           rel="noreferrer"
           id="nav-download-github"

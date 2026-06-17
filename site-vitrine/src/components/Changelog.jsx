@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Download, ChevronRight, CheckCircle } from 'lucide-react';
 import GithubIcon from './GithubIcon';
 
@@ -9,6 +9,21 @@ const DISCOVER_UPDATES = [
 ];
 
 export default function Changelog() {
+  const [os, setOs] = useState('Windows');
+
+  useEffect(() => {
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    if (userAgent.includes('mac')) {
+      setOs('Mac');
+    } else if (userAgent.includes('linux')) {
+      setOs('Linux');
+    } else {
+      setOs('Windows');
+    }
+  }, []);
+
+  const downloadLink = `https://github.com/EcoSim-Interactive/EcoSim-game/releases/latest/download/EcoSim-${os}.zip`;
+
   return (
     <section id="changelog" className="space-y-12">
       
@@ -24,14 +39,14 @@ export default function Changelog() {
             
             <div className="flex flex-col sm:flex-row gap-4 items-center pt-2">
               <a 
-                href="https://github.com/EcoSim-Interactive/EcoSim-game/releases/latest/download/EcoSim-Windows.zip"
+                href={downloadLink}
                 target="_blank"
                 rel="noreferrer"
                 id="direct-download-github"
                 className="w-full sm:w-auto flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-500 hover:to-green-500 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 shadow-md active:scale-95 text-base"
               >
                 <Download className="w-5 h-5" />
-                <span>Télécharger (Dernière version Windows)</span>
+                <span>Télécharger pour {os}</span>
               </a>
               <a
                 href="https://github.com/EcoSim-Interactive/EcoSim-game/releases/tag/v1.0.0"
