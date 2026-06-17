@@ -7,7 +7,7 @@ export default function Navbar({ isDarkMode, onToggleTheme }) {
   useEffect(() => {
     const userAgent = window.navigator.userAgent.toLowerCase();
     if (userAgent.includes('mac')) {
-      setOs('Mac');
+      setOs('MacOs');
     } else if (userAgent.includes('linux')) {
       setOs('Linux');
     } else {

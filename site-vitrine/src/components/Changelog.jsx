@@ -34,7 +34,7 @@ export default function Changelog() {
             <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono tracking-widest">INSTALLATION RAPIDE</span>
             <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white">Prêt à observer votre écosystème ?</h2>
             <p className="text-slate-600 dark:text-slate-300 leading-relaxed font-light text-base">
-              Téléchargez l'application complète directement depuis notre espace de publication GitHube. Le fichier contient tout le nécessaire : le moteur écologique, le visualiseur 3D et le lanceur unifié. Double-cliquez simplement sur l'exécutable pour démarrer l'aventure.
+              Téléchargez l'application complète directement depuis notre espace de publication GitHub. Le fichier contient tout le nécessaire : le moteur écologique, le visualiseur 3D et le lanceur unifié. Double-cliquez simplement sur l'exécutable pour démarrer l'aventure.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 items-center pt-2">
