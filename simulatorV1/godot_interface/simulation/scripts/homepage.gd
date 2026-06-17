@@ -15,6 +15,11 @@ extends Control
 @onready var world_config_btn = $MainVBox/TopBar/Margin/HBox/WorldConfigBtn
 @onready var world_configurator = $WorldConfigurator
 
+@onready var graph_population = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/GraphPopulation
+@onready var graph_food = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/GraphFood
+@onready var graph_death = $MainVBox/MainHBox/RightSidebar/Margin/VBox/GraphDeath
+@onready var graph_energy = $MainVBox/MainHBox/RightSidebar/Margin/VBox/GraphEnergy
+
 # --- Variables principales ---
 var simulation_logs = []          # Données chargées depuis summary.json
 var current_step_data = {}
@@ -162,6 +167,39 @@ func load_simulation_json(json_path: String):
 func add_step_log(step_data: Dictionary):
 	simulation_logs.append(step_data)
 	current_step_data = step_data
+	
+	_update_graphs(step_data)
+
+func _update_graphs(step_data: Dictionary):
+	var pop = 0
+	var food = 0
+	var dead = 0
+	var total_energy = 0.0
+	
+	if step_data.has("species"):
+		for s in step_data["species"]:
+			var vitality = s.get("vitality", 0)
+			if vitality > 0:
+				pop += 1
+				total_energy += vitality
+			else:
+				dead += 1
+				
+	if step_data.has("world_state") and step_data["world_state"].has("food_available"):
+		food = step_data["world_state"]["food_available"]
+	
+	var avg_energy = 0.0
+	if pop > 0:
+		avg_energy = total_energy / float(pop)
+		
+	if graph_population and graph_population.has_method("add_value"):
+		graph_population.add_value(pop)
+	if graph_food and graph_food.has_method("add_value"):
+		graph_food.add_value(food)
+	if graph_death and graph_death.has_method("add_value"):
+		graph_death.add_value(dead)
+	if graph_energy and graph_energy.has_method("add_value"):
+		graph_energy.add_value(avg_energy)
 
 # --- Générer un résumé global pour le fichier TXT ---
 func generate_summary_text() -> String:

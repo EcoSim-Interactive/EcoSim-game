@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://scripts/homepage.gd" id="1_6ky6r"]
 [ext_resource type="PackedScene" path="res://screens/World.tscn" id="2_1n0mb"]
@@ -9,6 +9,7 @@
 [ext_resource type="Script" path="res://scripts/zoom_menu_button_homepage.gd" id="5_8onl8"]
 [ext_resource type="Script" path="res://scripts/toggle_day_night.gd" id="6_daynight"]
 [ext_resource type="Script" path="res://scripts/world_configurator.gd" id="7_speciescfg"]
+[ext_resource type="PackedScene" path="res://screens/GraphCard.tscn" id="8_graph"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
 bg_color = Color(0.059, 0.09, 0.165, 1)
@@ -252,11 +253,15 @@ text = "Informations (Gauche)"
 [node name="HSeparator" type="HSeparator" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox"]
 layout_mode = 2
 
-[node name="InfoPlaceholder" type="Label" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox"]
+[node name="GraphPopulation" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox" instance=ExtResource("8_graph")]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
-text = "Espace disponible pour afficher des statistiques ou données d'écosystème..."
-autowrap_mode = 3
+title = "Population Totale"
+line_color = Color(0.1, 0.7, 0.5, 1)
+
+[node name="GraphFood" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox" instance=ExtResource("8_graph")]
+layout_mode = 2
+title = "Nourriture Disponible"
+line_color = Color(0.9, 0.6, 0.2, 1)
 
 [node name="MainArea" type="MarginContainer" parent="MainVBox/MainHBox"]
 layout_mode = 2
@@ -322,11 +327,15 @@ text = "Informations (Droite)"
 [node name="HSeparator" type="HSeparator" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox"]
 layout_mode = 2
 
-[node name="InfoPlaceholder" type="Label" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox"]
+[node name="GraphDeath" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox" instance=ExtResource("8_graph")]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
-text = "Espace de même taille que la gauche, prêt à accueillir des boutons d'infos ou autres..."
-autowrap_mode = 3
+title = "Morts par cycle"
+line_color = Color(0.9, 0.2, 0.2, 1)
+
+[node name="GraphEnergy" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox" instance=ExtResource("8_graph")]
+layout_mode = 2
+title = "Énergie Moyenne"
+line_color = Color(0.2, 0.6, 0.9, 1)
 
 [node name="SettingsPanel" type="Panel" parent="."]
 visible = false
