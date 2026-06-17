@@ -1,21 +1,25 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene format=3 uid="uid://cvp1k35x1b3jb"]
 
-[ext_resource type="Script" path="res://scripts/homepage.gd" id="1_6ky6r"]
-[ext_resource type="PackedScene" path="res://screens/World.tscn" id="2_1n0mb"]
-[ext_resource type="Theme" path="res://background/theme_dark.tres" id="2_gmipm"]
-[ext_resource type="Script" path="res://scripts/import_simulation.gd" id="3_8onl8"]
-[ext_resource type="Script" path="res://scripts/startpausebutton.gd" id="4_1wvxa"]
-[ext_resource type="Script" path="res://scripts/FileDialog.gd" id="4_8onl8"]
-[ext_resource type="Script" path="res://scripts/zoom_menu_button_homepage.gd" id="5_8onl8"]
-[ext_resource type="Script" path="res://scripts/toggle_day_night.gd" id="6_daynight"]
-[ext_resource type="Script" path="res://scripts/world_configurator.gd" id="7_speciescfg"]
-[ext_resource type="PackedScene" path="res://screens/GraphCard.tscn" id="8_graph"]
+[ext_resource type="Script" uid="uid://bh7exeqawjsfq" path="res://scripts/homepage.gd" id="1_6ky6r"]
+[ext_resource type="PackedScene" uid="uid://do5fd1twewot8" path="res://screens/World.tscn" id="2_1n0mb"]
+[ext_resource type="Theme" uid="uid://c05i4bhxyffka" path="res://background/theme_dark.tres" id="2_gmipm"]
+[ext_resource type="Script" uid="uid://bt83p4dji63yw" path="res://scripts/import_simulation.gd" id="3_8onl8"]
+[ext_resource type="Script" uid="uid://cxdofghu3fydu" path="res://scripts/startpausebutton.gd" id="4_1wvxa"]
+[ext_resource type="Script" uid="uid://bl41sx076ths2" path="res://scripts/FileDialog.gd" id="4_8onl8"]
+[ext_resource type="Script" uid="uid://qtm62clrr35r" path="res://scripts/toggle_day_night.gd" id="6_daynight"]
+[ext_resource type="Script" uid="uid://qd8i6wandxfl" path="res://scripts/world_configurator.gd" id="7_speciescfg"]
+[ext_resource type="PackedScene" uid="uid://c1p2x3b4n5e6" path="res://screens/GraphCard.tscn" id="8_graph"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
 bg_color = Color(0.059, 0.09, 0.165, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.118, 0.161, 0.231, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.15, 0.18, 0.23, 1)
 corner_radius_top_left = 12
 corner_radius_top_right = 12
 corner_radius_bottom_right = 12
@@ -23,8 +27,56 @@ corner_radius_bottom_left = 12
 shadow_color = Color(0, 0, 0, 0.2)
 shadow_size = 8
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.2, 0.255, 0.333, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.25, 0.33, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.278, 0.333, 0.412, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.32, 0.42, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_start"]
+content_margin_left = 20.0
+content_margin_top = 8.0
+content_margin_right = 20.0
+content_margin_bottom = 8.0
+bg_color = Color(0.063, 0.725, 0.506, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Settings"]
 bg_color = Color(0.118, 0.161, 0.231, 0.95)
+border_width_left = 6
+border_width_top = 6
+border_width_right = 6
+border_width_bottom = 6
+border_color = Color(0.2, 0.6, 0.4, 1)
 corner_radius_top_left = 16
 corner_radius_top_right = 16
 corner_radius_bottom_right = 16
@@ -32,40 +84,7 @@ corner_radius_bottom_left = 16
 shadow_color = Color(0, 0, 0, 0.4)
 shadow_size = 12
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
-bg_color = Color(0.2, 0.255, 0.333, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
-bg_color = Color(0.278, 0.333, 0.412, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_start"]
-bg_color = Color(0.063, 0.725, 0.506, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-content_margin_left = 20.0
-content_margin_top = 8.0
-content_margin_right = 20.0
-content_margin_bottom = 8.0
-
-[node name="Homepage" type="Control"]
+[node name="Homepage" type="Control" unique_id=462511854]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -75,11 +94,11 @@ grow_vertical = 2
 theme = ExtResource("2_gmipm")
 script = ExtResource("1_6ky6r")
 
-[node name="WorldConfigurator" type="CanvasLayer" parent="."]
+[node name="WorldConfigurator" type="CanvasLayer" parent="." unique_id=1901204437]
 script = ExtResource("7_speciescfg")
 world_path = NodePath("../MainVBox/MainHBox/MainArea/SubViewportContainer/SubViewport/World")
 
-[node name="Background" type="Panel" parent="."]
+[node name="Background" type="Panel" parent="." unique_id=1222582938]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -88,7 +107,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
 
-[node name="MainVBox" type="VBoxContainer" parent="."]
+[node name="MainVBox" type="VBoxContainer" parent="." unique_id=738541667]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -97,39 +116,39 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 0
 
-[node name="TopBar" type="PanelContainer" parent="MainVBox"]
+[node name="TopBar" type="PanelContainer" parent="MainVBox" unique_id=1944546868]
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="Margin" type="MarginContainer" parent="MainVBox/TopBar"]
+[node name="Margin" type="MarginContainer" parent="MainVBox/TopBar" unique_id=781787255]
 layout_mode = 2
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 8
 
-[node name="HBox" type="HBoxContainer" parent="MainVBox/TopBar/Margin"]
+[node name="HBox" type="HBoxContainer" parent="MainVBox/TopBar/Margin" unique_id=1505349582]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Title" type="Label" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="Title" type="Label" parent="MainVBox/TopBar/Margin/HBox" unique_id=994595706]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.2, 0.8, 0.5, 1)
 theme_override_font_sizes/font_size = 24
 text = "EcoSim"
 
-[node name="Subtitle" type="Label" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="Subtitle" type="Label" parent="MainVBox/TopBar/Margin/HBox" unique_id=451066356]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.6, 0.65, 0.75, 1)
 theme_override_font_sizes/font_size = 14
 text = "Interactive"
 
-[node name="VSeparator" type="VSeparator" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="VSeparator" type="VSeparator" parent="MainVBox/TopBar/Margin/HBox" unique_id=2057683684]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="ImportBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="ImportBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=902540138]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
@@ -137,133 +156,132 @@ text = "Import"
 script = ExtResource("3_8onl8")
 dialog_path = NodePath("../FileDialog")
 
-[node name="FileDialog" type="FileDialog" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="FileDialog" type="FileDialog" parent="MainVBox/TopBar/Margin/HBox" unique_id=1945103733]
 title = "Open a File"
 ok_button_text = "Open"
 file_mode = 0
 script = ExtResource("4_8onl8")
 simulation_manager_path = NodePath("../../../../MainHBox/MainArea/SubViewportContainer/SubViewport/World")
 
-[node name="ExportBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="ExportBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=135988492]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 text = "Export"
 
-[node name="ExportLogBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="ExportLogBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=1661317233]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 text = "Export Logs"
 
-[node name="VSeparator2" type="VSeparator" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="VSeparator2" type="VSeparator" parent="MainVBox/TopBar/Margin/HBox" unique_id=42262642]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="StartBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="StartBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=193069957]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_start")
 text = "Start"
 script = ExtResource("4_1wvxa")
 world_path = NodePath("../../../../MainHBox/MainArea/SubViewportContainer/SubViewport/World")
 
-[node name="Speed1x" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="Speed1x" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=1043489598]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 text = "1x"
 
-[node name="Speed2x" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="Speed2x" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=1089983416]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 text = "2x"
 
-[node name="Speed3x" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="Speed3x" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=1610833238]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 text = "3x"
 
-[node name="VSeparator3" type="VSeparator" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="VSeparator3" type="VSeparator" parent="MainVBox/TopBar/Margin/HBox" unique_id=906286725]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="ZoomInBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="ZoomInBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=1132157483]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 text = "Zoom +"
 
-[node name="ZoomOutBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="ZoomOutBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=1193441135]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 text = "Zoom -"
 
-[node name="DayNightBtn" type="CheckButton" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="DayNightBtn" type="CheckButton" parent="MainVBox/TopBar/Margin/HBox" unique_id=950698932]
 layout_mode = 2
-text = "Jour/Nuit"
 button_pressed = true
+text = "Jour/Nuit"
 script = ExtResource("6_daynight")
 world_path = NodePath("../../../../MainHBox/MainArea/SubViewportContainer/SubViewport/World")
 
-[node name="Spacer" type="Control" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="Spacer" type="Control" parent="MainVBox/TopBar/Margin/HBox" unique_id=1698015496]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SettingsBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="SettingsBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=301930244]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 text = "Paramètres"
 
-[node name="WorldConfigBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="WorldConfigBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=1929719992]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 text = "Monde"
 
-[node name="QuitBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+[node name="QuitBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=845713531]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 text = "Quitter"
 
-[node name="MainHBox" type="HBoxContainer" parent="MainVBox"]
+[node name="MainHBox" type="HBoxContainer" parent="MainVBox" unique_id=1470918849]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 0
 
-[node name="LeftSidebar" type="PanelContainer" parent="MainVBox/MainHBox"]
+[node name="LeftSidebar" type="PanelContainer" parent="MainVBox/MainHBox" unique_id=2137391184]
 custom_minimum_size = Vector2(320, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="Margin" type="MarginContainer" parent="MainVBox/MainHBox/LeftSidebar"]
+[node name="Margin" type="MarginContainer" parent="MainVBox/MainHBox/LeftSidebar" unique_id=979287770]
 layout_mode = 2
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 16
 
-[node name="VBox" type="VBoxContainer" parent="MainVBox/MainHBox/LeftSidebar/Margin"]
+[node name="VBox" type="VBoxContainer" parent="MainVBox/MainHBox/LeftSidebar/Margin" unique_id=1424112151]
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="InfoTitle" type="Label" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox"]
+[node name="InfoTitle" type="Label" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox" unique_id=1525976323]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Informations (Gauche)"
 
-[node name="HSeparator" type="HSeparator" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox"]
+[node name="HSeparator" type="HSeparator" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox" unique_id=1828807360]
 layout_mode = 2
 
-[node name="GraphPopulation" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox" instance=ExtResource("8_graph")]
+[node name="GraphPopulation" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox" unique_id=430219511 instance=ExtResource("8_graph")]
 layout_mode = 2
 title = "Population Totale"
-line_color = Color(0.1, 0.7, 0.5, 1)
 
-[node name="GraphFood" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox" instance=ExtResource("8_graph")]
+[node name="GraphFood" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox" unique_id=2126144090 instance=ExtResource("8_graph")]
 layout_mode = 2
 title = "Nourriture Disponible"
 line_color = Color(0.9, 0.6, 0.2, 1)
 
-[node name="MainArea" type="MarginContainer" parent="MainVBox/MainHBox"]
+[node name="MainArea" type="MarginContainer" parent="MainVBox/MainHBox" unique_id=1628336570]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/margin_left = 16
@@ -271,27 +289,27 @@ theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 16
 
-[node name="Panel" type="Panel" parent="MainVBox/MainHBox/MainArea"]
+[node name="Panel" type="Panel" parent="MainVBox/MainHBox/MainArea" unique_id=1286808725]
 clip_contents = true
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
 
-[node name="SubViewportContainer" type="SubViewportContainer" parent="MainVBox/MainHBox/MainArea"]
+[node name="SubViewportContainer" type="SubViewportContainer" parent="MainVBox/MainHBox/MainArea" unique_id=404304916]
 layout_mode = 2
 stretch = true
 
-[node name="SubViewport" type="SubViewport" parent="MainVBox/MainHBox/MainArea/SubViewportContainer"]
+[node name="SubViewport" type="SubViewport" parent="MainVBox/MainHBox/MainArea/SubViewportContainer" unique_id=519707155]
 handle_input_locally = false
-size = Vector2i(1000, 1000)
+size = Vector2i(1248, 988)
 render_target_update_mode = 4
 
-[node name="World" parent="MainVBox/MainHBox/MainArea/SubViewportContainer/SubViewport" instance=ExtResource("2_1n0mb")]
+[node name="World" parent="MainVBox/MainHBox/MainArea/SubViewportContainer/SubViewport" unique_id=1173343557 instance=ExtResource("2_1n0mb")]
 
-[node name="LoadingOverlay" type="Control" parent="MainVBox/MainHBox/MainArea"]
+[node name="LoadingOverlay" type="Control" parent="MainVBox/MainHBox/MainArea" unique_id=691733600]
 visible = false
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MainVBox/MainHBox/MainArea/LoadingOverlay"]
+[node name="Label" type="Label" parent="MainVBox/MainHBox/MainArea/LoadingOverlay" unique_id=2137576169]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -303,41 +321,41 @@ text = "Génération de la simulation en cours..."
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="RightSidebar" type="PanelContainer" parent="MainVBox/MainHBox"]
+[node name="RightSidebar" type="PanelContainer" parent="MainVBox/MainHBox" unique_id=1948570552]
 custom_minimum_size = Vector2(320, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="Margin" type="MarginContainer" parent="MainVBox/MainHBox/RightSidebar"]
+[node name="Margin" type="MarginContainer" parent="MainVBox/MainHBox/RightSidebar" unique_id=1367585212]
 layout_mode = 2
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 16
 
-[node name="VBox" type="VBoxContainer" parent="MainVBox/MainHBox/RightSidebar/Margin"]
+[node name="VBox" type="VBoxContainer" parent="MainVBox/MainHBox/RightSidebar/Margin" unique_id=934433495]
 layout_mode = 2
 theme_override_constants/separation = 16
 
-[node name="InfoTitle" type="Label" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox"]
+[node name="InfoTitle" type="Label" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox" unique_id=1337477941]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
 text = "Informations (Droite)"
 
-[node name="HSeparator" type="HSeparator" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox"]
+[node name="HSeparator" type="HSeparator" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox" unique_id=308721911]
 layout_mode = 2
 
-[node name="GraphDeath" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox" instance=ExtResource("8_graph")]
+[node name="GraphDeath" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox" unique_id=1486739661 instance=ExtResource("8_graph")]
 layout_mode = 2
 title = "Morts par cycle"
 line_color = Color(0.9, 0.2, 0.2, 1)
 
-[node name="GraphEnergy" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox" instance=ExtResource("8_graph")]
+[node name="GraphEnergy" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox" unique_id=1327910493 instance=ExtResource("8_graph")]
 layout_mode = 2
 title = "Énergie Moyenne"
 line_color = Color(0.2, 0.6, 0.9, 1)
 
-[node name="SettingsPanel" type="Panel" parent="."]
+[node name="SettingsPanel" type="Panel" parent="." unique_id=826769241]
 visible = false
 z_index = 10
 layout_mode = 1
@@ -354,7 +372,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_Settings")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="SettingsPanel"]
+[node name="VBoxContainer" type="VBoxContainer" parent="SettingsPanel" unique_id=1984893065]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -367,12 +385,12 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 40
 
-[node name="Label" type="Label" parent="SettingsPanel/VBoxContainer"]
+[node name="Label" type="Label" parent="SettingsPanel/VBoxContainer" unique_id=1538930406]
 layout_mode = 2
 theme_override_font_sizes/font_size = 40
 text = "Mode d'affichage"
 
-[node name="ModeOption" type="OptionButton" parent="SettingsPanel/VBoxContainer"]
+[node name="ModeOption" type="OptionButton" parent="SettingsPanel/VBoxContainer" unique_id=2079075668]
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 theme_override_font_sizes/font_size = 35
