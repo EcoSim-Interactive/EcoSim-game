@@ -26,6 +26,16 @@ var save_start_button: Button
 var map_preview: Control
 var map_marker: ColorRect
 
+var current_world_config: Dictionary = {}
+var water_qty_input: SpinBox
+var river_segments_input: SpinBox
+var stagnant_count_input: SpinBox
+var oasis_count_input: SpinBox
+var lake_count_input: SpinBox
+var herbs_input: SpinBox
+var berries_input: SpinBox
+var tree_input: SpinBox
+
 var templates_by_id: Dictionary = {}
 var base_selection: Array = []
 var selection: Array = []
@@ -51,7 +61,11 @@ func _ready() -> void:
 		world.species_configuration_saved.connect(_on_species_configuration_saved)
 		if world.has_signal("world_loaded"):
 			world.world_loaded.connect(_on_world_loaded)
+		if world.has_signal("world_config_ready"):
+			world.world_config_ready.connect(_on_world_config_ready)
 		world.request_species_catalog()
+		if world.has_method("request_world_config"):
+			world.request_world_config()
 	else:
 		push_warning("SpeciesConfigurator: World introuvable, la modal de configuration ne sera pas affichee.")
 
@@ -78,8 +92,18 @@ func _build_dialog() -> void:
 	status_label.text = "Chargement du catalogue..."
 	root.add_child(status_label)
 
+	var tab_container = TabContainer.new()
+	tab_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tab_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	root.add_child(tab_container)
+
+	# --- ONGLET 1: ESPÈCES ---
+	var species_tab = VBoxContainer.new()
+	species_tab.name = "Especes"
+	tab_container.add_child(species_tab)
+
 	var top_row = HBoxContainer.new()
-	root.add_child(top_row)
+	species_tab.add_child(top_row)
 
 	template_picker = OptionButton.new()
 	template_picker.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -98,11 +122,11 @@ func _build_dialog() -> void:
 	species_list = ItemList.new()
 	species_list.custom_minimum_size = Vector2(0, 180)
 	species_list.item_selected.connect(_on_species_selected)
-	root.add_child(species_list)
+	species_tab.add_child(species_list)
 
 	var map_section = VBoxContainer.new()
 	map_section.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	root.add_child(map_section)
+	species_tab.add_child(map_section)
 
 	var map_label = Label.new()
 	map_label.text = "Carte miniature"
@@ -132,7 +156,7 @@ func _build_dialog() -> void:
 	var form = GridContainer.new()
 	form.columns = 2
 	form.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	root.add_child(form)
+	species_tab.add_child(form)
 
 	count_input = _add_spin_field(form, "Nombre", 0, 200, 1)
 	vision_input = _add_spin_field(form, "Vision", 1, 500, 1)
@@ -164,6 +188,28 @@ func _build_dialog() -> void:
 	diet_input.add_item("omnivore")
 	diet_input.add_item("carnivore")
 	form.add_child(diet_input)
+
+	# --- ONGLET 2: EAU ---
+	var water_tab = GridContainer.new()
+	water_tab.name = "Points d'eau"
+	water_tab.columns = 2
+	tab_container.add_child(water_tab)
+	
+	water_qty_input = _add_spin_field(water_tab, "Quantite Globale", 0, 100, 1)
+	river_segments_input = _add_spin_field(water_tab, "Segments de Riviere", 0, 200, 1)
+	stagnant_count_input = _add_spin_field(water_tab, "Points d'eau stagnante", 0, 50, 1)
+	oasis_count_input = _add_spin_field(water_tab, "Oasis", 0, 50, 1)
+	lake_count_input = _add_spin_field(water_tab, "Lacs", 0, 20, 1)
+
+	# --- ONGLET 3: NOURRITURE ---
+	var food_tab = GridContainer.new()
+	food_tab.name = "Nourriture (Distribution)"
+	food_tab.columns = 2
+	tab_container.add_child(food_tab)
+	
+	herbs_input = _add_spin_field(food_tab, "Herbes", 0, 1000, 1)
+	berries_input = _add_spin_field(food_tab, "Buissons (baies)", 0, 1000, 1)
+	tree_input = _add_spin_field(food_tab, "Arbres fruitiers", 0, 1000, 1)
 
 	var actions = HBoxContainer.new()
 	root.add_child(actions)
@@ -219,8 +265,10 @@ func open_modal() -> void:
 		if world.get("connected") == false:
 			status_label.text = "Serveur Python déconnecté ! Lancez le backend."
 		elif world.has_method("request_species_catalog"):
-			status_label.text = "Chargement du catalogue..."
+			status_label.text = "Chargement des configs..."
 			world.request_species_catalog()
+			if world.has_method("request_world_config"):
+				world.request_world_config()
 	dialog.popup_centered_ratio(0.72)
 
 func _on_species_catalog_ready(payload) -> void:
@@ -264,10 +312,24 @@ func _on_species_catalog_ready(payload) -> void:
 		selection.append(row.duplicate(true))
 
 	_refresh_species_list()
-	status_label.text = "Configurez les especes puis enregistrez."
-	if not has_opened_once:
-		has_opened_once = true
-		open_modal()
+	status_label.text = "Configurez l'environnement et les especes puis enregistrez."
+
+func _on_world_config_ready(payload) -> void:
+	if typeof(payload) != TYPE_DICTIONARY:
+		return
+	current_world_config = payload.duplicate(true)
+	var water = current_world_config.get("water", {})
+	water_qty_input.value = float(water.get("quantity", 12))
+	river_segments_input.value = float(water.get("river_segments", 35))
+	stagnant_count_input.value = float(water.get("stagnant_count", 3))
+	oasis_count_input.value = float(water.get("oasis_count", 2))
+	lake_count_input.value = float(water.get("lake_count", 1))
+
+	var food = current_world_config.get("food", {})
+	var dist = food.get("distribution", {})
+	herbs_input.value = float(dist.get("herbs", 140))
+	berries_input.value = float(dist.get("berries", 60))
+	tree_input.value = float(dist.get("fruit_tree", 35))
 
 func _refresh_species_list() -> void:
 	species_list.clear()
@@ -410,6 +472,27 @@ func _save(start_after: bool) -> void:
 		var count_value = int(row.get("count", 0))
 		if count_value > 0:
 			filtered_selection.append(row)
+	if not current_world_config.is_empty():
+		if not current_world_config.has("water"):
+			current_world_config["water"] = {}
+		current_world_config["water"]["quantity"] = int(water_qty_input.value)
+		current_world_config["water"]["river_segments"] = int(river_segments_input.value)
+		current_world_config["water"]["stagnant_count"] = int(stagnant_count_input.value)
+		current_world_config["water"]["oasis_count"] = int(oasis_count_input.value)
+		current_world_config["water"]["lake_count"] = int(lake_count_input.value)
+		
+		if not current_world_config.has("food"):
+			current_world_config["food"] = {}
+		if not current_world_config["food"].has("distribution"):
+			current_world_config["food"]["distribution"] = {}
+			
+		current_world_config["food"]["distribution"]["herbs"] = int(herbs_input.value)
+		current_world_config["food"]["distribution"]["berries"] = int(berries_input.value)
+		current_world_config["food"]["distribution"]["fruit_tree"] = int(tree_input.value)
+		
+		if world and world.has_method("apply_world_configuration"):
+			world.apply_world_configuration(current_world_config, false)
+
 	if world and world.has_method("apply_species_configuration"):
 		if filtered_selection.is_empty():
 			status_label.text = "Aucune espece active: sauvegarde d'une simulation vide..."

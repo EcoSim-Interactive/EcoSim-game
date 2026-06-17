@@ -30,6 +30,11 @@ func _on_item_selected(id: int) -> void:
 	if camera == null:
 		return
 
+	var zoom_step = Vector2(0.1, 0.1)
 	match id:
-		0: camera.zoom_out()
-		1: camera.zoom_in()
+		0: # Zoom In
+			camera.zoom += zoom_step
+		1: # Zoom Out
+			camera.zoom -= zoom_step
+			if camera.zoom.x < 0.1:
+				camera.zoom = Vector2(0.1, 0.1)

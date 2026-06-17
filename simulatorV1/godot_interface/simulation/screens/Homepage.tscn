@@ -1,342 +1,292 @@
-[gd_scene format=3 uid="uid://dqa6r6pkucju8"]
+[gd_scene load_steps=15 format=3]
 
-[ext_resource type="Script" uid="uid://bh7exeqawjsfq" path="res://scripts/homepage.gd" id="1_6ky6r"]
-[ext_resource type="PackedScene" uid="uid://do5fd1twewot8" path="res://screens/World.tscn" id="2_1n0mb"]
-[ext_resource type="Theme" uid="uid://c05i4bhxyffka" path="res://background/theme_dark.tres" id="2_gmipm"]
-[ext_resource type="Script" uid="uid://bt83p4dji63yw" path="res://scripts/import_simulation.gd" id="3_8onl8"]
-[ext_resource type="Script" uid="uid://cxdofghu3fydu" path="res://scripts/startpausebutton.gd" id="4_1wvxa"]
-[ext_resource type="Script" uid="uid://bl41sx076ths2" path="res://scripts/FileDialog.gd" id="4_8onl8"]
-[ext_resource type="Script" uid="uid://qfl7x310v0el" path="res://scripts/zoom_menu_button_homepage.gd" id="5_8onl8"]
-[ext_resource type="FontFile" uid="uid://co4dtpakhdbuq" path="res://UI/Vogue.ttf" id="5_500xv"]
-[ext_resource type="Script" uid="uid://qtm62clrr35r" path="res://scripts/toggle_day_night.gd" id="6_daynight"]
-[ext_resource type="Script" uid="uid://d35yrifxduwrq" path="res://scripts/species_configurator.gd" id="7_speciescfg"]
+[ext_resource type="Script" path="res://scripts/homepage.gd" id="1_6ky6r"]
+[ext_resource type="PackedScene" path="res://screens/World.tscn" id="2_1n0mb"]
+[ext_resource type="Theme" path="res://background/theme_dark.tres" id="2_gmipm"]
+[ext_resource type="Script" path="res://scripts/import_simulation.gd" id="3_8onl8"]
+[ext_resource type="Script" path="res://scripts/startpausebutton.gd" id="4_1wvxa"]
+[ext_resource type="Script" path="res://scripts/FileDialog.gd" id="4_8onl8"]
+[ext_resource type="Script" path="res://scripts/zoom_menu_button_homepage.gd" id="5_8onl8"]
+[ext_resource type="Script" path="res://scripts/toggle_day_night.gd" id="6_daynight"]
+[ext_resource type="Script" path="res://scripts/world_configurator.gd" id="7_speciescfg"]
 
-[sub_resource type="SystemFont" id="SystemFont_6ky6r"]
-font_names = PackedStringArray("Impact")
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.059, 0.09, 0.165, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1wvxa"]
-bg_color = Color(0, 0.423529, 0.517647, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8onl8"]
-bg_color = Color(0, 0.423529, 0.517647, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_70huw"]
-bg_color = Color(0.2, 0.254902, 0.333333, 1)
-border_color = Color(0, 0, 0, 1)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.118, 0.161, 0.231, 0.95)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.2)
+shadow_size = 8
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Settings"]
-bg_color = Color(0.12, 0.14, 0.18, 0.95)
-border_width_left = 6
-border_width_top = 6
-border_width_right = 6
-border_width_bottom = 6
-border_color = Color(0.2, 0.6, 0.4, 1)
+bg_color = Color(0.118, 0.161, 0.231, 0.95)
 corner_radius_top_left = 16
 corner_radius_top_right = 16
 corner_radius_bottom_right = 16
 corner_radius_bottom_left = 16
-shadow_color = Color(0, 0, 0, 0.5)
+shadow_color = Color(0, 0, 0, 0.4)
 shadow_size = 12
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_StartNormal"]
-bg_color = Color(0.102, 0.125, 0.173, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.192, 0.51, 0.808, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-content_margin_left = 15.0
-content_margin_top = 10.0
-content_margin_right = 15.0
-content_margin_bottom = 10.0
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_normal"]
+bg_color = Color(0.2, 0.255, 0.333, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_StartHover"]
-bg_color = Color(0.176, 0.216, 0.282, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.231, 0.612, 0.97, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-content_margin_left = 15.0
-content_margin_top = 10.0
-content_margin_right = 15.0
-content_margin_bottom = 10.0
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_hover"]
+bg_color = Color(0.278, 0.333, 0.412, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_StartPressed"]
-bg_color = Color(0.067, 0.082, 0.11, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.154, 0.408, 0.646, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-content_margin_left = 15.0
-content_margin_top = 10.0
-content_margin_right = 15.0
-content_margin_bottom = 10.0
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_start"]
+bg_color = Color(0.063, 0.725, 0.506, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 20.0
+content_margin_top = 8.0
+content_margin_right = 20.0
+content_margin_bottom = 8.0
 
-[node name="Homepage" type="Control" unique_id=1607099367]
+[node name="Homepage" type="Control"]
 layout_mode = 3
-anchor_left = -0.262
-anchor_top = -0.015
-anchor_right = 1.056
+anchors_preset = 15
+anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 935.04
-offset_top = 528.2
-offset_right = 1378.08
-offset_bottom = 594.56
 grow_horizontal = 2
 grow_vertical = 2
-scale = Vector2(1, 0.960001)
+theme = ExtResource("2_gmipm")
 script = ExtResource("1_6ky6r")
 
-[node name="Panel" type="Panel" parent="." unique_id=13225178]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = -0.293
-anchor_top = -0.434
-anchor_right = 0.966
-anchor_bottom = 1.391
-offset_left = -56.7351
-offset_top = -37.4489
-offset_right = 87.5022
-offset_bottom = 157.879
-grow_horizontal = 2
-grow_vertical = 2
-theme = ExtResource("2_gmipm")
+[node name="WorldConfigurator" type="CanvasLayer" parent="."]
+script = ExtResource("7_speciescfg")
+world_path = NodePath("../MainVBox/MainHBox/MainArea/SubViewportContainer/SubViewport/World")
 
-[node name="Logo" type="VBoxContainer" parent="." unique_id=561979642]
-layout_mode = 0
-offset_left = -816.0
-offset_top = -451.041
-offset_right = -472.0
-offset_bottom = -376.041
-theme_override_constants/separation = 15
-
-[node name="Label" type="Label" parent="Logo" unique_id=364273118]
-layout_mode = 2
-theme = ExtResource("2_gmipm")
-theme_override_font_sizes/font_size = 60
-text = "EcoSim v0.0"
-
-[node name="Boutton" type="HBoxContainer" parent="." unique_id=283473636]
-layout_mode = 0
-offset_left = -224.0
-offset_top = -221.875
-offset_right = 446.0
-offset_bottom = -151.875
-theme_override_constants/separation = 15
-
-[node name="ImportVBoxContainer" type="VBoxContainer" parent="Boutton" unique_id=392850831]
-layout_mode = 2
-
-[node name="Import Simulation" type="Button" parent="Boutton/ImportVBoxContainer" unique_id=757523180]
-custom_minimum_size = Vector2(250, 70)
-layout_mode = 2
-theme = ExtResource("2_gmipm")
-text = "Import Simulation"
-script = ExtResource("3_8onl8")
-dialog_path = NodePath("../FileDialog")
-
-[node name="FileDialog" type="FileDialog" parent="Boutton/ImportVBoxContainer" unique_id=1023210381]
-title = "Open a File"
-ok_button_text = "Open"
-file_mode = 0
-script = ExtResource("4_8onl8")
-simulation_manager_path = NodePath("../../../Simulateur/Panel/SubViewportContainer/SubViewport/World")
-
-[node name="ExportVBoxContainer" type="VBoxContainer" parent="Boutton" unique_id=274178000]
-layout_mode = 2
-
-[node name="Export Simulation" type="Button" parent="Boutton/ExportVBoxContainer" unique_id=790486035]
-custom_minimum_size = Vector2(250, 70)
-layout_mode = 2
-theme = ExtResource("2_gmipm")
-text = "Export Simulation
-"
-
-[node name="VBoxContainer" type="VBoxContainer" parent="Boutton" unique_id=1768139623]
-layout_mode = 2
-mouse_filter = 0
-
-[node name="ExportLog" type="Button" parent="Boutton/VBoxContainer" unique_id=1889699073]
-custom_minimum_size = Vector2(250, 70)
-layout_mode = 2
-theme = ExtResource("2_gmipm")
-button_mask = 5
-text = "Export logs"
-
-[node name="SpecimenVBoxContainer" type="VBoxContainer" parent="Boutton" unique_id=2100357777]
-visible = false
-layout_mode = 2
-theme_override_constants/separation = 65
-
-[node name="Seperator" type="Control" parent="Boutton/SpecimenVBoxContainer" unique_id=214201221]
-layout_mode = 2
-
-[node name="Specimen" type="Button" parent="Boutton/SpecimenVBoxContainer" unique_id=298175785]
-custom_minimum_size = Vector2(200, 50)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_pressed_color = Color(0.435192, 0.435192, 0.435192, 1)
-theme_override_fonts/font = SubResource("SystemFont_6ky6r")
-theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_1wvxa")
-text = "Specimen"
-
-[node name="ClimatVBoxContainer" type="VBoxContainer" parent="Boutton" unique_id=676092135]
-visible = false
-layout_mode = 2
-theme_override_constants/separation = 65
-
-[node name="Seperator" type="Control" parent="Boutton/ClimatVBoxContainer" unique_id=1965085740]
-layout_mode = 2
-
-[node name="Climat" type="Button" parent="Boutton/ClimatVBoxContainer" unique_id=1194277814]
-custom_minimum_size = Vector2(200, 50)
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_pressed_color = Color(0.278431, 0.278431, 0.278431, 1)
-theme_override_fonts/font = SubResource("SystemFont_6ky6r")
-theme_override_font_sizes/font_size = 24
-theme_override_styles/normal = SubResource("StyleBoxFlat_8onl8")
-text = "Climat"
-
-[node name="Speed change" type="HBoxContainer" parent="." unique_id=2137886601]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.978612
-anchor_top = -0.322462
-anchor_right = 1.05697
-anchor_bottom = -0.237442
-offset_left = -891.0
-offset_top = 197.798
-offset_right = -884.0
-offset_bottom = 198.958
-theme = ExtResource("2_gmipm")
-theme_override_constants/separation = 15
-alignment = 2
-metadata/_edit_use_anchors_ = true
-
-[node name="1X" type="VBoxContainer" parent="Speed change" unique_id=1195211754]
-layout_mode = 2
-
-[node name="1x speed" type="Button" parent="Speed change/1X" unique_id=1798168046]
-custom_minimum_size = Vector2(70, 45)
-layout_mode = 2
-theme = ExtResource("2_gmipm")
-text = "1x
-"
-
-[node name="2X" type="VBoxContainer" parent="Speed change" unique_id=1257191720]
-layout_mode = 2
-theme_override_constants/separation = 65
-
-[node name="2x speed" type="Button" parent="Speed change/2X" unique_id=2099407026]
-custom_minimum_size = Vector2(70, 45)
-layout_mode = 2
-theme = ExtResource("2_gmipm")
-text = "2x
-"
-
-[node name="3X" type="VBoxContainer" parent="Speed change" unique_id=358956573]
-custom_minimum_size = Vector2(0, 100)
-layout_mode = 2
-theme_override_constants/separation = 65
-
-[node name="3x speed" type="Button" parent="Speed change/3X" unique_id=1023964981]
-custom_minimum_size = Vector2(70, 45)
-layout_mode = 2
-theme = ExtResource("2_gmipm")
-text = "3x"
-
-[node name="Simulateur" type="HSplitContainer" parent="." unique_id=516877929]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = -0.0914716
-anchor_top = -0.113793
-anchor_right = 0.408932
-anchor_bottom = 0.789386
-offset_left = 20.0
-offset_right = 32.0
-grow_horizontal = 2
-grow_vertical = 2
-scale = Vector2(1.7, 1.7)
-metadata/_edit_use_anchors_ = true
-
-[node name="Panel" type="Panel" parent="Simulateur" unique_id=1067205849]
-z_index = 1
-clip_contents = true
-custom_minimum_size = Vector2(1500, 1050)
-layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 0
-theme_override_styles/panel = SubResource("StyleBoxFlat_70huw")
-
-[node name="Label" type="Label" parent="Simulateur/Panel" unique_id=1747067935]
-z_index = 1
-layout_mode = 0
-offset_left = 16.4706
-offset_right = 318.471
-offset_bottom = 55.0
-size_flags_horizontal = 0
-size_flags_vertical = 0
-theme = ExtResource("2_gmipm")
-theme_override_font_sizes/font_size = 30
-text = "Écran de simulation"
-
-[node name="time_label" type="Label" parent="Simulateur/Panel" unique_id=1521774851 groups=["time_display"]]
-z_index = 1
-layout_mode = 0
-offset_left = 1294.71
-offset_top = 13.0637
-offset_right = 1482.71
-offset_bottom = 68.0638
-size_flags_horizontal = 0
-size_flags_vertical = 0
-theme = ExtResource("2_gmipm")
-theme_override_colors/font_color = Color(0, 0, 0, 1)
-theme_override_fonts/font = ExtResource("5_500xv")
-theme_override_font_sizes/font_size = 30
-
-[node name="SubViewportContainer" type="SubViewportContainer" parent="Simulateur/Panel" unique_id=240849429]
-layout_mode = 0
-offset_left = 16.0
-offset_top = 42.0
-offset_right = 1491.0
-offset_bottom = 1042.0
-stretch = true
-
-[node name="SubViewport" type="SubViewport" parent="Simulateur/Panel/SubViewportContainer" unique_id=172850891]
-handle_input_locally = false
-size = Vector2i(1475, 1000)
-render_target_update_mode = 4
-
-[node name="LoadingOverlay" type="Control" parent="Simulateur/Panel" unique_id=1067205850]
-visible = false
+[node name="Background" type="Panel" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
 
-[node name="Label" type="Label" parent="Simulateur/Panel/LoadingOverlay" unique_id=1067205851]
+[node name="MainVBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 0
+
+[node name="TopBar" type="PanelContainer" parent="MainVBox"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/TopBar"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="HBox" type="HBoxContainer" parent="MainVBox/TopBar/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Title" type="Label" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.8, 0.5, 1)
+theme_override_font_sizes/font_size = 24
+text = "EcoSim"
+
+[node name="Subtitle" type="Label" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.65, 0.75, 1)
+theme_override_font_sizes/font_size = 14
+text = "Interactive"
+
+[node name="VSeparator" type="VSeparator" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="ImportBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+text = "Import"
+script = ExtResource("3_8onl8")
+dialog_path = NodePath("../FileDialog")
+
+[node name="FileDialog" type="FileDialog" parent="MainVBox/TopBar/Margin/HBox"]
+title = "Open a File"
+ok_button_text = "Open"
+file_mode = 0
+script = ExtResource("4_8onl8")
+simulation_manager_path = NodePath("../../../../MainHBox/MainArea/SubViewportContainer/SubViewport/World")
+
+[node name="ExportBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+text = "Export"
+
+[node name="ExportLogBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+text = "Export Logs"
+
+[node name="VSeparator2" type="VSeparator" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="StartBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_start")
+text = "Start"
+script = ExtResource("4_1wvxa")
+world_path = NodePath("../../../../MainHBox/MainArea/SubViewportContainer/SubViewport/World")
+
+[node name="Speed1x" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+text = "1x"
+
+[node name="Speed2x" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+text = "2x"
+
+[node name="Speed3x" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+text = "3x"
+
+[node name="VSeparator3" type="VSeparator" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="ZoomInBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+text = "Zoom +"
+
+[node name="ZoomOutBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+text = "Zoom -"
+
+[node name="DayNightBtn" type="CheckButton" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+text = "Jour/Nuit"
+button_pressed = true
+script = ExtResource("6_daynight")
+world_path = NodePath("../../../../MainHBox/MainArea/SubViewportContainer/SubViewport/World")
+
+[node name="Spacer" type="Control" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SettingsBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+text = "Paramètres"
+
+[node name="WorldConfigBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+text = "Monde"
+
+[node name="QuitBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox"]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+text = "Quitter"
+
+[node name="MainHBox" type="HBoxContainer" parent="MainVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+
+[node name="LeftSidebar" type="PanelContainer" parent="MainVBox/MainHBox"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/MainHBox/LeftSidebar"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBox" type="VBoxContainer" parent="MainVBox/MainHBox/LeftSidebar/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="InfoTitle" type="Label" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Informations (Gauche)"
+
+[node name="HSeparator" type="HSeparator" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox"]
+layout_mode = 2
+
+[node name="InfoPlaceholder" type="Label" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+text = "Espace disponible pour afficher des statistiques ou données d'écosystème..."
+autowrap_mode = 3
+
+[node name="MainArea" type="MarginContainer" parent="MainVBox/MainHBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Panel" type="Panel" parent="MainVBox/MainHBox/MainArea"]
+clip_contents = true
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="MainVBox/MainHBox/MainArea"]
+layout_mode = 2
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="MainVBox/MainHBox/MainArea/SubViewportContainer"]
+handle_input_locally = false
+size = Vector2i(1000, 1000)
+render_target_update_mode = 4
+
+[node name="World" parent="MainVBox/MainHBox/MainArea/SubViewportContainer/SubViewport" instance=ExtResource("2_1n0mb")]
+
+[node name="LoadingOverlay" type="Control" parent="MainVBox/MainHBox/MainArea"]
+visible = false
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MainVBox/MainHBox/MainArea/LoadingOverlay"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -348,197 +298,54 @@ text = "Génération de la simulation en cours..."
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="World" parent="Simulateur/Panel/SubViewportContainer/SubViewport" unique_id=1002459072 instance=ExtResource("2_1n0mb")]
-z_index = 1
-
-[node name="Camera2D" type="Camera2D" parent="." unique_id=234891584]
-position = Vector2(991, 546)
-zoom = Vector2(0.505, 0.523)
-
-[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1464508810]
-layout_mode = 0
-offset_left = 2460.0
-offset_top = -77.0833
-offset_right = 2660.0
-offset_bottom = 22.9167
-scale = Vector2(0.80001, 1)
-theme = ExtResource("2_gmipm")
-
-[node name="CheckButton" type="Button" parent="VBoxContainer" unique_id=96596973]
-z_index = 1
+[node name="RightSidebar" type="PanelContainer" parent="MainVBox/MainHBox"]
+custom_minimum_size = Vector2(320, 0)
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_colors/font_pressed_color = Color(0.8, 0.8, 0.8, 1)
-theme_override_colors/font_hover_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 32
-theme_override_styles/normal = SubResource("StyleBoxFlat_StartNormal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_StartHover")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_StartPressed")
-text = "Start"
-script = ExtResource("4_1wvxa")
-world_path = NodePath("../../Simulateur/Panel/SubViewportContainer/SubViewport/World")
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="MenuButton" type="MenuButton" parent="VBoxContainer" unique_id=199535931]
-z_index = 1
+[node name="Margin" type="MarginContainer" parent="MainVBox/MainHBox/RightSidebar"]
 layout_mode = 2
-theme = ExtResource("2_gmipm")
-theme_override_font_sizes/font_size = 30
-toggle_mode = false
-text = "Zoom"
-script = ExtResource("5_8onl8")
-camera_path = NodePath("../../Simulateur/Panel/SubViewportContainer/SubViewport/World/Camera2D")
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
 
-[node name="DayNightToggle" type="CheckButton" parent="VBoxContainer" unique_id=1280171825]
-z_index = 1
+[node name="VBox" type="VBoxContainer" parent="MainVBox/MainHBox/RightSidebar/Margin"]
 layout_mode = 2
-theme = ExtResource("2_gmipm")
-theme_override_font_sizes/font_size = 40
-button_pressed = true
-text = "Jour/Nuit"
-script = ExtResource("6_daynight")
-world_path = NodePath("../../Simulateur/Panel/SubViewportContainer/SubViewport/World")
+theme_override_constants/separation = 16
 
-[node name="PanelContainer" type="PanelContainer" parent="." unique_id=1824479893]
-layout_mode = 0
-offset_left = -825.0
-offset_top = -57.292
-offset_right = -346.0
-offset_bottom = 292.708
-scale = Vector2(1, 1.33333)
-theme = ExtResource("2_gmipm")
-
-[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer" unique_id=1503282101]
+[node name="InfoTitle" type="Label" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox"]
 layout_mode = 2
-theme = ExtResource("2_gmipm")
+theme_override_font_sizes/font_size = 20
+text = "Informations (Droite)"
 
-[node name="Label" type="Label" parent="PanelContainer/VBoxContainer" unique_id=477734801]
-layout_mode = 2
-theme = ExtResource("2_gmipm")
-theme_override_font_sizes/font_size = 24
-text = "Espèce"
-horizontal_alignment = 1
-
-[node name="ScrollContainer" type="ScrollContainer" parent="PanelContainer/VBoxContainer" unique_id=359598251]
+[node name="HSeparator" type="HSeparator" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox"]
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/VBoxContainer/ScrollContainer" unique_id=773486576]
+[node name="InfoPlaceholder" type="Label" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.5, 0.5, 1)
+text = "Espace de même taille que la gauche, prêt à accueillir des boutons d'infos ou autres..."
+autowrap_mode = 3
 
-[node name="SpeciesConfigurator" type="CanvasLayer" parent="." unique_id=941361684]
-script = ExtResource("7_speciescfg")
-world_path = NodePath("../Simulateur/Panel/SubViewportContainer/SubViewport/World")
-
-[node name="Climat" type="PanelContainer" parent="." unique_id=2126025409]
-layout_mode = 0
-offset_left = -825.0
-offset_top = 450.0
-offset_right = -346.0
-offset_bottom = 750.0
-scale = Vector2(1, 1.0833303)
-theme = ExtResource("2_gmipm")
-
-[node name="VBoxContainer" type="VBoxContainer" parent="Climat" unique_id=9119494]
-layout_mode = 2
-theme = ExtResource("2_gmipm")
-
-[node name="Label" type="Label" parent="Climat/VBoxContainer" unique_id=1570899280]
-layout_mode = 2
-theme = ExtResource("2_gmipm")
-theme_override_font_sizes/font_size = 24
-text = "Climat"
-horizontal_alignment = 1
-
-[node name="ScrollContainer" type="ScrollContainer" parent="Climat/VBoxContainer" unique_id=1671602933]
-layout_mode = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="Climat/VBoxContainer/ScrollContainer" unique_id=768445579]
-layout_mode = 2
-
-[node name="Controles status" type="PanelContainer" parent="." unique_id=1820014903]
-layout_mode = 0
-offset_left = -825.0
-offset_top = 820.0
-offset_right = -346.0
-offset_bottom = 1120.0
-scale = Vector2(1, 1.0833303)
-theme = ExtResource("2_gmipm")
-
-[node name="VBoxContainer" type="VBoxContainer" parent="Controles status" unique_id=851255562]
-layout_mode = 2
-theme = ExtResource("2_gmipm")
-
-[node name="Label" type="Label" parent="Controles status/VBoxContainer" unique_id=2000180916]
-layout_mode = 2
-theme = ExtResource("2_gmipm")
-theme_override_font_sizes/font_size = 24
-text = "Contrôleur statut"
-horizontal_alignment = 1
-
-[node name="ScrollContainer" type="ScrollContainer" parent="Controles status/VBoxContainer" unique_id=2119747977]
-layout_mode = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="Controles status/VBoxContainer/ScrollContainer" unique_id=1032709830]
-layout_mode = 2
-
-[node name="Simulation" type="PanelContainer" parent="." unique_id=1642821269]
-layout_mode = 0
-offset_left = -825.0
-offset_top = 1182.291
-offset_right = -346.0
-offset_bottom = 1482.291
-scale = Vector2(1, 1.0833303)
-theme = ExtResource("2_gmipm")
-
-[node name="VBoxContainer" type="VBoxContainer" parent="Simulation" unique_id=1315321564]
-layout_mode = 2
-theme = ExtResource("2_gmipm")
-
-[node name="Label" type="Label" parent="Simulation/VBoxContainer" unique_id=1208706082]
-layout_mode = 2
-theme = ExtResource("2_gmipm")
-theme_override_font_sizes/font_size = 24
-text = "Simulation"
-horizontal_alignment = 1
-
-[node name="ScrollContainer" type="ScrollContainer" parent="Simulation/VBoxContainer" unique_id=433140446]
-layout_mode = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="Simulation/VBoxContainer/ScrollContainer" unique_id=823890126]
-layout_mode = 2
-
-[node name="Header" type="HBoxContainer" parent="." unique_id=9999901]
-layout_mode = 0
-offset_left = 2480.0
-offset_top = -520.0
-offset_right = 2880.0
-offset_bottom = -440.0
-theme = ExtResource("2_gmipm")
-alignment = 2
-theme_override_constants/separation = 20
-
-[node name="SettingsBtn" type="Button" parent="Header" unique_id=9999902]
-custom_minimum_size = Vector2(180, 70)
-layout_mode = 2
-theme = ExtResource("2_gmipm")
-text = "Paramètres"
-
-[node name="QuitBtn" type="Button" parent="Header" unique_id=9999903]
-custom_minimum_size = Vector2(180, 70)
-layout_mode = 2
-theme = ExtResource("2_gmipm")
-text = "Quitter"
-
-[node name="SettingsPanel" type="Panel" parent="." unique_id=9999904]
+[node name="SettingsPanel" type="Panel" parent="."]
 visible = false
 z_index = 10
-layout_mode = 0
-offset_left = 2380.0
-offset_top = -420.0
-offset_right = 2880.0
-offset_bottom = -120.0
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = -150.0
+offset_right = 250.0
+offset_bottom = 150.0
+grow_horizontal = 2
+grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_Settings")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="SettingsPanel" unique_id=9999905]
+[node name="VBoxContainer" type="VBoxContainer" parent="SettingsPanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -551,12 +358,12 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 40
 
-[node name="Label" type="Label" parent="SettingsPanel/VBoxContainer" unique_id=9999906]
+[node name="Label" type="Label" parent="SettingsPanel/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 40
 text = "Mode d'affichage"
 
-[node name="ModeOption" type="OptionButton" parent="SettingsPanel/VBoxContainer" unique_id=9999907]
+[node name="ModeOption" type="OptionButton" parent="SettingsPanel/VBoxContainer"]
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 theme_override_font_sizes/font_size = 35

@@ -34,42 +34,32 @@ func _update_visuals(is_playing: bool):
 	var hover_style = StyleBoxFlat.new()
 	var pressed_style = StyleBoxFlat.new()
 	
-	# Forme rectangulaire avec bords légèrement arrondis comme dans le dashboard
 	for style in [normal_style, hover_style, pressed_style]:
-		style.bg_color = Color("#1a202c") # Fond sombre comme les panels
-		style.corner_radius_top_left = 6
-		style.corner_radius_top_right = 6
-		style.corner_radius_bottom_right = 6
-		style.corner_radius_bottom_left = 6
-		style.border_width_left = 1
-		style.border_width_right = 1
-		style.border_width_top = 1
-		style.border_width_bottom = 1
-		style.content_margin_left = 15
-		style.content_margin_right = 15
-		style.content_margin_top = 10
-		style.content_margin_bottom = 10
+		style.corner_radius_top_left = 8
+		style.corner_radius_top_right = 8
+		style.corner_radius_bottom_right = 8
+		style.corner_radius_bottom_left = 8
+		style.content_margin_left = 20
+		style.content_margin_right = 20
+		style.content_margin_top = 8
+		style.content_margin_bottom = 8
 
-	var border_color: Color
+	var base_color: Color
 	if is_playing:
 		text = "Pause"
-		border_color = Color("#e53e3e") # Bordure rouge subtile
+		base_color = Color("#EF4444") # Red 500
 	else:
 		text = "Start"
-		border_color = Color("#3182ce") # Bordure bleue subtile
+		base_color = Color("#10B981") # Emerald 500
 		
-	normal_style.border_color = border_color
-	
-	hover_style.border_color = border_color.lightened(0.2)
-	hover_style.bg_color = Color("#2d3748") # Fond un peu plus clair au survol
-	
-	pressed_style.border_color = border_color.darkened(0.2)
-	pressed_style.bg_color = Color("#11151c") # Fond plus sombre au clic
+	normal_style.bg_color = base_color
+	hover_style.bg_color = base_color.lightened(0.1)
+	pressed_style.bg_color = base_color.darkened(0.1)
 
 	add_theme_color_override("font_color", Color(1.0, 1.0, 1.0))
 	add_theme_color_override("font_hover_color", Color(1.0, 1.0, 1.0))
-	add_theme_color_override("font_pressed_color", Color(0.8, 0.8, 0.8))
-	add_theme_font_size_override("font_size", 32) # Texte très grand comme demandé
+	add_theme_color_override("font_pressed_color", Color(0.9, 0.9, 0.9))
+	add_theme_font_size_override("font_size", 18)
 	
 	add_theme_stylebox_override("normal", normal_style)
 	add_theme_stylebox_override("hover", hover_style)

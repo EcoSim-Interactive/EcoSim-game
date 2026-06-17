@@ -9,6 +9,8 @@ signal world_loading
 signal world_loaded
 signal simulation_computing
 signal simulation_computed
+signal world_config_ready(payload)
+signal world_configuration_saved(ok, payload)
 
 var socket := WebSocketPeer.new()
 var connected := false
@@ -171,10 +173,22 @@ func _on_message(msg: String):
 		"error":
 			print("[CLIENT] Erreur serveur :", data)
 			var message = String(data.get("message", ""))
-			if message.find("configure_species") != -1:
+			if message.find("configure_species") != -1 or message.find("configure_world") != -1:
 				species_configured = false
 				pending_start_after_species_save = false
 				emit_signal("species_configuration_saved", false, data)
+				emit_signal("world_configuration_saved", false, data)
+		"world_config":
+			var payload = data.get("data", {})
+			emit_signal("world_config_ready", payload)
+		"world_configuration_saved":
+			var payload = data.get("data", {})
+			var ok = bool(payload.get("ok", false))
+			emit_signal("world_configuration_saved", ok, payload)
+			_send_cmd("get_world")
+			if ok and pending_start_after_species_save:
+				pending_start_after_species_save = false
+				start_simulation()
 		"species_catalog":
 			var payload = data.get("data", {})
 			emit_signal("species_catalog_ready", payload)
@@ -280,6 +294,17 @@ func apply_species_configuration(selection: Array, start_after_apply: bool = fal
 	species_configured = false
 	pending_start_after_species_save = start_after_apply
 	_send_cmd("configure_species", {"selection": selection})
+
+func request_world_config() -> void:
+	if connected:
+		_send_cmd("get_world_config")
+
+func apply_world_configuration(payload: Dictionary, start_after_apply: bool = false) -> void:
+	if not connected:
+		return
+	species_configured = false
+	pending_start_after_species_save = start_after_apply
+	_send_cmd("configure_world", payload)
 
 func start_simulation():
 	if not species_configured:

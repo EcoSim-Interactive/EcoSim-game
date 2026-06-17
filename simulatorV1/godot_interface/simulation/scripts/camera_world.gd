@@ -51,8 +51,19 @@ func _clamp_position() -> void:
 	var vp_size = get_viewport_rect().size / zoom.x
 	var half_vp = vp_size * 0.5
 	
-	global_position.x = clamp(global_position.x, limit_left + half_vp.x, limit_right - half_vp.x)
-	global_position.y = clamp(global_position.y, limit_top + half_vp.y, limit_bottom - half_vp.y)
+	var min_x = limit_left + half_vp.x
+	var max_x = limit_right - half_vp.x
+	if min_x > max_x:
+		global_position.x = (limit_left + limit_right) / 2.0
+	else:
+		global_position.x = clamp(global_position.x, min_x, max_x)
+
+	var min_y = limit_top + half_vp.y
+	var max_y = limit_bottom - half_vp.y
+	if min_y > max_y:
+		global_position.y = (limit_top + limit_bottom) / 2.0
+	else:
+		global_position.y = clamp(global_position.y, min_y, max_y)
 
 # Used for buttons zoom
 func zoom_in() -> void:
@@ -88,11 +99,22 @@ func _set_camera_limits() -> void:
 	var grass := get_parent().get_node("Grass") as TileMapLayer
 	var rect: Rect2i = grass.get_used_rect()
 	
-	# Obtenir la taille réelle d'une tile en tenant compte de l'échelle
+	if rect.size.x == 0 or rect.size.y == 0:
+		return
+
+	
 	var tile_size: Vector2 = Vector2(grass.tile_set.tile_size) * grass.scale
+	var map_size: Vector2 = Vector2(rect.size) * tile_size
+	
+	# Empêcher de dézoomer plus que la taille de la map
+	var vp_size: Vector2 = get_viewport_rect().size
+	var needed_zoom_x = vp_size.x / map_size.x
+	var needed_zoom_y = vp_size.y / map_size.y
+	min_zoom = max(0.1, max(needed_zoom_x, needed_zoom_y))
+	if zoom.x < min_zoom:
+		zoom = Vector2(min_zoom, min_zoom)
 	
 	var tile_origin: Vector2 = grass.global_position
-
 	var map_origin: Vector2 = tile_origin + Vector2(rect.position) * tile_size
 	var map_end: Vector2 = tile_origin + Vector2(rect.position + rect.size) * tile_size
 
@@ -108,6 +130,9 @@ func fit_camera_to_viewport(viewport_size: Vector2) -> void:
 	var grass := get_parent().get_node("Grass") as TileMapLayer
 	var rect: Rect2i = grass.get_used_rect()
 	
+	if rect.size.x == 0 or rect.size.y == 0:
+		return
+		
 	# Obtenir la taille réelle d'une tile en tenant compte de l'échelle
 	var tile_size: Vector2 = Vector2(grass.tile_set.tile_size) * grass.scale
 	

@@ -2,13 +2,18 @@
 extends Control
 
 # --- Références aux nodes ---
-@onready var export_button = $Boutton/VBoxContainer/ExportLog
-@onready var settings_btn = $Header/SettingsBtn
-@onready var quit_btn = $Header/QuitBtn
+@onready var export_button = $MainVBox/TopBar/Margin/HBox/ExportLogBtn
+@onready var settings_btn = $MainVBox/TopBar/Margin/HBox/SettingsBtn
+@onready var quit_btn = $MainVBox/TopBar/Margin/HBox/QuitBtn
 @onready var settings_panel = $SettingsPanel
 @onready var mode_option = $SettingsPanel/VBoxContainer/ModeOption
-@onready var loading_overlay = $Simulateur/Panel/LoadingOverlay
-@onready var world = $Simulateur/Panel/SubViewportContainer/SubViewport/World
+@onready var loading_overlay = $MainVBox/MainHBox/MainArea/LoadingOverlay
+@onready var world = $MainVBox/MainHBox/MainArea/SubViewportContainer/SubViewport/World
+@onready var camera = $MainVBox/MainHBox/MainArea/SubViewportContainer/SubViewport/World/Camera2D
+@onready var zoom_in_btn = $MainVBox/TopBar/Margin/HBox/ZoomInBtn
+@onready var zoom_out_btn = $MainVBox/TopBar/Margin/HBox/ZoomOutBtn
+@onready var world_config_btn = $MainVBox/TopBar/Margin/HBox/WorldConfigBtn
+@onready var world_configurator = $WorldConfigurator
 
 # --- Variables principales ---
 var simulation_logs = []          # Données chargées depuis summary.json
@@ -28,6 +33,12 @@ func _ready():
 		settings_btn.pressed.connect(_on_settings_pressed)
 	if quit_btn:
 		quit_btn.pressed.connect(_on_quit_pressed)
+	if world_config_btn:
+		world_config_btn.pressed.connect(_on_world_config_pressed)
+	if zoom_in_btn:
+		zoom_in_btn.pressed.connect(_on_zoom_in_pressed)
+	if zoom_out_btn:
+		zoom_out_btn.pressed.connect(_on_zoom_out_pressed)
 	if mode_option:
 		var popup = mode_option.get_popup()
 		popup.add_theme_font_size_override("font_size", 35)
@@ -250,7 +261,14 @@ func clear_logs():
 # --- Gestion du Header ---
 func _on_settings_pressed():
 	if settings_panel:
-		settings_panel.visible = !settings_panel.visible
+		settings_panel.visible = not settings_panel.visible
+
+func _on_world_config_pressed():
+	if world_configurator and world_configurator.has_method("open_modal"):
+		world_configurator.open_modal()
+
+func _on_world_config_ready(config):
+	pass # Handle logic when world config is ready
 
 func _on_quit_pressed():
 	get_tree().quit()
@@ -291,3 +309,12 @@ func _on_simulation_computing():
 func _on_simulation_computed():
 	if loading_overlay:
 		loading_overlay.visible = false
+
+# --- Gestion du Zoom ---
+func _on_zoom_in_pressed():
+	if camera and camera.has_method("zoom_in"):
+		camera.zoom_in()
+
+func _on_zoom_out_pressed():
+	if camera and camera.has_method("zoom_out"):
+		camera.zoom_out()
