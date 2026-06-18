@@ -1,4 +1,5 @@
 """Construit les snapshots de contexte utilises a chaque pas de simulation."""
+
 from __future__ import annotations
 
 import copy
@@ -19,8 +20,10 @@ def compute_world_time(world: Any, step_index: int) -> Dict[str, int | bool]:
     }
 
 
-def build_step_frame(step_index: int, world_time: Dict[str, Any]) -> Dict[str, Any]:
-    """Initialise la structure standard de donnees pour un tour de simulation."""
+def build_step_frame(
+    step_index: int, world_time: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Initialise la structure standard de donnees pour un tour de simulation."""  # noqa: E501
     return {
         "step": step_index + 1,
         "hour": int(world_time["hour"]),
@@ -36,7 +39,11 @@ def build_step_frame(step_index: int, world_time: Dict[str, Any]) -> Dict[str, A
 
 def initialize_species_status(species: Any) -> Dict[str, Any]:
     """Capture the state of a species before applying the behaviour rules."""
-    display_name = species.get_display_name() if hasattr(species, "get_display_name") else species.name
+    display_name = (
+        species.get_display_name()
+        if hasattr(species, "get_display_name")
+        else species.name
+    )
     original_name = getattr(species, "original_name", species.name)
     age_years = getattr(species, "age_years", None)
     age_stage = getattr(species, "age_stage", None)
@@ -50,7 +57,9 @@ def initialize_species_status(species: Any) -> Dict[str, Any]:
         "age_years": age_years,
         "animal_id": getattr(species, "animal_id", None),
         "sprite_name": getattr(species, "sprite_name", None),
-        "species_type": getattr(species, "species_type", getattr(species, "name", "")),
+        "species_type": getattr(
+            species, "species_type", getattr(species, "name", "")
+        ),
         "diet": getattr(species, "diet", None),
         "group_id": getattr(species, "group_id", None),
         "pack_id": getattr(species, "pack_id", None),
@@ -78,8 +87,12 @@ def initialize_species_status(species: Any) -> Dict[str, Any]:
     }
 
 
-def finalize_species_status(species: Any, status: Dict[str, Any]) -> Dict[str, Any]:
-    """Inject the updated state of the species once the behaviour has been resolved."""
+def finalize_species_status(
+    species: Any, status: Dict[str, Any]
+) -> Dict[str, Any]:
+    """    Inject the updated state of the species once the behaviour has been
+    resolved.
+    """
     status.setdefault("food_event", None)
     status["after"] = {
         "x": species.x,
@@ -96,24 +109,32 @@ def finalize_species_status(species: Any, status: Dict[str, Any]) -> Dict[str, A
         "alive": getattr(species, "alive", species.vitality > 0),
         "age_years": getattr(species, "age_years", None),
         "age_stage": getattr(species, "age_stage", None),
-        "display_name": species.get_display_name() if hasattr(species, "get_display_name") else species.name,
+        "display_name": species.get_display_name()
+        if hasattr(species, "get_display_name")
+        else species.name,
     }
     status["age_years"] = status["after"].get("age_years")
     status["age_stage"] = status["after"].get("age_stage")
-    status["display_name"] = status["after"].get("display_name", status.get("display_name"))
+    status["display_name"] = status["after"].get(
+        "display_name", status.get("display_name")
+    )
     status["name"] = status["display_name"] or status["name"]
     status["motivation"] = status.get("motivation", "")
     return status
 
 
-def build_summary_payload(species_list: List[Any], world: Any) -> Dict[str, Any]:
+def build_summary_payload(
+    species_list: List[Any], world: Any
+) -> Dict[str, Any]:
     """Return an aggregate snapshot of the world after the simulation run."""
     return {
         "species": [
             {
                 "name": s.name,
                 "animal_id": getattr(s, "animal_id", None),
-                "species_type": getattr(s, "species_type", getattr(s, "name", "")),
+                "species_type": getattr(
+                    s, "species_type", getattr(s, "name", "")
+                ),
                 "sprite_name": getattr(s, "sprite_name", None),
                 "diet": getattr(s, "diet", None),
                 "group_id": getattr(s, "group_id", None),
@@ -121,8 +142,12 @@ def build_summary_payload(species_list: List[Any], world: Any) -> Dict[str, Any]
                 "sex": getattr(s, "sex", None),
                 "age_stage": getattr(s, "age_stage", None),
                 "age_years": getattr(s, "age_years", None),
-                "original_name": getattr(s, "original_name", getattr(s, "name", "")),
-                "display_name": s.get_display_name() if hasattr(s, "get_display_name") else getattr(s, "name", ""),
+                "original_name": getattr(
+                    s, "original_name", getattr(s, "name", "")
+                ),
+                "display_name": s.get_display_name()
+                if hasattr(s, "get_display_name")
+                else getattr(s, "name", ""),
                 "traits": copy.deepcopy(getattr(s, "traits", {})),
                 "position": [s.x, s.y],
                 "vitality": s.vitality,
@@ -140,11 +165,13 @@ def build_summary_payload(species_list: List[Any], world: Any) -> Dict[str, Any]
         "remaining_food": sum(
             1
             for food in world.food_sources
-            if not hasattr(world, "food_has_supply") or world.food_has_supply(food)
+            if not hasattr(world, "food_has_supply")
+            or world.food_has_supply(food)
         ),
         "remaining_water": sum(
             1
             for water in world.water_sources
-            if not hasattr(world, "water_has_supply") or world.water_has_supply(water)
+            if not hasattr(world, "water_has_supply")
+            or world.water_has_supply(water)
         ),
     }

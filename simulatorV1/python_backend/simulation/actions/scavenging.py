@@ -1,4 +1,5 @@
 """Comportements de charognage pour les carnivores opportunistes."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, Optional, Set, Tuple
@@ -41,7 +42,11 @@ def _state_set(state: Dict[str, Any], key: str) -> Set[Any]:
 
 def _find_shared_kill(animal: Animal) -> Optional[Dict[str, object]]:
     scavenger_cfg = animal.get_trait("scavenger", {})
-    follow_packs = scavenger_cfg.get("follow_packs") if isinstance(scavenger_cfg, dict) else None
+    follow_packs = (
+        scavenger_cfg.get("follow_packs")
+        if isinstance(scavenger_cfg, dict)
+        else None
+    )
     if not follow_packs:
         return None
     for pack_id in follow_packs:
@@ -52,7 +57,11 @@ def _find_shared_kill(animal: Animal) -> Optional[Dict[str, object]]:
 
 
 def _scavenge_memory(animal: Animal) -> Dict[str, Any]:
-    state = animal.recall_social("scavenge_memory", {}) if hasattr(animal, "recall_social") else {}
+    state = (
+        animal.recall_social("scavenge_memory", {})
+        if hasattr(animal, "recall_social")
+        else {}
+    )
     if not isinstance(state, dict):
         state = {}
     if hasattr(animal, "remember_social"):
@@ -110,7 +119,11 @@ def _handle_failed_approach(
         blocked = _state_set(shared_kill, "blocked")
         blocked.add(animal.animal_id)
         participants = shared_kill.get("participants")
-        if isinstance(participants, dict) and participants and blocked.issuperset(participants.keys()):
+        if (
+            isinstance(participants, dict)
+            and participants
+            and blocked.issuperset(participants.keys())
+        ):
             shared_kill.clear()
     if permanently_blocked:
         return False, "", False
@@ -119,15 +132,23 @@ def _handle_failed_approach(
     return False, "", False
 
 
-def _nearest_unblocked_carcass(animal: Animal, world, blocked_food_ids: Set[str]) -> Optional[Dict[str, Any]]:
+def _nearest_unblocked_carcass(
+    animal: Animal, world, blocked_food_ids: Set[str]
+) -> Optional[Dict[str, Any]]:
     if not hasattr(world, "food_sources"):
         return None
     candidates = [
         food
         for food in world.food_sources
         if food.get("id") not in blocked_food_ids
-        and (not hasattr(world, "food_has_supply") or world.food_has_supply(food))
-        and (not hasattr(world, "food_matches_diet") or world.food_matches_diet(food, animal.diet))
+        and (
+            not hasattr(world, "food_has_supply")
+            or world.food_has_supply(food)
+        )
+        and (
+            not hasattr(world, "food_matches_diet")
+            or world.food_matches_diet(food, animal.diet)
+        )
     ]
     if not candidates:
         return None
@@ -140,18 +161,24 @@ def seek_carcass_opportunity(
     *,
     hunger_threshold: float = 45.0,
 ) -> Tuple[bool, str, bool]:
-    """Dirige un charognard vers une carcasse en respectant les priorites de nourrissage."""
+    """Dirige un charognard vers une carcasse en respectant
+    les priorites de nourrissage.
+    """
     scavenger_cfg = animal.get_trait("scavenger", {})
     if not isinstance(scavenger_cfg, dict):
         return False, "", False
 
-    if animal.hunger < float(scavenger_cfg.get("hunger_threshold", hunger_threshold)):
+    if animal.hunger < float(
+        scavenger_cfg.get("hunger_threshold", hunger_threshold)
+    ):
         return False, "", False
 
     blocked_food_ids = set(_tick_blocked_foods(animal).keys())
     shared_kill = _find_shared_kill(animal)
     wait_priorities = _priority_set(scavenger_cfg.get("wait_for_priorities"))
-    wait_distance = float(scavenger_cfg.get("wait_distance", animal.vision * 0.8))
+    wait_distance = float(
+        scavenger_cfg.get("wait_distance", animal.vision * 0.8)
+    )
 
     if shared_kill:
         location = shared_kill.get("position")
@@ -163,7 +190,11 @@ def seek_carcass_opportunity(
                     if food.get("id") == food_id:
                         carcass = food
                         break
-                if carcass is not None and hasattr(world, "food_has_supply") and not world.food_has_supply(carcass):
+                if (
+                    carcass is not None
+                    and hasattr(world, "food_has_supply")
+                    and not world.food_has_supply(carcass)
+                ):
                     carcass = None
             if carcass is None:
                 return False, "", False
@@ -172,7 +203,10 @@ def seek_carcass_opportunity(
                 blocked = _state_set(shared_kill, "blocked")
                 blocked.add(animal.animal_id)
                 return False, "", False
-            target_point = {"x": float(carcass.get("x", location[0])), "y": float(carcass.get("y", location[1]))}
+            target_point = {
+                "x": float(carcass.get("x", location[0])),
+                "y": float(carcass.get("y", location[1])),
+            }
             distance = animal.distance_to(target_point)
             participants = shared_kill.get("participants")
             if not isinstance(participants, dict):
@@ -254,4 +288,8 @@ def seek_carcass_opportunity(
         )
     _clear_failure(animal, food_id)
     resolve = distance <= CARNIVORE_EAT_DISTANCE
-    return True, "scavenge_consume" if resolve else "scavenge_approach", resolve
+    return (
+        True,
+        "scavenge_consume" if resolve else "scavenge_approach",
+        resolve,
+    )

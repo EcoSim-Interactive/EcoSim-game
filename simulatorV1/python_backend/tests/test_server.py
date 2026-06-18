@@ -1,11 +1,12 @@
-import unittest
 import json
+import unittest
 from unittest.mock import AsyncMock
 
 from infrastructure.http.server import (
-    handle_command,
     _reset_runtime_state,
+    handle_command,
 )
+
 
 class TestWebSocketServer(unittest.IsolatedAsyncioTestCase):
     def setUp(self):
@@ -55,6 +56,7 @@ class TestWebSocketServer(unittest.IsolatedAsyncioTestCase):
         sent_data = json.loads(self.mock_ws.send.call_args[0][0])
         self.assertEqual(sent_data["type"], "status")
         self.assertEqual(sent_data["data"], "stopped")
-        
-if __name__ == '__main__':
+
+
+if __name__ == "__main__":
     unittest.main()

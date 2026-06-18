@@ -1,4 +1,5 @@
 """Helpers de persistance JSON pour les sorties de simulation."""
+
 from __future__ import annotations
 
 import copy
@@ -56,7 +57,9 @@ def _slugify(value: str | None, *, default: str = "entity") -> str:
     return value or default
 
 
-def write_step(logs_dir: str, step_number: int, step_data: Dict[str, Any]) -> str:
+def write_step(
+    logs_dir: str, step_number: int, step_data: Dict[str, Any]
+) -> str:
     ensure_logs_dir(logs_dir)
     filename = os.path.join(logs_dir, f"step{step_number + 1}.json")
     with open(filename, "w", encoding="utf-8") as handle:
@@ -82,7 +85,9 @@ def write_summary(
     return path
 
 
-def _compact_steps(steps: Sequence[Dict[str, Any]]) -> Iterable[Dict[str, Any]]:
+def _compact_steps(
+    steps: Sequence[Dict[str, Any]],
+) -> Iterable[Dict[str, Any]]:
     """Reduce step payloads to the fields utiles au rerun/affichage Godot."""
     for step in steps:
         if not isinstance(step, dict):
@@ -134,8 +139,9 @@ def write_steps_bundle(
 ) -> str:
     """Persist all computed steps into a single JSON file.
 
-    When ``summary_data`` is provided, it is appended under the ``summary`` key so
-    the consumer can access the resume without opening another file.
+    When ``summary_data`` is provided, it is appended under the
+    ``summary`` key so the consumer can access the resume without
+    opening another file.
     """
 
     ensure_logs_dir(logs_dir)
@@ -147,7 +153,9 @@ def write_steps_bundle(
 
     path = os.path.join(run_dir, filename)
     payload: Dict[str, Any] = {}
-    payload["steps"] = list(_compact_steps(steps_data) if compact else steps_data)
+    payload["steps"] = list(
+        _compact_steps(steps_data) if compact else steps_data
+    )
     if summary_data is not None:
         payload["summary"] = summary_data
     if world_data is not None:
@@ -170,7 +178,9 @@ def _serialize_meta(meta: Dict[str, Any]) -> Dict[str, Any]:
     return serialized
 
 
-def _compact_registry_entries(entries: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
+def _compact_registry_entries(
+    entries: Sequence[Dict[str, Any]],
+) -> Dict[str, Any]:
     """Produit un resume leger pour les vues derivees groupe/espece/regime."""
     action_counts: Dict[str, int] = {}
     total_entries = 0
@@ -208,11 +218,21 @@ def _compact_registry_entries(entries: Sequence[Dict[str, Any]]) -> Dict[str, An
     }
 
 
-def _collect_members(meta: Dict[str, Any], summary_lookup: Dict[str, Any]) -> Iterable[Dict[str, Any]]:
+def _collect_members(
+    meta: Dict[str, Any], summary_lookup: Dict[str, Any]
+) -> Iterable[Dict[str, Any]]:
     identifiers = meta.get("member_ids")
     collected: list[Dict[str, Any]] = []
-    if isinstance(identifiers, Iterable) and not isinstance(identifiers, (str, bytes)):
-        for identifier in sorted({str(item) for item in identifiers if isinstance(item, (str, int, str))}):
+    if isinstance(identifiers, Iterable) and not isinstance(
+        identifiers, (str, bytes)
+    ):
+        for identifier in sorted(
+            {
+                str(item)
+                for item in identifiers
+                if isinstance(item, (str, int, str))
+            }
+        ):
             summary = summary_lookup.get(identifier)
             if summary:
                 collected.append(summary)
@@ -221,7 +241,13 @@ def _collect_members(meta: Dict[str, Any], summary_lookup: Dict[str, Any]) -> It
 
     members = meta.get("members")
     if isinstance(members, Iterable) and not isinstance(members, (str, bytes)):
-        for name in sorted({str(item) for item in members if isinstance(item, (str, int, str))}):
+        for name in sorted(
+            {
+                str(item)
+                for item in members
+                if isinstance(item, (str, int, str))
+            }
+        ):
             summary = summary_lookup.get(name)
             if summary:
                 collected.append(summary)
@@ -331,13 +357,23 @@ def write_entity_logs(
             animal_bucket["entries"].append(entry)
             meta = animal_bucket["meta"]
             if after_state:
-                meta["age_years"] = after_state.get("age_years", meta.get("age_years"))
-                meta["age_stage"] = after_state.get("age_stage", meta.get("age_stage"))
-                meta["display_name"] = after_state.get("display_name", meta.get("display_name", meta.get("name")))
+                meta["age_years"] = after_state.get(
+                    "age_years", meta.get("age_years")
+                )
+                meta["age_stage"] = after_state.get(
+                    "age_stage", meta.get("age_stage")
+                )
+                meta["display_name"] = after_state.get(
+                    "display_name", meta.get("display_name", meta.get("name"))
+                )
                 meta["name"] = meta.get("display_name", meta.get("name"))
             meta["sex"] = status.get("sex", meta.get("sex"))
-            meta["original_name"] = status.get("original_name", meta.get("original_name"))
-            meta["traits"] = copy.deepcopy(status.get("traits", meta.get("traits", {})))
+            meta["original_name"] = status.get(
+                "original_name", meta.get("original_name")
+            )
+            meta["traits"] = copy.deepcopy(
+                status.get("traits", meta.get("traits", {}))
+            )
             meta["alive"] = after_state.get("alive", meta.get("alive", True))
             if not meta.get("alive", True):
                 meta["death_step"] = step_info["step"]
@@ -427,10 +463,16 @@ def write_entity_logs(
                 summary = summary_lookup.get(str(meta["name"]))
             if summary:
                 data["summary"] = summary
-            members_snapshot = list(_collect_members(payload.get("meta", {}), summary_lookup))
+            members_snapshot = list(
+                _collect_members(payload.get("meta", {}), summary_lookup)
+            )
             if members_snapshot:
                 data["members_summary"] = members_snapshot
-                data_meta_members = [member.get("display_name") or member.get("name") for member in members_snapshot if isinstance(member, dict)]
+                data_meta_members = [
+                    member.get("display_name") or member.get("name")
+                    for member in members_snapshot
+                    if isinstance(member, dict)
+                ]
                 if data_meta_members:
                     data["meta"]["members"] = data_meta_members
             label = (

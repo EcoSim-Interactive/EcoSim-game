@@ -1,4 +1,5 @@
-"""Moteur principal qui orchestre les tours de simulation et la journalisation."""
+"""Moteur principal qui orchestre les tours de simulation et la journalisation."""  # noqa: E501
+
 from __future__ import annotations
 
 import copy
@@ -43,7 +44,11 @@ class SimulationEngine:
             animal.set_pack_id(getattr(animal, "pack_id", None))
             converted_species.append(animal)
         self.species_list = converted_species
-        self._active_species: List[Animal] = [animal for animal in self.species_list if getattr(animal, "alive", True)]
+        self._active_species: List[Animal] = [
+            animal
+            for animal in self.species_list
+            if getattr(animal, "alive", True)
+        ]
         self.steps = steps
         self.write_logs = write_logs
         self.logs_dir = logs_dir
@@ -56,7 +61,9 @@ class SimulationEngine:
         self.steps_file: Optional[str] = None
         self.summary_file: Optional[str] = None
         self.last_generation_duration: Optional[float] = None
-        self._initial_world_snapshot: Dict[str, Any] = self._snapshot_world(world)
+        self._initial_world_snapshot: Dict[str, Any] = self._snapshot_world(
+            world
+        )
         if self.write_logs:
             log_writer.ensure_logs_dir(self.logs_dir)
 
@@ -80,11 +87,19 @@ class SimulationEngine:
         for animal in list(self._active_species):
             if not getattr(animal, "alive", True):
                 status = initialize_species_status(animal)
-                predator_id = animal.recall_social("killed_by") if hasattr(animal, "recall_social") else None
+                predator_id = (
+                    animal.recall_social("killed_by")
+                    if hasattr(animal, "recall_social")
+                    else None
+                )
                 if predator_id is not None:
-                    self.logger.log(f"{animal.name} a ete tue avant son tour par le predateur {predator_id}.")
+                    self.logger.log(
+                        f"{animal.name} a ete tue avant son tour par le predateur {predator_id}."  # noqa: E501
+                    )
                     status["action"] = "killed_by_predation"
-                    status["motivation"] = f"attaque du predateur {predator_id}"
+                    status["motivation"] = (
+                        f"attaque du predateur {predator_id}"
+                    )
                 else:
                     self._handle_exhaustion(animal, status)
                 finalize_species_status(animal, status)
@@ -104,7 +119,9 @@ class SimulationEngine:
             if was_alive:
                 animal.update_vitals(world_time)
                 if hasattr(self.world, "minutes_per_step"):
-                    animal.advance_age(getattr(self.world, "minutes_per_step", 0))
+                    animal.advance_age(
+                        getattr(self.world, "minutes_per_step", 0)
+                    )
             finalize_species_status(animal, status)
             step_data["species"].append(status)
             food_result = status.get("food_event") if was_alive else None
@@ -145,9 +162,14 @@ class SimulationEngine:
 
         return steps_data
 
-    def generate_all_steps(self, *, persist: bool = True) -> List[Dict[str, Any]]:
-        """Compute every step once, cache them, and optionally persist to disk."""
-        if self._precomputed_steps is None or len(self._precomputed_steps) != self.steps:
+    def generate_all_steps(
+        self, *, persist: bool = True
+    ) -> List[Dict[str, Any]]:
+        """Compute every step once, cache them, and optionally persist to disk."""  # noqa: E501
+        if (
+            self._precomputed_steps is None
+            or len(self._precomputed_steps) != self.steps
+        ):
             steps_data = self.run()
         else:
             steps_data = list(self._precomputed_steps)
@@ -156,7 +178,9 @@ class SimulationEngine:
             self._summary_cache = self._build_summary()
 
         if self.write_logs and persist:
-            run_index = self._run_index or log_writer.next_run_index(self.logs_dir)
+            run_index = self._run_index or log_writer.next_run_index(
+                self.logs_dir
+            )
             self._run_index = run_index
             self.steps_file = log_writer.write_steps_bundle(
                 self.logs_dir,
@@ -188,7 +212,9 @@ class SimulationEngine:
         if self._summary_cache is None:
             self._summary_cache = self._build_summary()
         if self.write_logs:
-            run_index = self._run_index or log_writer.next_run_index(self.logs_dir)
+            run_index = self._run_index or log_writer.next_run_index(
+                self.logs_dir
+            )
             self._run_index = run_index
             self.summary_file = log_writer.write_summary(
                 self.logs_dir,
@@ -212,12 +238,19 @@ class SimulationEngine:
     # ------------------------------------------------------------------
     # Helpers internes utilises pendant un run
 
-    def _handle_exhaustion(self, animal: Animal, status: Dict[str, Any]) -> None:
+    def _handle_exhaustion(
+        self, animal: Animal, status: Dict[str, Any]
+    ) -> None:
         self.logger.log(f"{animal.name} est epuise.")
         status["action"] = "exhausted"
         status["motivation"] = "vitalite nulle"
 
-    def _process_species(self, animal: Animal, status: Dict[str, Any], world_time: Dict[str, Any]) -> None:
+    def _process_species(
+        self,
+        animal: Animal,
+        status: Dict[str, Any],
+        world_time: Dict[str, Any],
+    ) -> None:
         return ai_decision.process_species(
             animal,
             status,
@@ -227,7 +260,9 @@ class SimulationEngine:
             self.logger,
         )
 
-    def _apply_food_result(self, food_event: Optional[Dict[str, Any]], step_data: Dict[str, Any]) -> None:
+    def _apply_food_result(
+        self, food_event: Optional[Dict[str, Any]], step_data: Dict[str, Any]
+    ) -> None:
         if not food_event:
             return
         snapshot = dict(food_event)
@@ -252,7 +287,7 @@ class SimulationEngine:
         return summary
 
     def _snapshot_world(self, world: Any) -> Dict[str, Any]:
-        """Capture le monde avant le run (evite les carcasses/post-mutations)."""
+        """Capture le monde avant le run (evite les carcasses/post-mutations)."""  # noqa: E501
         terrain = getattr(world, "terrain", None)
         if terrain in (None, []):
             if hasattr(world, "generate_terrain"):
@@ -269,6 +304,8 @@ class SimulationEngine:
             "height": getattr(world, "height", None),
             "minutes_per_step": getattr(world, "minutes_per_step", None),
             "food_sources": copy.deepcopy(getattr(world, "food_sources", [])),
-            "water_sources": copy.deepcopy(getattr(world, "water_sources", [])),
+            "water_sources": copy.deepcopy(
+                getattr(world, "water_sources", [])
+            ),
             "terrain": copy.deepcopy(terrain) if terrain is not None else [],
         }

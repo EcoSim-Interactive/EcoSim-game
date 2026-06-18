@@ -1,4 +1,7 @@
-"""Gestion orientee objet du catalogue d'especes et de la selection utilisateur."""
+"""Gestion orientee objet du catalogue d'especes et
+de la selection utilisateur.
+"""
+
 from __future__ import annotations
 
 import copy
@@ -11,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class SpeciesCatalogStore:
-    """Encapsule le chargement/validation/persistance du catalogue d'especes."""
+    """Encapsule le chargement/validation/persistance du catalogue
+    d'especes.
+    """
 
     def __init__(
         self,
@@ -27,11 +32,15 @@ class SpeciesCatalogStore:
         self.legacy_selection_path = legacy_selection_file
 
     @staticmethod
-    def _deep_merge(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    def _deep_merge(
+        base: Dict[str, Any], override: Dict[str, Any]
+    ) -> Dict[str, Any]:
         merged = copy.deepcopy(base)
         for key, value in override.items():
             if isinstance(value, dict) and isinstance(merged.get(key), dict):
-                merged[key] = SpeciesCatalogStore._deep_merge(merged[key], value)
+                merged[key] = SpeciesCatalogStore._deep_merge(
+                    merged[key], value
+                )
             else:
                 merged[key] = copy.deepcopy(value)
         return merged
@@ -52,7 +61,9 @@ class SpeciesCatalogStore:
         return payload
 
     @staticmethod
-    def _normalize_template(template: Dict[str, Any], profiles: Dict[str, Dict[str, Any]]) -> Dict[str, Any]:
+    def _normalize_template(
+        template: Dict[str, Any], profiles: Dict[str, Dict[str, Any]]
+    ) -> Dict[str, Any]:
         inherits = template.get("inherits")
         profile_data: Dict[str, Any] = {}
         if isinstance(inherits, str) and inherits in profiles:
@@ -112,10 +123,20 @@ class SpeciesCatalogStore:
             "default_selection": default_selection,
         }
 
-    def build_selection_from_catalog(self, catalog: Dict[str, Any]) -> List[Dict[str, Any]]:
-        templates = catalog.get("templates") if isinstance(catalog, dict) else []
-        default_selection = catalog.get("default_selection") if isinstance(catalog, dict) else []
-        if not isinstance(templates, list) or not isinstance(default_selection, list):
+    def build_selection_from_catalog(
+        self, catalog: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        templates = (
+            catalog.get("templates") if isinstance(catalog, dict) else []
+        )
+        default_selection = (
+            catalog.get("default_selection")
+            if isinstance(catalog, dict)
+            else []
+        )
+        if not isinstance(templates, list) or not isinstance(
+            default_selection, list
+        ):
             return []
 
         template_by_id: Dict[str, Dict[str, Any]] = {}
@@ -130,7 +151,10 @@ class SpeciesCatalogStore:
             if not isinstance(item, dict):
                 continue
             template_id = item.get("template_id")
-            if not isinstance(template_id, str) or template_id not in template_by_id:
+            if (
+                not isinstance(template_id, str)
+                or template_id not in template_by_id
+            ):
                 continue
 
             count = item.get("count", 0)
@@ -148,8 +172,12 @@ class SpeciesCatalogStore:
 
         return selection
 
-    def sanitize_selection(self, raw_selection: List[Dict[str, Any]], catalog: Dict[str, Any]) -> List[Dict[str, Any]]:
-        templates = catalog.get("templates") if isinstance(catalog, dict) else []
+    def sanitize_selection(
+        self, raw_selection: List[Dict[str, Any]], catalog: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        templates = (
+            catalog.get("templates") if isinstance(catalog, dict) else []
+        )
         template_by_id: Dict[str, Dict[str, Any]] = {}
         if isinstance(templates, list):
             for tpl in templates:
@@ -161,7 +189,10 @@ class SpeciesCatalogStore:
             if not isinstance(entry, dict):
                 continue
             template_id = entry.get("template_id")
-            if not isinstance(template_id, str) or template_id not in template_by_id:
+            if (
+                not isinstance(template_id, str)
+                or template_id not in template_by_id
+            ):
                 continue
 
             merged = self._deep_merge(template_by_id[template_id], entry)
@@ -176,17 +207,27 @@ class SpeciesCatalogStore:
 
             for field in ("vision", "smell_range", "speed"):
                 try:
-                    merged[field] = float(merged.get(field, template_by_id[template_id].get(field, 0.0)))
+                    merged[field] = float(
+                        merged.get(
+                            field, template_by_id[template_id].get(field, 0.0)
+                        )
+                    )
                 except (TypeError, ValueError):
-                    merged[field] = float(template_by_id[template_id].get(field, 0.0))
+                    merged[field] = float(
+                        template_by_id[template_id].get(field, 0.0)
+                    )
 
             if "diurnal" in merged:
                 merged["diurnal"] = bool(merged["diurnal"])
 
             if not isinstance(merged.get("temperament"), str):
-                merged["temperament"] = str(template_by_id[template_id].get("temperament", "neutre"))
+                merged["temperament"] = str(
+                    template_by_id[template_id].get("temperament", "neutre")
+                )
             if not isinstance(merged.get("diet"), str):
-                merged["diet"] = str(template_by_id[template_id].get("diet", "omnivore"))
+                merged["diet"] = str(
+                    template_by_id[template_id].get("diet", "omnivore")
+                )
 
             nr = merged.get("nutrition_range")
             if not isinstance(nr, dict):
@@ -200,7 +241,10 @@ class SpeciesCatalogStore:
             if nr_min <= 0 or nr_max <= 0:
                 nr_min = 80.0
                 nr_max = 80.0
-            merged["nutrition_range"] = {"min": min(nr_min, nr_max), "max": max(nr_min, nr_max)}
+            merged["nutrition_range"] = {
+                "min": min(nr_min, nr_max),
+                "max": max(nr_min, nr_max),
+            }
 
             sanitized.append(merged)
 
@@ -213,8 +257,12 @@ class SpeciesCatalogStore:
 
         if self.legacy_selection_path is not None:
             legacy_payload = self._load_json(self.legacy_selection_path)
-            if legacy_payload and isinstance(legacy_payload.get("selection"), list):
-                sanitized = self.sanitize_selection(legacy_payload["selection"], catalog)
+            if legacy_payload and isinstance(
+                legacy_payload.get("selection"), list
+            ):
+                sanitized = self.sanitize_selection(
+                    legacy_payload["selection"], catalog
+                )
                 if sanitized:
                     self.save_selection(sanitized)
                     return sanitized
@@ -224,10 +272,14 @@ class SpeciesCatalogStore:
     def save_selection(self, selection: List[Dict[str, Any]]) -> None:
         self.base_dir.mkdir(parents=True, exist_ok=True)
         with self.selection_path.open("w", encoding="utf-8") as handle:
-            json.dump({"selection": selection}, handle, ensure_ascii=False, indent=2)
+            json.dump(
+                {"selection": selection}, handle, ensure_ascii=False, indent=2
+            )
 
     @staticmethod
-    def selection_to_species_config(selection: List[Dict[str, Any]]) -> Dict[str, Any]:
+    def selection_to_species_config(
+        selection: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
         defaults = {
             "vision": 110,
             "smell_range": 220,
@@ -249,19 +301,40 @@ class SpeciesCatalogStore:
             if count_int <= 0:
                 continue
 
-            species_type = str(entry.get("species_type") or entry.get("id") or entry.get("template_id") or "species")
-            nutrition_range = entry.get("nutrition_range") if isinstance(entry.get("nutrition_range"), dict) else {}
-            traits = entry.get("traits") if isinstance(entry.get("traits"), dict) else {}
+            species_type = str(
+                entry.get("species_type")
+                or entry.get("id")
+                or entry.get("template_id")
+                or "species"
+            )
+            nutrition_range = (
+                entry.get("nutrition_range")
+                if isinstance(entry.get("nutrition_range"), dict)
+                else {}
+            )
+            traits = (
+                entry.get("traits")
+                if isinstance(entry.get("traits"), dict)
+                else {}
+            )
 
             pop_entry: Dict[str, Any] = {
-                "name": str(entry.get("display_name") or entry.get("name") or species_type.title()),
+                "name": str(
+                    entry.get("display_name")
+                    or entry.get("name")
+                    or species_type.title()
+                ),
                 "species_type": species_type,
                 "count": count_int,
                 "vision": float(entry.get("vision", defaults["vision"])),
-                "smell_range": float(entry.get("smell_range", defaults["smell_range"])),
+                "smell_range": float(
+                    entry.get("smell_range", defaults["smell_range"])
+                ),
                 "speed": float(entry.get("speed", defaults["speed"])),
                 "diurnal": bool(entry.get("diurnal", defaults["diurnal"])),
-                "temperament": str(entry.get("temperament", defaults["temperament"])),
+                "temperament": str(
+                    entry.get("temperament", defaults["temperament"])
+                ),
                 "diet": str(entry.get("diet", "omnivore")),
                 "traits": copy.deepcopy(traits),
                 "body_nutrition_range": {
@@ -273,7 +346,10 @@ class SpeciesCatalogStore:
             position = entry.get("position")
             if isinstance(position, (list, tuple)) and len(position) >= 2:
                 try:
-                    pop_entry["position"] = [float(position[0]), float(position[1])]
+                    pop_entry["position"] = [
+                        float(position[0]),
+                        float(position[1]),
+                    ]
                 except (TypeError, ValueError):
                     pass
 
@@ -283,7 +359,9 @@ class SpeciesCatalogStore:
                 for item in positions:
                     if isinstance(item, (list, tuple)) and len(item) >= 2:
                         try:
-                            normalized_positions.append([float(item[0]), float(item[1])])
+                            normalized_positions.append(
+                                [float(item[0]), float(item[1])]
+                            )
                         except (TypeError, ValueError):
                             continue
                 if normalized_positions:

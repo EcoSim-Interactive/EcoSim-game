@@ -1,17 +1,18 @@
-import unittest
 import json
+import unittest
 from pathlib import Path
 from unittest.mock import patch
 
 from app.world_loader import (
+    _coerce_bool,
+    _coerce_float,
+    _positive_float,
+    _positive_int,
+    _resolve_config_path,
     load_world,
     load_world_and_species,
-    _resolve_config_path,
-    _coerce_float,
-    _coerce_bool,
-    _positive_int,
-    _positive_float
 )
+
 
 class TestWorldLoader(unittest.TestCase):
     def test_coerce_float(self):
@@ -39,19 +40,21 @@ class TestWorldLoader(unittest.TestCase):
         self.assertIsNone(_positive_float(-2.0))
         self.assertIsNone(_positive_float("foo"))
 
-    @patch('app.world_loader.load_config')
+    @patch("app.world_loader.load_config")
     def test_load_world_fallback_on_error(self, mock_load_config):
         mock_load_config.side_effect = FileNotFoundError("Not found")
         world = load_world(fallback_food=50, fallback_water=20)
-        
+
         self.assertTrue(len(world.food_sources) > 0)
         self.assertTrue(len(world.water_sources) > 0)
 
-    @patch('app.world_loader.load_config')
+    @patch("app.world_loader.load_config")
     def test_load_world_and_species_fallback(self, mock_load_config):
         mock_load_config.side_effect = json.JSONDecodeError("Error", "", 0)
-        world, species = load_world_and_species(fallback_food=10, fallback_water=5)
-        
+        world, species = load_world_and_species(
+            fallback_food=10, fallback_water=5
+        )
+
         self.assertTrue(len(world.food_sources) > 0)
         self.assertTrue(len(world.water_sources) > 0)
         self.assertGreater(len(species), 0)
@@ -62,5 +65,6 @@ class TestWorldLoader(unittest.TestCase):
         resolved = _resolve_config_path(str(abs_path))
         self.assertEqual(resolved, abs_path)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

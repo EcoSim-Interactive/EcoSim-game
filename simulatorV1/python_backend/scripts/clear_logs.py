@@ -1,4 +1,5 @@
 """Script utilitaire pour nettoyer les journaux generes dans le workspace."""
+
 from __future__ import annotations
 
 import logging

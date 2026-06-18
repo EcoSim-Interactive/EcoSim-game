@@ -1,4 +1,5 @@
 """Serveur WebSocket qui expose le moteur de simulation au client Godot."""
+
 from __future__ import annotations
 
 import asyncio
@@ -13,11 +14,16 @@ import websockets
 
 from app.config import DEFAULT_SETTINGS
 from app.species_catalog import SpeciesCatalogStore
-from app.world_loader import build_species_from_config, build_world_from_config, load_config
+from app.world_loader import (
+    build_species_from_config,
+    build_world_from_config,
+    load_config,
+)
 from domain import World
 from simulation import Simulation
 
-# Etat global du serveur pour la session courante --------------------------------
+# Etat global du serveur pour la session courante
+# --------------------------------
 
 logger = logging.getLogger(__name__)
 
@@ -38,13 +44,21 @@ generation_duration: Optional[float] = None
 species_catalog_cache: Optional[Dict[str, Any]] = None
 species_selection_cache: Optional[List[Dict[str, Any]]] = None
 species_store = SpeciesCatalogStore(
-    legacy_selection_file=(Path(__file__).resolve().parents[2] / "app" / "species_selection.json")
+    legacy_selection_file=(
+        Path(__file__).resolve().parents[2] / "app" / "species_selection.json"
+    )
 )
 
 
 def _reset_runtime_state(*, clear_events: bool = True) -> None:
     """Reinitialise les donnees derives de la simulation courante."""
-    global precomputed_steps, summary_cache, steps_file, summary_file, step_cursor, compute_task
+    global \
+        precomputed_steps, \
+        summary_cache, \
+        steps_file, \
+        summary_file, \
+        step_cursor, \
+        compute_task
     precomputed_steps = []
     summary_cache = None
     steps_file = None
@@ -78,19 +92,25 @@ def _coerce_positive_int(value: Any) -> Optional[int]:
     return number if number > 0 else None
 
 
-def _load_catalog_with_selection() -> Tuple[Dict[str, Any], List[Dict[str, Any]]]:
+def _load_catalog_with_selection() -> Tuple[
+    Dict[str, Any], List[Dict[str, Any]]
+]:
     global species_catalog_cache, species_selection_cache
 
     if species_catalog_cache is None:
         species_catalog_cache = species_store.load_catalog()
 
     if species_selection_cache is None:
-        species_selection_cache = species_store.build_selection_from_catalog(species_catalog_cache)
+        species_selection_cache = species_store.build_selection_from_catalog(
+            species_catalog_cache
+        )
 
     return species_catalog_cache, species_selection_cache
 
 
-def _build_config_with_species_selection(base_config: Dict[str, Any]) -> Dict[str, Any]:
+def _build_config_with_species_selection(
+    base_config: Dict[str, Any],
+) -> Dict[str, Any]:
     catalog, selection = _load_catalog_with_selection()
     _ = catalog  # garde la reference explicite pour lisibilite
     config = dict(base_config)
@@ -98,12 +118,22 @@ def _build_config_with_species_selection(base_config: Dict[str, Any]) -> Dict[st
     return config
 
 
-async def _send_species_catalog(websocket: websockets.WebSocketServerProtocol) -> None:
+async def _send_species_catalog(
+    websocket: websockets.WebSocketServerProtocol,
+) -> None:
     catalog, _ = _load_catalog_with_selection()
     config, _ = load_config(DEFAULT_SETTINGS.world_config_path)
     world_section = config.get("world", {}) if isinstance(config, dict) else {}
-    world_width = int(world_section.get("width", 1000)) if isinstance(world_section, dict) else 1000
-    world_height = int(world_section.get("height", 1000)) if isinstance(world_section, dict) else 1000
+    world_width = (
+        int(world_section.get("width", 1000))
+        if isinstance(world_section, dict)
+        else 1000
+    )
+    world_height = (
+        int(world_section.get("height", 1000))
+        if isinstance(world_section, dict)
+        else 1000
+    )
     await websocket.send(
         json.dumps(
             {
@@ -125,14 +155,32 @@ async def _configure_species_selection(
 ) -> None:
     global sim, world, species_selection_cache
 
-    payload = obj.get("value") if isinstance(obj.get("value"), dict) else obj.get("data")
+    payload = (
+        obj.get("value")
+        if isinstance(obj.get("value"), dict)
+        else obj.get("data")
+    )
     if not isinstance(payload, dict):
-        await websocket.send(json.dumps({"type": "error", "message": "configure_species : payload manquant"}))
+        await websocket.send(
+            json.dumps(
+                {
+                    "type": "error",
+                    "message": "configure_species : payload manquant",
+                }
+            )
+        )
         return
 
     raw_selection = payload.get("selection")
     if not isinstance(raw_selection, list):
-        await websocket.send(json.dumps({"type": "error", "message": "configure_species : selection invalide"}))
+        await websocket.send(
+            json.dumps(
+                {
+                    "type": "error",
+                    "message": "configure_species : selection invalide",
+                }
+            )
+        )
         return
 
     catalog, _ = _load_catalog_with_selection()
@@ -156,10 +204,15 @@ async def _configure_species_selection(
             }
         )
     )
-    logger.info("Configuration especes enregistree (%s templates actifs).", len(sanitized))
+    logger.info(
+        "Configuration especes enregistree (%s templates actifs).",
+        len(sanitized),
+    )
 
 
-async def _send_world_config(websocket: websockets.WebSocketServerProtocol) -> None:
+async def _send_world_config(
+    websocket: websockets.WebSocketServerProtocol,
+) -> None:
     from app.world_loader import _resolve_config_path
 
     config_path = _resolve_config_path(DEFAULT_SETTINGS.world_config_path)
@@ -175,7 +228,11 @@ async def _send_world_config(websocket: websockets.WebSocketServerProtocol) -> N
             )
         )
     except Exception as exc:
-        await websocket.send(json.dumps({"type": "error", "message": f"Erreur lecture config: {exc}"}))
+        await websocket.send(
+            json.dumps(
+                {"type": "error", "message": f"Erreur lecture config: {exc}"}
+            )
+        )
 
 
 async def _configure_world(
@@ -185,9 +242,20 @@ async def _configure_world(
     global sim, world
     from app.world_loader import _resolve_config_path
 
-    payload = obj.get("value") if isinstance(obj.get("value"), dict) else obj.get("data")
+    payload = (
+        obj.get("value")
+        if isinstance(obj.get("value"), dict)
+        else obj.get("data")
+    )
     if not isinstance(payload, dict):
-        await websocket.send(json.dumps({"type": "error", "message": "configure_world : payload manquant"}))
+        await websocket.send(
+            json.dumps(
+                {
+                    "type": "error",
+                    "message": "configure_world : payload manquant",
+                }
+            )
+        )
         return
 
     config_path = _resolve_config_path(DEFAULT_SETTINGS.world_config_path)
@@ -214,7 +282,11 @@ async def _configure_world(
         logger.info("Configuration du monde enregistree avec succes.")
     except Exception as exc:
         logger.exception("Erreur ecriture config")
-        await websocket.send(json.dumps({"type": "error", "message": f"Erreur ecriture config: {exc}"}))
+        await websocket.send(
+            json.dumps(
+                {"type": "error", "message": f"Erreur ecriture config: {exc}"}
+            )
+        )
 
 
 async def get_world(websocket: websockets.WebSocketServerProtocol) -> None:
@@ -225,8 +297,10 @@ async def get_world(websocket: websockets.WebSocketServerProtocol) -> None:
     config_with_species = _build_config_with_species_selection(config)
 
     world = build_world_from_config(config_with_species, base_dir=base_dir)
-    species_list = build_species_from_config(config_with_species, world, base_dir=base_dir)
-    world.generate_terrain() # TODO: to move
+    species_list = build_species_from_config(
+        config_with_species, world, base_dir=base_dir
+    )
+    world.generate_terrain()  # TODO: to move
 
     sim = Simulation(
         world,
@@ -263,21 +337,23 @@ async def get_world(websocket: websockets.WebSocketServerProtocol) -> None:
         end = start + CHUNK_SIZE
         chunk_rows = world.terrain[start:end]
 
-        await websocket.send(json.dumps({
-            "type": "terrain_chunk",
-            "data": {
-                "chunk_index": i,
-                "y_start": start,
-                "rows": chunk_rows,
-            }
-        }))
+        await websocket.send(
+            json.dumps(
+                {
+                    "type": "terrain_chunk",
+                    "data": {
+                        "chunk_index": i,
+                        "y_start": start,
+                        "rows": chunk_rows,
+                    },
+                }
+            )
+        )
         # optionnel : une petite pause pour ne pas saturer le client
         await asyncio.sleep(0.01)
 
     await websocket.send(json.dumps({"type": "terrain_complete"}))
     logger.info("Tous les chunks envoyés avec succès")
-
-
 
 
 def format_step_summary(step_data: Dict[str, Any]) -> str:
@@ -292,22 +368,38 @@ def format_step_summary(step_data: Dict[str, Any]) -> str:
         hunger = after.get("hunger", before.get("hunger", 0))
         thirst = after.get("thirst", before.get("thirst", 0))
         fatigue = after.get("fatigue", before.get("fatigue", 0))
-        calories_fragment = f" calories={calories:.0f}" if isinstance(calories, (int, float)) else ""
+        calories_fragment = (
+            f" calories={calories:.0f}"
+            if isinstance(calories, (int, float))
+            else ""
+        )
         species_states.append(
-            f"{status.get('name', 'Inconnu')} pos=({x:.2f}, {y:.2f}) vitalite={vitality:.0f} faim={hunger:.0f} soif={thirst:.0f} fatigue={fatigue:.0f}{calories_fragment}"
+            f"{status.get('name', 'Inconnu')} pos=({x:.2f}, {y:.2f}) vitalite={vitality:.0f} faim={hunger:.0f} soif={thirst:.0f} fatigue={fatigue:.0f}{calories_fragment}"  # noqa: E501
         )
 
     return " | ".join(species_states) if species_states else "aucune espece"
 
 
 async def _compute_steps() -> None:
-    global precomputed_steps, summary_cache, steps_file, summary_file, step_cursor, generation_duration
+    global \
+        precomputed_steps, \
+        summary_cache, \
+        steps_file, \
+        summary_file, \
+        step_cursor, \
+        generation_duration
     if sim is None:
         raise RuntimeError("Simulation non initialise.")
 
     logger.info("Pre-calcul des steps en cours...")
 
-    def _generate() -> Tuple[List[Dict[str, Any]], Dict[str, Any], Optional[str], Optional[str], Optional[float]]:
+    def _generate() -> Tuple[
+        List[Dict[str, Any]],
+        Dict[str, Any],
+        Optional[str],
+        Optional[str],
+        Optional[float],
+    ]:
         assert sim is not None  # pour mypy
         steps = sim.generate_all_steps()
         summary = sim.save_summary()
@@ -319,7 +411,13 @@ async def _compute_steps() -> None:
             getattr(sim, "last_generation_duration", None),
         )
 
-    steps, summary, bundle_path, summary_path, duration = await asyncio.to_thread(_generate)
+    (
+        steps,
+        summary,
+        bundle_path,
+        summary_path,
+        duration,
+    ) = await asyncio.to_thread(_generate)
     precomputed_steps = steps
     summary_cache = summary
     steps_file = bundle_path
@@ -332,7 +430,7 @@ async def _compute_steps() -> None:
     bundle_info = steps_file or "<memoire>"
     summary_info = summary_file or "<memoire>"
     logger.info(
-        "Pre-calcul termine : %s steps stockes (simulation=%s, resume=%s, duree=%.3fs).",
+        "Pre-calcul termine : %s steps stockes (simulation=%s, resume=%s, duree=%.3fs).",  # noqa: E501
         len(precomputed_steps),
         bundle_info,
         summary_info,
@@ -371,10 +469,14 @@ async def ensure_precomputed(
 
     if compute_task is None or compute_task.done():
         if notify:
-            await websocket.send(json.dumps({"type": "status", "data": "computing"}))
+            await websocket.send(
+                json.dumps({"type": "status", "data": "computing"})
+            )
         compute_task = asyncio.create_task(_compute_steps())
     elif notify:
-        await websocket.send(json.dumps({"type": "status", "data": "computing"}))
+        await websocket.send(
+            json.dumps({"type": "status", "data": "computing"})
+        )
 
     try:
         await compute_task
@@ -404,7 +506,9 @@ async def ensure_precomputed(
             compute_task = None
 
 
-async def simulation_runner(websocket: websockets.WebSocketServerProtocol) -> None:
+async def simulation_runner(
+    websocket: websockets.WebSocketServerProtocol,
+) -> None:
     """Task asynchrone qui envoie un step pre-calcule a la fois."""
     global step_cursor
     logger.info("Simulation pre-calculee en lecture.")
@@ -422,8 +526,12 @@ async def simulation_runner(websocket: websockets.WebSocketServerProtocol) -> No
             step_cursor += 1
 
             step_num = step_data.get("step")
-            logger.info("Step %s : %s", step_num, format_step_summary(step_data))
-            await websocket.send(json.dumps({"type": "step", "data": step_data}))
+            logger.info(
+                "Step %s : %s", step_num, format_step_summary(step_data)
+            )
+            await websocket.send(
+                json.dumps({"type": "step", "data": step_data})
+            )
 
             if tick_ms > 0:
                 await asyncio.sleep(tick_ms / 1000.0)
@@ -433,33 +541,42 @@ async def simulation_runner(websocket: websockets.WebSocketServerProtocol) -> No
             summary_payload = dict(summary_cache)
             if generation_duration is not None:
                 summary_payload = dict(summary_payload)
-                summary_payload["generation_duration_sec"] = generation_duration
-            await websocket.send(json.dumps({"type": "summary", "data": summary_payload}))
+                summary_payload["generation_duration_sec"] = (
+                    generation_duration
+                )
+            await websocket.send(
+                json.dumps({"type": "summary", "data": summary_payload})
+            )
             logger.info("Resume envoye.")
     except websockets.ConnectionClosed:
         logger.info("Client deconnecte, arret de la simulation.")
     except Exception as exc:
         logger.exception("Erreur dans simulation_runner")
-        await websocket.send(json.dumps({"type": "error", "message": str(exc)}))
+        await websocket.send(
+            json.dumps({"type": "error", "message": str(exc)})
+        )
 
 
 async def _send_world_snapshot(
     websocket: websockets.WebSocketServerProtocol,
     payload: Optional[Dict[str, Any]] = None,
 ) -> None:
-    """Envoie les metadonnees du monde (et eventuellement le terrain) au client."""
+    """Envoie les metadonnees du monde (et eventuellement le terrain) au client."""  # noqa: E501
     source: Dict[str, Any] = {}
     if isinstance(payload, dict):
         source = payload
 
     fallback_world = world if world is not None else World()
 
-    width = _coerce_positive_int(source.get("width")) or getattr(fallback_world, "width", 0)
-    height = _coerce_positive_int(source.get("height")) or getattr(fallback_world, "height", 0)
-    minutes_per_step = (
-        _coerce_positive_int(source.get("minutes_per_step"))
-        or getattr(fallback_world, "minutes_per_step", 0)
+    width = _coerce_positive_int(source.get("width")) or getattr(
+        fallback_world, "width", 0
     )
+    height = _coerce_positive_int(source.get("height")) or getattr(
+        fallback_world, "height", 0
+    )
+    minutes_per_step = _coerce_positive_int(
+        source.get("minutes_per_step")
+    ) or getattr(fallback_world, "minutes_per_step", 0)
     food_sources = source.get("food_sources")
     if not isinstance(food_sources, list):
         food_sources = []
@@ -512,11 +629,17 @@ async def _send_world_snapshot(
     await websocket.send(json.dumps({"type": "terrain_complete"}))
 
 
-async def _load_simulation_payload(source: Dict[str, Any], label: str) -> Tuple[List[Dict[str, Any]], Optional[Dict[str, Any]], Optional[float], str]:
+async def _load_simulation_payload(
+    source: Dict[str, Any], label: str
+) -> Tuple[
+    List[Dict[str, Any]], Optional[Dict[str, Any]], Optional[float], str
+]:
     """Valide et extrait les steps/summary issus d'une requete rerun."""
     steps_data = source.get("steps")
     if not isinstance(steps_data, list) or not steps_data:
-        raise ValueError("rerun : le JSON doit contenir une cle 'steps' non vide.")
+        raise ValueError(
+            "rerun : le JSON doit contenir une cle 'steps' non vide."
+        )
 
     normalized_steps: List[Dict[str, Any]] = []
     for entry in steps_data:
@@ -525,7 +648,11 @@ async def _load_simulation_payload(source: Dict[str, Any], label: str) -> Tuple[
     if not normalized_steps:
         raise ValueError("rerun : aucun step exploitable dans le JSON fourni.")
 
-    summary_data = source.get("summary") if isinstance(source.get("summary"), dict) else None
+    summary_data = (
+        source.get("summary")
+        if isinstance(source.get("summary"), dict)
+        else None
+    )
     duration = None
     for key in ("generation_duration_sec", "duration_sec", "duration"):
         if key in source:
@@ -543,7 +670,14 @@ async def _handle_rerun_command(
     obj: Dict[str, Any],
 ) -> None:
     """Recharge un JSON de simulation et le stream immediatement au client."""
-    global precomputed_steps, summary_cache, steps_file, summary_file, step_cursor, generation_duration, runner_task
+    global \
+        precomputed_steps, \
+        summary_cache, \
+        steps_file, \
+        summary_file, \
+        step_cursor, \
+        generation_duration, \
+        runner_task
 
     target_path = obj.get("path") or obj.get("file") or obj.get("filename")
     payload = obj.get("data") or obj.get("value") or {}
@@ -552,6 +686,7 @@ async def _handle_rerun_command(
     if not isinstance(payload, dict) and target_path:
         try:
             resolved = Path(str(target_path)).expanduser()
+
             def _read() -> Dict[str, Any]:
                 with resolved.open("r", encoding="utf-8") as handle:
                     return json.load(handle)
@@ -561,17 +696,33 @@ async def _handle_rerun_command(
         except Exception as exc:  # pragma: no cover - I/O failure path
             message = f"Impossible de lire le fichier de simulation : {exc}"
             logger.exception(message)
-            await websocket.send(json.dumps({"type": "error", "message": message}))
+            await websocket.send(
+                json.dumps({"type": "error", "message": message})
+            )
             return
 
     if not isinstance(payload, dict):
-        await websocket.send(json.dumps({"type": "error", "message": "rerun : données de simulation manquantes."}))
+        await websocket.send(
+            json.dumps(
+                {
+                    "type": "error",
+                    "message": "rerun : données de simulation manquantes.",
+                }
+            )
+        )
         return
 
     try:
-        steps, summary, duration, source_label = await _load_simulation_payload(payload, source_label)
+        (
+            steps,
+            summary,
+            duration,
+            source_label,
+        ) = await _load_simulation_payload(payload, source_label)
     except ValueError as exc:
-        await websocket.send(json.dumps({"type": "error", "message": str(exc)}))
+        await websocket.send(
+            json.dumps({"type": "error", "message": str(exc)})
+        )
         return
 
     await _cancel_runner_task()
@@ -605,10 +756,16 @@ async def _handle_rerun_command(
     pause_event.set()
     runner_task = asyncio.create_task(simulation_runner(websocket))
     await websocket.send(json.dumps({"type": "status", "data": "started"}))
-    logger.info("Commande RERUN executee depuis %s (%s steps).", source_label, len(precomputed_steps))
+    logger.info(
+        "Commande RERUN executee depuis %s (%s steps).",
+        source_label,
+        len(precomputed_steps),
+    )
 
 
-async def handle_command(websocket: websockets.WebSocketServerProtocol, message: str) -> None:
+async def handle_command(
+    websocket: websockets.WebSocketServerProtocol, message: str
+) -> None:
     """Gere chaque message recu depuis le client."""
     global runner_task, tick_ms, step_cursor
 
@@ -687,14 +844,20 @@ async def handle_command(websocket: websockets.WebSocketServerProtocol, message:
         value = obj.get("value")
         if isinstance(value, (int, float)) and value >= 0:
             tick_ms = int(value)
-            await websocket.send(json.dumps({"type": "status", "data": f"speed={tick_ms}ms"}))
+            await websocket.send(
+                json.dumps({"type": "status", "data": f"speed={tick_ms}ms"})
+            )
             logger.info("Vitesse modifiee : %sms/step", tick_ms)
         else:
-            await websocket.send(json.dumps({"type": "error", "message": "invalid speed"}))
+            await websocket.send(
+                json.dumps({"type": "error", "message": "invalid speed"})
+            )
             logger.warning("Mauvaise valeur speed recue.")
         return
 
-    await websocket.send(json.dumps({"type": "error", "message": "Unknown command"}))
+    await websocket.send(
+        json.dumps({"type": "error", "message": "Unknown command"})
+    )
     logger.warning("Commande inconnue : %s", cmd)
 
 
@@ -729,7 +892,8 @@ async def _bind_websocket_server() -> Tuple[Any, int]:
                 handler,
                 settings.host,
                 port,
-                max_size=1_000_000_000,  # autorise l'import de simulations volumineuses (~1Go)
+                # autorise l'import de simulations volumineuses (~1Go)
+                max_size=1_000_000_000,
             )
             if offset > 0:
                 logger.info(
@@ -750,7 +914,9 @@ async def _bind_websocket_server() -> Tuple[Any, int]:
                 continue
             raise
 
-    raise RuntimeError("Impossible de trouver un port libre pour le serveur WebSocket.") from last_error
+    raise RuntimeError(
+        "Impossible de trouver un port libre pour le serveur WebSocket."
+    ) from last_error
 
 
 async def main() -> None:

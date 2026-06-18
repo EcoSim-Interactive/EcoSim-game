@@ -1,4 +1,5 @@
 """Lance une campagne de benchmarks multi-seeds sur un meme scenario."""
+
 from __future__ import annotations
 
 import argparse
@@ -23,8 +24,12 @@ from simulation.animal import Animal  # noqa: E402
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     """Declare les options de la campagne de benchmark."""
-    parser = argparse.ArgumentParser(description="Benchmark la simulation sur plusieurs seeds.")
-    parser.add_argument("--steps", type=int, default=1000, help="Nombre de steps par run.")
+    parser = argparse.ArgumentParser(
+        description="Benchmark la simulation sur plusieurs seeds."
+    )
+    parser.add_argument(
+        "--steps", type=int, default=1000, help="Nombre de steps par run."
+    )
     parser.add_argument(
         "--seeds",
         default="1,2,3,4,5",
@@ -35,14 +40,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         default=str(DEFAULT_WORLD_CONFIG),
         help="Chemin du fichier de configuration monde.",
     )
-    parser.add_argument("--write-logs", action="store_true", help="Ecrit les logs complets pendant le benchmark.")
-    parser.add_argument("--verbose", action="store_true", help="Active les logs console de chaque run.")
-    parser.add_argument("--output-json", help="Chemin optionnel pour sauvegarder le rapport JSON.")
+    parser.add_argument(
+        "--write-logs",
+        action="store_true",
+        help="Ecrit les logs complets pendant le benchmark.",
+    )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Active les logs console de chaque run.",
+    )
+    parser.add_argument(
+        "--output-json",
+        help="Chemin optionnel pour sauvegarder le rapport JSON.",
+    )
     return parser.parse_args(argv)
 
 
 def parse_seed_list(raw_value: str) -> List[int]:
-    """Convertit une chaine CSV en liste de seeds uniques conservees dans l'ordre."""
+    """Convertit une chaine CSV en liste de seeds uniques conservees dans l'ordre."""  # noqa: E501
     seeds: List[int] = []
     seen: set[int] = set()
     for chunk in (raw_value or "").split(","):
@@ -65,7 +81,9 @@ def summarize_species(summary: Dict[str, Any]) -> Dict[str, Dict[str, int]]:
     for item in summary.get("species", []):
         species_type = str(item.get("species_type", "unknown"))
         vitality = float(item.get("vitality", 0.0))
-        bucket = result.setdefault(species_type, {"alive": 0, "dead": 0, "total": 0})
+        bucket = result.setdefault(
+            species_type, {"alive": 0, "dead": 0, "total": 0}
+        )
         bucket["total"] += 1
         if vitality > 0.0:
             bucket["alive"] += 1
@@ -106,7 +124,11 @@ def run_single_benchmark(
 
     summary = simulation.save_summary()
     total = len(summary.get("species", []))
-    alive = sum(1 for item in summary.get("species", []) if float(item.get("vitality", 0.0)) > 0.0)
+    alive = sum(
+        1
+        for item in summary.get("species", [])
+        if float(item.get("vitality", 0.0)) > 0.0
+    )
 
     return {
         "seed": seed,
@@ -125,7 +147,7 @@ def run_single_benchmark(
 
 
 def build_aggregate_report(runs: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
-    """Agrege les indicateurs principaux pour comparer les seeds entre elles."""
+    """Agrege les indicateurs principaux pour comparer les seeds entre elles."""  # noqa: E501
     run_list = list(runs)
     engine_values = [float(item["engine_seconds"]) for item in run_list]
     wall_values = [float(item["wall_seconds"]) for item in run_list]
@@ -169,14 +191,14 @@ def print_report(report: Dict[str, Any]) -> None:
     for run in report["runs"]:
         print(
             f"seed={run['seed']} steps={run['steps']} "
-            f"engine={run['engine_seconds']:.3f}s wall={run['wall_seconds']:.3f}s "
+            f"engine={run['engine_seconds']:.3f}s wall={run['wall_seconds']:.3f}s "  # noqa: E501
             f"alive={run['alive']}/{run['total']} dead={run['dead']} "
             f"food={run['remaining_food']} water={run['remaining_water']}"
         )
         for species_type, values in sorted(run["species"].items()):
             print(
                 f"  species={species_type} "
-                f"alive={values['alive']}/{values['total']} dead={values['dead']}"
+                f"alive={values['alive']}/{values['total']} dead={values['dead']}"  # noqa: E501
             )
 
 

@@ -1,4 +1,5 @@
 """Helpers utilitaires pour finaliser les actions d'un individu."""
+
 from __future__ import annotations
 
 from typing import Any, Callable, Dict
@@ -6,8 +7,10 @@ from typing import Any, Callable, Dict
 LogFn = Callable[[str], None]
 
 
-def resolve_consumption(world: Any, species: Any, log: LogFn) -> Dict[str, Any]:
-    """Verifie si l'action en cours amene l'individu a consommer de la nourriture."""
+def resolve_consumption(
+    world: Any, species: Any, log: LogFn
+) -> Dict[str, Any]:
+    """Verifie si l'action en cours amene l'individu a consommer de la nourriture."""  # noqa: E501
     result = species.try_eat(world)
     if result and result.get("consumed", 0.0) > 0.0:
         log(f"{species.name} a mange {result['consumed']:.1f} calories.")

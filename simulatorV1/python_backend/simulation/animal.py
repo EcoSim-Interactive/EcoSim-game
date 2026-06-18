@@ -1,4 +1,5 @@
-"""Specialisation de `Species` qui porte l'etat comportemental et social complet."""
+"""Specialisation de `Species` qui porte l'etat comportemental et social complet."""  # noqa: E501
+
 from __future__ import annotations
 
 import copy
@@ -41,10 +42,20 @@ class Animal(Species):
         pack_id: Optional[str] = None,
         age_years: Optional[float] = None,
     ) -> None:
-        traits_copy: Dict[str, Any] = copy.deepcopy(traits) if isinstance(traits, dict) else {}
-        initial_age = self._coerce_age_value(traits_copy.get("age_years", age_years))
-        metabolism_cfg = traits_copy.get("metabolism") if isinstance(traits_copy.get("metabolism"), dict) else {}
-        temp_metabolism = MetabolismComponent(metabolism_cfg, initial_body_nutrition=body_nutrition)
+        traits_copy: Dict[str, Any] = (
+            copy.deepcopy(traits) if isinstance(traits, dict) else {}
+        )
+        initial_age = self._coerce_age_value(
+            traits_copy.get("age_years", age_years)
+        )
+        metabolism_cfg = (
+            traits_copy.get("metabolism")
+            if isinstance(traits_copy.get("metabolism"), dict)
+            else {}
+        )
+        temp_metabolism = MetabolismComponent(
+            metabolism_cfg, initial_body_nutrition=body_nutrition
+        )
         super().__init__(
             name=name,
             position=position,
@@ -66,17 +77,29 @@ class Animal(Species):
         )
         self._metabolism_comp = temp_metabolism
         self.original_name = name
-        self.animal_id = animal_id if animal_id is not None else next(self._id_sequence)
+        self.animal_id = (
+            animal_id if animal_id is not None else next(self._id_sequence)
+        )
         self.species_type = species_type or name
         self.traits = traits_copy
-        self.age_years = self._coerce_age_value(self.traits.get("age_years", self.age_years))
+        self.age_years = self._coerce_age_value(
+            self.traits.get("age_years", self.age_years)
+        )
         self.traits["age_years"] = self.age_years
         self.age_units = "years"
-        self.age_profile_spec = copy.deepcopy(self.traits.get("age_profile")) if isinstance(self.traits.get("age_profile"), dict) else None
+        self.age_profile_spec = (
+            copy.deepcopy(self.traits.get("age_profile"))
+            if isinstance(self.traits.get("age_profile"), dict)
+            else None
+        )
         self.age_profile = self._normalize_age_profile(self.age_profile_spec)
         if self.age_profile_spec is not None:
             self.traits["age_profile"] = copy.deepcopy(self.age_profile_spec)
-        explicit_age_stage = self._normalize_stage(self.traits.get("age_stage")) if self.traits.get("age_stage") is not None else None
+        explicit_age_stage = (
+            self._normalize_stage(self.traits.get("age_stage"))
+            if self.traits.get("age_stage") is not None
+            else None
+        )
         self.age_stage = explicit_age_stage or self._compute_age_stage()
         self.traits["age_stage"] = self.age_stage
         self.sex = self._normalize_sex(self.traits.get("sex"))
@@ -87,14 +110,18 @@ class Animal(Species):
         self.refresh_body_profile()
         self.group_id = group_id or self.traits.get("group_id")
         if self.group_id:
-            self.group_state = self._group_states.setdefault(str(self.group_id), {})
+            self.group_state = self._group_states.setdefault(
+                str(self.group_id), {}
+            )
             self.traits["group_id"] = self.group_id
         else:
             self.group_state = {}
             self.traits.pop("group_id", None)
         self.pack_id = pack_id or self.traits.get("pack_id")
         if self.pack_id:
-            self.pack_state = self._pack_states.setdefault(str(self.pack_id), {})
+            self.pack_state = self._pack_states.setdefault(
+                str(self.pack_id), {}
+            )
             self.traits["pack_id"] = self.pack_id
         else:
             self.pack_state = {}
@@ -112,7 +139,9 @@ class Animal(Species):
                 self.territory_anchor = (self.x, self.y)
 
     @classmethod
-    def from_species(cls, species: Species, *, species_type: str | None = None) -> "Animal":
+    def from_species(
+        cls, species: Species, *, species_type: str | None = None
+    ) -> "Animal":
         """Create an Animal instance from an existing Species instance."""
         if isinstance(species, cls):
             if species_type is not None:
@@ -129,7 +158,8 @@ class Animal(Species):
             temperament=species.temperament,
             diet=species.diet,
             body_nutrition=species.body_nutrition,
-            species_type=species_type or getattr(species, "species_type", species.name),
+            species_type=species_type
+            or getattr(species, "species_type", species.name),
             animal_id=getattr(species, "animal_id", None),
             traits=getattr(species, "traits", None),
             group_id=getattr(species, "group_id", None),
@@ -137,22 +167,44 @@ class Animal(Species):
         )
 
         # Mirror dynamic state from the original object.
-        instance.original_name = getattr(species, "original_name", species.name)
+        instance.original_name = getattr(
+            species, "original_name", species.name
+        )
         instance.vitality = species.vitality
         instance.consumed = species.consumed
         instance.memory = species.memory
         instance.rest_steps = species.rest_steps
         instance.max_rest_steps = species.max_rest_steps
-        instance.daily_calorie_need = getattr(species, "daily_calorie_need", instance.daily_calorie_need)
-        instance.calorie_reserve_days = getattr(species, "calorie_reserve_days", instance.calorie_reserve_days)
-        instance.max_calories = getattr(species, "max_calories", instance.max_calories)
+        instance.daily_calorie_need = getattr(
+            species, "daily_calorie_need", instance.daily_calorie_need
+        )
+        instance.calorie_reserve_days = getattr(
+            species, "calorie_reserve_days", instance.calorie_reserve_days
+        )
+        instance.max_calories = getattr(
+            species, "max_calories", instance.max_calories
+        )
         instance.calories = getattr(species, "calories", instance.calories)
-        instance.meal_calories = getattr(species, "meal_calories", instance.meal_calories)
-        instance.base_body_mass_kg = getattr(species, "base_body_mass_kg", instance.base_body_mass_kg)
-        instance.body_mass_kg = getattr(species, "body_mass_kg", instance.body_mass_kg)
-        instance.carcass_edible_ratio = getattr(species, "carcass_edible_ratio", instance.carcass_edible_ratio)
-        instance.carcass_calories_per_kg = getattr(species, "carcass_calories_per_kg", instance.carcass_calories_per_kg)
-        instance.body_nutrition = getattr(species, "body_nutrition", instance.body_nutrition)
+        instance.meal_calories = getattr(
+            species, "meal_calories", instance.meal_calories
+        )
+        instance.base_body_mass_kg = getattr(
+            species, "base_body_mass_kg", instance.base_body_mass_kg
+        )
+        instance.body_mass_kg = getattr(
+            species, "body_mass_kg", instance.body_mass_kg
+        )
+        instance.carcass_edible_ratio = getattr(
+            species, "carcass_edible_ratio", instance.carcass_edible_ratio
+        )
+        instance.carcass_calories_per_kg = getattr(
+            species,
+            "carcass_calories_per_kg",
+            instance.carcass_calories_per_kg,
+        )
+        instance.body_nutrition = getattr(
+            species, "body_nutrition", instance.body_nutrition
+        )
         instance.thirst = species.thirst
         instance.fatigue = species.fatigue
         instance.resting = species.resting
@@ -160,15 +212,27 @@ class Animal(Species):
         instance.social_state = dict(getattr(species, "social_state", {}))
         instance.territory_anchor = getattr(species, "territory_anchor", None)
         if instance.pack_id:
-            instance.pack_state = cls._pack_states.setdefault(str(instance.pack_id), {})
+            instance.pack_state = cls._pack_states.setdefault(
+                str(instance.pack_id), {}
+            )
         if instance.group_id:
-            instance.group_state = cls._group_states.setdefault(str(instance.group_id), {})
+            instance.group_state = cls._group_states.setdefault(
+                str(instance.group_id), {}
+            )
         instance.sex = getattr(species, "sex", instance.sex)
         instance.age_years = getattr(species, "age_years", instance.age_years)
-        instance.age_profile_spec = copy.deepcopy(getattr(species, "age_profile_spec", instance.age_profile_spec))
-        instance.age_profile = copy.deepcopy(getattr(species, "age_profile", instance.age_profile))
-        instance.age_units = getattr(species, "age_units", getattr(instance, "age_units", "years"))
-        instance.age_stage = getattr(species, "age_stage", instance._compute_age_stage())
+        instance.age_profile_spec = copy.deepcopy(
+            getattr(species, "age_profile_spec", instance.age_profile_spec)
+        )
+        instance.age_profile = copy.deepcopy(
+            getattr(species, "age_profile", instance.age_profile)
+        )
+        instance.age_units = getattr(
+            species, "age_units", getattr(instance, "age_units", "years")
+        )
+        instance.age_stage = getattr(
+            species, "age_stage", instance._compute_age_stage()
+        )
         instance.traits["sex"] = instance.sex
         instance.traits["age_years"] = instance.age_years
         instance.traits["age_stage"] = instance.age_stage
@@ -363,7 +427,9 @@ class Animal(Species):
                     self.traits.pop("age_profile", None)
                 else:
                     self.traits["age_profile"] = value
-            self.age_profile = self._normalize_age_profile(self.age_profile_spec)
+            self.age_profile = self._normalize_age_profile(
+                self.age_profile_spec
+            )
             self.age_stage = self._compute_age_stage()
             self.traits["age_stage"] = self.age_stage
             self.refresh_body_profile()
@@ -428,7 +494,9 @@ class Animal(Species):
     def recall_social(self, key: str, default: Any = None) -> Any:
         return self.social_state.get(key, default)
 
-    def remember_water(self, x: float, y: float, ttl_steps: int = WATER_MEMORY_TTL_STEPS) -> None:
+    def remember_water(
+        self, x: float, y: float, ttl_steps: int = WATER_MEMORY_TTL_STEPS
+    ) -> None:
         try:
             self.water_memory = {"x": float(x), "y": float(y)}
             self.water_memory_ttl = max(0, int(ttl_steps))
@@ -436,7 +504,9 @@ class Animal(Species):
             return
 
     def remember_water_target(self, x: float, y: float) -> None:
-        """Memorise une case de rive precise a viser tant que la source reste valide."""
+        """Memorise une case de rive precise a viser tant que la
+        source reste valide.
+        """
         if not self.water_memory or self.water_memory_ttl <= 0:
             return
         try:
@@ -463,7 +533,10 @@ class Animal(Species):
     def recall_water(self) -> Optional[Tuple[float, float]]:
         if not self.water_memory or self.water_memory_ttl <= 0:
             return None
-        return (float(self.water_memory.get("x", 0.0)), float(self.water_memory.get("y", 0.0)))
+        return (
+            float(self.water_memory.get("x", 0.0)),
+            float(self.water_memory.get("y", 0.0)),
+        )
 
     def _tick_water_memory(self) -> None:
         if self.water_memory_ttl > 0:
@@ -520,29 +593,58 @@ class Animal(Species):
         return number if number > 0.0 else fallback
 
     def refresh_body_profile(self) -> None:
-        """Met a jour la masse et la valeur calorique du corps selon le profil reel."""
+        """Met a jour la masse et la valeur calorique du corps selon le profil reel."""  # noqa: E501
         if not hasattr(self, "_metabolism_comp"):
-            metabolism_cfg = self.traits.get("metabolism", {}) if hasattr(self, "traits") and isinstance(self.traits, dict) else {}
-            self._metabolism_comp = MetabolismComponent(metabolism_cfg, initial_calories=self.calories, initial_max=getattr(self, "max_calories", 0.0))
-        self._metabolism_comp.refresh_body_profile(self.age_stage, self.sex, getattr(self, "traits", {}))
+            metabolism_cfg = (
+                self.traits.get("metabolism", {})
+                if hasattr(self, "traits") and isinstance(self.traits, dict)
+                else {}
+            )
+            self._metabolism_comp = MetabolismComponent(
+                metabolism_cfg,
+                initial_calories=self.calories,
+                initial_max=getattr(self, "max_calories", 0.0),
+            )
+        self._metabolism_comp.refresh_body_profile(
+            self.age_stage, self.sex, getattr(self, "traits", {})
+        )
         self.body_mass_kg = self._metabolism_comp.body_mass_kg
         self.body_nutrition = self._metabolism_comp.body_nutrition
 
-    def _apply_metabolism_profile(self, metabolism_cfg: Dict[str, Any]) -> None:
+    def _apply_metabolism_profile(
+        self, metabolism_cfg: Dict[str, Any]
+    ) -> None:
         if not hasattr(self, "_metabolism_comp"):
-            self._metabolism_comp = MetabolismComponent(metabolism_cfg, initial_calories=self.calories, initial_max=getattr(self, "max_calories", 0.0))
+            self._metabolism_comp = MetabolismComponent(
+                metabolism_cfg,
+                initial_calories=self.calories,
+                initial_max=getattr(self, "max_calories", 0.0),
+            )
 
-        current_percent = self.calories / self.max_calories if getattr(self, "max_calories", 0.0) > 0 else 1.0
+        current_percent = (
+            self.calories / self.max_calories
+            if getattr(self, "max_calories", 0.0) > 0
+            else 1.0
+        )
 
-        self._metabolism_comp.apply_profile(metabolism_cfg, self.age_stage, self.sex, getattr(self, "traits", {}))
+        self._metabolism_comp.apply_profile(
+            metabolism_cfg,
+            self.age_stage,
+            self.sex,
+            getattr(self, "traits", {}),
+        )
         self.daily_calorie_need = self._metabolism_comp.daily_calorie_need
         self.calorie_reserve_days = self._metabolism_comp.calorie_reserve_days
         self.max_calories = self._metabolism_comp.max_calories
-        self.calories = min(self.max_calories, self.max_calories * current_percent)
+        self.calories = min(
+            self.max_calories, self.max_calories * current_percent
+        )
         self.meal_calories = self._metabolism_comp.meal_calories
         self.base_body_mass_kg = self._metabolism_comp.base_body_mass_kg
         self.carcass_edible_ratio = self._metabolism_comp.carcass_edible_ratio
-        self.carcass_calories_per_kg = self._metabolism_comp.carcass_calories_per_kg
+        self.carcass_calories_per_kg = (
+            self._metabolism_comp.carcass_calories_per_kg
+        )
         self.body_mass_kg = self._metabolism_comp.body_mass_kg
         self.body_nutrition = self._metabolism_comp.body_nutrition
 
@@ -576,7 +678,11 @@ class Animal(Species):
             if label is None:
                 label = self._extract_label(naming.get(self.sex))
         if not label:
-            base = self.species_type if isinstance(self.species_type, str) else self.original_name
+            base = (
+                self.species_type
+                if isinstance(self.species_type, str)
+                else self.original_name
+            )
             label = str(base)
         return label
 
@@ -610,7 +716,9 @@ class Animal(Species):
         delta = new_val - self.age_years
 
         if not hasattr(self, "_age_comp"):
-            self._age_comp = AgeComponent(self.age_years, self.age_profile_spec)
+            self._age_comp = AgeComponent(
+                self.age_years, self.age_profile_spec
+            )
 
         is_dead, metabolism_cfg = self._age_comp.tick_age(delta)
 
@@ -675,7 +783,9 @@ def decide_idle_action(species: Animal) -> str:
     return species.decide_idle_action()
 
 
-def handle_thirst(species: Animal, world: Any, log: LogFn) -> Tuple[bool, str, str]:
+def handle_thirst(
+    species: Animal, world: Any, log: LogFn
+) -> Tuple[bool, str, str]:
     return species.handle_thirst(world, log)
 
 
@@ -687,7 +797,9 @@ def handle_cycle_rest(species: Animal, log: LogFn) -> Tuple[bool, str, str]:
     return species.handle_cycle_rest(log)
 
 
-def handle_hunger(species: Animal, world: Any, log: LogFn) -> Tuple[bool, str, str]:
+def handle_hunger(
+    species: Animal, world: Any, log: LogFn
+) -> Tuple[bool, str, str]:
     return species.handle_hunger(world, log)
 
 

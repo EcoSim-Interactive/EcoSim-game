@@ -1,4 +1,7 @@
-"""Coordonne la chasse cooperative et le partage des carcasses chez les carnivores."""
+"""Coordonne la chasse cooperative et le partage des carcasses chez les
+carnivores.
+"""
+
 from __future__ import annotations
 
 import random
@@ -13,7 +16,9 @@ from domain.constants import (
 
 from ..animal import Animal
 
-PACK_TARGET_STALE_STEPS = 45  # Delai max avant d'abandonner une cible de meute devenue obsolesce.
+PACK_TARGET_STALE_STEPS = (
+    45  # Delai max avant d'abandonner une cible de meute devenue obsolesce.
+)
 
 
 def _priority_value(value: Any, default: float) -> float:
@@ -56,14 +61,21 @@ def _state_dict(state: dict[str, Any], key: str) -> dict[Any, Any]:
 def _feed_priority_for(member: Animal) -> float:
     role = str(member.get_trait("role", "")).lower()
     raw_hunt_cfg = member.get_trait("hunt")
-    hunt_cfg: dict[str, Any] = raw_hunt_cfg if isinstance(raw_hunt_cfg, dict) else {}
+    hunt_cfg: dict[str, Any] = (
+        raw_hunt_cfg if isinstance(raw_hunt_cfg, dict) else {}
+    )
     return _priority_value(
         member.get_trait("feed_priority"),
-        _priority_value(hunt_cfg.get("feed_priority"), 40.0 if role in {"leader", "alpha"} else 60.0),
+        _priority_value(
+            hunt_cfg.get("feed_priority"),
+            40.0 if role in {"leader", "alpha"} else 60.0,
+        ),
     )
 
 
-def _prey_matches_targets(creature: Animal, targets: Optional[Set[str]]) -> bool:
+def _prey_matches_targets(
+    creature: Animal, targets: Optional[Set[str]]
+) -> bool:
     species_key = str(creature.species_type).lower()
     normalized_targets = {target.lower() for target in targets or set()}
     if normalized_targets:
@@ -99,14 +111,18 @@ def _nearest_prey(
     return best
 
 
-def _find_prey_by_id(animals: Iterable[Animal], prey_id: Any) -> Optional[Animal]:
+def _find_prey_by_id(
+    animals: Iterable[Animal], prey_id: Any
+) -> Optional[Animal]:
     for creature in animals:
         if creature.animal_id == prey_id and creature.alive:
             return creature
     return None
 
 
-def _alive_pack_members(animal: Animal, animals: Iterable[Animal]) -> list[Animal]:
+def _alive_pack_members(
+    animal: Animal, animals: Iterable[Animal]
+) -> list[Animal]:
     if not animal.pack_id:
         return [animal]
     members = [
@@ -117,7 +133,9 @@ def _alive_pack_members(animal: Animal, animals: Iterable[Animal]) -> list[Anima
     return members or [animal]
 
 
-def _should_coordinate(animal: Animal, hunt_cfg: dict[str, Any], role: str) -> bool:
+def _should_coordinate(
+    animal: Animal, hunt_cfg: dict[str, Any], role: str
+) -> bool:
     if hunt_cfg:
         return True
     if animal.get_trait("predator"):
@@ -125,7 +143,9 @@ def _should_coordinate(animal: Animal, hunt_cfg: dict[str, Any], role: str) -> b
     return role in {"hunter", "predator", "leader", "alpha"}
 
 
-def _consume_carcass(animal: Animal, world, carcass_id: Optional[str]) -> float:
+def _consume_carcass(
+    animal: Animal, world, carcass_id: Optional[str]
+) -> float:
     if not carcass_id or not hasattr(world, "food_sources"):
         return 0.0
     carcass = None
@@ -135,10 +155,16 @@ def _consume_carcass(animal: Animal, world, carcass_id: Optional[str]) -> float:
             break
     if carcass is None:
         return 0.0
-    if hasattr(world, "food_has_supply") and not world.food_has_supply(carcass):
+    if hasattr(world, "food_has_supply") and not world.food_has_supply(
+        carcass
+    ):
         return 0.0
     required = animal._compute_required_food_amount(carcass)
-    result = world.consume_food(carcass, required) if hasattr(world, "consume_food") else None
+    result = (
+        world.consume_food(carcass, required)
+        if hasattr(world, "consume_food")
+        else None
+    )
     if not result or result.get("consumed", 0.0) <= 0.0:
         return 0.0
     consumed = float(result["consumed"])
@@ -148,7 +174,9 @@ def _consume_carcass(animal: Animal, world, carcass_id: Optional[str]) -> float:
     return consumed
 
 
-def _reposition_pack_member(animal: Animal, world, action: str) -> Tuple[bool, str, bool]:
+def _reposition_pack_member(
+    animal: Animal, world, action: str
+) -> Tuple[bool, str, bool]:
     """Force un pas de decalage quand la trajectoire directe echoue."""
     if animal.random_move(world):
         return True, action, False
@@ -173,7 +201,9 @@ def _resolve_pack_target(
     targets: Optional[Set[str]],
     world,
 ) -> Optional[Animal]:
-    shared_target = animal.pack_state.get("shared_target") if animal.pack_id else None
+    shared_target = (
+        animal.pack_state.get("shared_target") if animal.pack_id else None
+    )
     if isinstance(shared_target, dict):
         prey = _find_prey_by_id(animals, shared_target.get("prey_id"))
         if prey is not None and _prey_matches_targets(prey, targets):
@@ -192,7 +222,9 @@ def _resolve_pack_target(
     return prey
 
 
-def _sync_pack_participants(pack_kill: dict[str, Any], pack_members: Iterable[Animal]) -> dict[int, float]:
+def _sync_pack_participants(
+    pack_kill: dict[str, Any], pack_members: Iterable[Animal]
+) -> dict[int, float]:
     participants = _state_dict(pack_kill, "participants")
     active_ids: set[int] = set()
     for member in pack_members:
@@ -201,7 +233,9 @@ def _sync_pack_participants(pack_kill: dict[str, Any], pack_members: Iterable[An
         active_ids.add(member.animal_id)
         participants[member.animal_id] = _feed_priority_for(member)
 
-    stale_ids = [member_id for member_id in participants if member_id not in active_ids]
+    stale_ids = [
+        member_id for member_id in participants if member_id not in active_ids
+    ]
     for member_id in stale_ids:
         participants.pop(member_id, None)
 
@@ -268,13 +302,20 @@ def _handle_shared_kill(
             if food.get("id") == food_id:
                 carcass = food
                 break
-        if carcass is not None and hasattr(world, "food_has_supply") and not world.food_has_supply(carcass):
+        if (
+            carcass is not None
+            and hasattr(world, "food_has_supply")
+            and not world.food_has_supply(carcass)
+        ):
             carcass = None
     if carcass is None:
         pack_kill.clear()
         return False, "", False
 
-    target_point = {"x": float(carcass.get("x", location[0])), "y": float(carcass.get("y", location[1]))}
+    target_point = {
+        "x": float(carcass.get("x", location[0])),
+        "y": float(carcass.get("y", location[1])),
+    }
     distance = animal.distance_to(target_point)
 
     originator_id = pack_kill.get("originator")
@@ -295,7 +336,11 @@ def _handle_shared_kill(
     if animal.animal_id in blocked:
         return False, "", False
 
-    if distance > guard_radius and world is not None and hasattr(world, "_line_blocked_by_water"):
+    if (
+        distance > guard_radius
+        and world is not None
+        and hasattr(world, "_line_blocked_by_water")
+    ):
         if world._line_blocked_by_water(
             int(round(animal.x)),
             int(round(animal.y)),
@@ -377,8 +422,12 @@ def _handle_shared_kill(
     _state_set(pack_kill, "fed_priorities").add(feed_priority)
     wait_counters[animal.animal_id] = 0
     pack_kill["stale_steps"] = 0
-    pack_kill.setdefault("feed_log", []).append({"animal": animal.animal_id, "priority": feed_priority})
-    log(f"{animal.name} consomme la carcasse partagee (priorite {feed_priority}).")
+    pack_kill.setdefault("feed_log", []).append(
+        {"animal": animal.animal_id, "priority": feed_priority}
+    )
+    log(
+        f"{animal.name} consomme la carcasse partagee (priorite {feed_priority})."  # noqa: E501
+    )
     animal.memory = target_point
     return True, "pack_feed_from_carcass", True
 
@@ -389,20 +438,26 @@ def execute_predation_cycle(
     world,
     log,
 ) -> Tuple[bool, str, bool]:
-    """Pilote la sequence complete de chasse, kill partage et ordre de nourrissage."""
+    """Pilote la sequence complete de chasse, kill partage et ordre de nourrissage."""  # noqa: E501
     if animal.diet != "carnivore":
         return False, "", False
 
     animals = list(animals)
     raw_hunt_cfg = animal.get_trait("hunt")
-    hunt_cfg: dict[str, Any] = raw_hunt_cfg if isinstance(raw_hunt_cfg, dict) else {}
+    hunt_cfg: dict[str, Any] = (
+        raw_hunt_cfg if isinstance(raw_hunt_cfg, dict) else {}
+    )
     role = str(animal.get_trait("role", "")).lower()
 
     if not _should_coordinate(animal, hunt_cfg, role):
         return False, "", False
 
-    attack_range = float(hunt_cfg.get("attack_range", max(40.0, animal.vision * 0.3)))
-    chase_range = float(hunt_cfg.get("chase_range", max(animal.vision, attack_range * 2.0)))
+    attack_range = float(
+        hunt_cfg.get("attack_range", max(40.0, animal.vision * 0.3))
+    )
+    chase_range = float(
+        hunt_cfg.get("chase_range", max(animal.vision, attack_range * 2.0))
+    )
     success_rate = float(hunt_cfg.get("success_rate", 0.5))
     pack_bonus = float(hunt_cfg.get("pack_bonus", 0.06))
     hunger_threshold = float(hunt_cfg.get("hunger_threshold", 55.0))
@@ -415,14 +470,20 @@ def execute_predation_cycle(
         for other in pack_members:
             if other is animal:
                 continue
-            if animal.distance_to({"x": other.x, "y": other.y}) <= guard_radius:
+            if (
+                animal.distance_to({"x": other.x, "y": other.y})
+                <= guard_radius
+            ):
                 nearby += 1
         if nearby > 0:
             success_rate = min(0.95, success_rate + pack_bonus * nearby)
 
     feed_priority = _priority_value(
         animal.get_trait("feed_priority"),
-        _priority_value(hunt_cfg.get("feed_priority"), 40.0 if role in {"leader", "alpha"} else 60.0),
+        _priority_value(
+            hunt_cfg.get("feed_priority"),
+            40.0 if role in {"leader", "alpha"} else 60.0,
+        ),
     )
     wait_trait = animal.get_trait("wait_for_priorities")
     if wait_trait is None:
@@ -430,7 +491,11 @@ def execute_predation_cycle(
     wait_priorities = _priority_set(wait_trait)
 
     raw_targets = hunt_cfg.get("targets")
-    target_set = {str(value).lower() for value in raw_targets} if isinstance(raw_targets, (list, tuple, set)) else None
+    target_set = (
+        {str(value).lower() for value in raw_targets}
+        if isinstance(raw_targets, (list, tuple, set))
+        else None
+    )
 
     pack_kill = animal.pack_state.get("shared_kill")
     if pack_kill:
@@ -461,16 +526,22 @@ def execute_predation_cycle(
     if distance_to_prey > chase_range:
         if animal.move_towards(prey_point, world):
             return True, "pack_tracking_prey", False
-        return _reposition_pack_member(animal, world, "pack_reposition_for_prey")
+        return _reposition_pack_member(
+            animal, world, "pack_reposition_for_prey"
+        )
 
     if distance_to_prey > attack_range:
         if animal.move_towards(prey_point, world):
             return True, "pack_closing_distance", False
-        return _reposition_pack_member(animal, world, "pack_reposition_for_prey")
+        return _reposition_pack_member(
+            animal, world, "pack_reposition_for_prey"
+        )
 
     if random.random() > success_rate:
         if not animal.move_towards(prey_point, world):
-            moved, action, resolve = _reposition_pack_member(animal, world, "pack_reposition_after_attack_fail")
+            moved, action, resolve = _reposition_pack_member(
+                animal, world, "pack_reposition_after_attack_fail"
+            )
             if moved:
                 _sync_shared_target(animal, prey)
                 log(f"{animal.name} rate son attaque sur {prey.name}.")
@@ -508,8 +579,12 @@ def execute_predation_cycle(
     if consumed > 0.0:
         _state_set(pack_kill, "fed_animals").add(animal.animal_id)
         _state_set(pack_kill, "fed_priorities").add(feed_priority)
-        pack_kill.setdefault("feed_log", []).append({"animal": animal.animal_id, "priority": feed_priority})
-        log(f"{animal.name} abat {prey.name} et commence a manger ({consumed:.1f}).")
+        pack_kill.setdefault("feed_log", []).append(
+            {"animal": animal.animal_id, "priority": feed_priority}
+        )
+        log(
+            f"{animal.name} abat {prey.name} et commence a manger ({consumed:.1f})."  # noqa: E501
+        )
         return True, "pack_hunt_success", False
 
     log(f"{animal.name} abat {prey.name} et cree une carcasse partagee.")

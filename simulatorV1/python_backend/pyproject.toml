@@ -15,12 +15,12 @@ dev = [
 ]
 
 [tool.ruff]
-line-length = 120
+line-length = 79
 target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "W"]
-ignore = ["E501"]
+ignore = []
 fixable = ["ALL"]
 unfixable = []
 

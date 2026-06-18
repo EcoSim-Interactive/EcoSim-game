@@ -1,4 +1,5 @@
 """Outils de generation procedurale des points d'eau et de leurs formes."""
+
 from __future__ import annotations
 
 import random
@@ -31,7 +32,7 @@ def generate_river_segments(
     length: int,
     *,
     max_attempts_multiplier: int = 10,
-    key_point_step: int = 15, # Pas augmenté pour des courbes plus larges
+    key_point_step: int = 15,  # Pas augmenté pour des courbes plus larges
 ) -> List[Dict[str, float]]:
     if length <= 0:
         return []
@@ -43,11 +44,12 @@ def generate_river_segments(
 
     # 2. DEFINIR LE FLUX GÉNÉRAL (L'astuce est ici)
     # On choisit une destination générale loin du point de départ
-    # Par exemple, si on est à gauche (x < width/2), le flux va vers la droite (+1)
+    # Par exemple, si on est à gauche (x < width/2), le flux va vers la droite
+    # (+1)
     flow_x = 1 if x < width / 2 else -1
     flow_y = 1 if y < height / 2 else -1
 
-    # On peut ajouter un peu d'aléatoire au flux pour qu'il ne soit pas parfaitement diagonal
+    # On peut ajouter un peu d'aléatoire au flux pour qu'il ne soit pas parfaitement diagonal  # noqa: E501
     if random.random() < 0.5:
         flow_y = 0  # Flux principalement horizontal
     elif random.random() < 0.5:
@@ -72,19 +74,24 @@ def generate_river_segments(
                 if dx == 0 and dy == 0:
                     continue
 
-                # PRODUIT SCALAIRE : Si le mouvement va à l'opposé du flux général, on l'ignore ou on le pénalise
-                # Score > 0 : va dans le bon sens. Score < 0 : va en arrière (interdit)
+                # PRODUIT SCALAIRE : Si le mouvement va à l'opposé du flux
+                # général, on l'ignore ou on le pénalise
+                # Score > 0 : va dans le bon sens. Score < 0 : va en arrière (interdit)  # noqa: E501
                 score = (dx * flow_x) + (dy * flow_y)
 
-                if score >= 0: # On accepte seulement si ça ne recule pas par rapport au flux global
+                if (
+                    score >= 0
+                ):  # On accepte seulement si ça ne recule pas par rapport au flux global  # noqa: E501
                     # On ajoute ce candidat (dx, dy) à la liste
-                    # On l'ajoute plusieurs fois si le score est bon pour augmenter ses chances
-                    weight = 1 + (score * 2) # Poids: 1 (neutre) ou 3 (très bon sens)
+                    # On l'ajoute plusieurs fois si le score est bon pour augmenter ses chances  # noqa: E501
+                    weight = 1 + (
+                        score * 2
+                    )  # Poids: 1 (neutre) ou 3 (très bon sens)
                     for _ in range(weight):
                         candidates.append((dx, dy))
 
         if not candidates:
-            break # Coincé
+            break  # Coincé
 
         # Choix d'une direction parmi les candidats validés
         move_dx, move_dy = random.choice(candidates)
@@ -101,13 +108,13 @@ def generate_river_segments(
         if int(target_x) == int(x) and int(target_y) == int(y):
             continue
 
-        # Ajout d'une petite perturbation ("Wobble") pour que ce ne soit pas des lignes droites parfaites
+        # Ajout d'une petite perturbation ("Wobble") pour que ce ne soit pas des lignes droites parfaites  # noqa: E501
         # On décale un peu le point d'arrivée perpendiculairement au mouvement
         wobble = random.randint(-key_point_step // 3, key_point_step // 3)
-        if move_dx == 0: # Mouvement vertical -> wobble horizontal
-             target_x += wobble
-        elif move_dy == 0: # Mouvement horizontal -> wobble vertical
-             target_y += wobble
+        if move_dx == 0:  # Mouvement vertical -> wobble horizontal
+            target_x += wobble
+        elif move_dy == 0:  # Mouvement horizontal -> wobble vertical
+            target_y += wobble
 
         # Re-clamp après wobble
         target_x = max(0, min(width - 1, target_x))
@@ -120,7 +127,7 @@ def generate_river_segments(
 
 
 def trace_line(x1: int, y1: int, x2: int, y2: int) -> List[Tuple[int, int]]:
-    """Relie deux points par une ligne continue de pixels (Algorithme de Bresenham)."""
+    """Relie deux points par une ligne continue de pixels (Algorithme de Bresenham)."""  # noqa: E501
     points = []
     dx = abs(x2 - x1)
     dy = abs(y2 - y1)
@@ -143,6 +150,7 @@ def trace_line(x1: int, y1: int, x2: int, y2: int) -> List[Tuple[int, int]]:
             cy += sy
 
     return points
+
 
 def generate_stagnant_pool_specs(
     width: int,
@@ -180,7 +188,7 @@ def generate_oasis_specs(
     capacity_range: Tuple[int, int],
     radius_range: Tuple[int, int],
 ) -> List[Dict[str, float]]:
-    """Return oasis specifications with limited capacity and radius metadata."""
+    """Return oasis specifications with limited capacity and radius metadata."""  # noqa: E501
     if count <= 0:
         return []
 
@@ -239,7 +247,9 @@ def generate_lake_specs(
     return lakes
 
 
-def _ordered_directions(prev_direction: Tuple[int, int]) -> List[Tuple[int, int]]:
+def _ordered_directions(
+    prev_direction: Tuple[int, int],
+) -> List[Tuple[int, int]]:
     """Return candidate directions favouring continuity."""
     directions = list(_DIRECTIONS)
     random.shuffle(directions)
@@ -269,4 +279,6 @@ def _gentle_turns(direction: Tuple[int, int]) -> Tuple[Tuple[int, int], ...]:
     if dy != 0:
         options.append((0, dy))
         options.append((1 if dx >= 0 else -1, dy))
-    return tuple(opt for opt in options if opt in _DIRECTIONS and opt != (0, 0))
+    return tuple(
+        opt for opt in options if opt in _DIRECTIONS and opt != (0, 0)
+    )

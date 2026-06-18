@@ -1,4 +1,5 @@
 """Helpers de cohesion de groupe pour les especes sociales."""
+
 from __future__ import annotations
 
 from typing import Iterable, Tuple
@@ -27,14 +28,19 @@ def maintain_group_cohesion(
     cohesion: float = 0.6,
 ) -> Tuple[bool, str]:
     """Maintient un groupe compact sans provoquer de superposition brutale."""
-    def _attempt_move(target: dict[str, float], primary_action: str) -> Tuple[bool, str]:
+
+    def _attempt_move(
+        target: dict[str, float], primary_action: str
+    ) -> Tuple[bool, str]:
         if animal.move_towards(target, world):
             return True, primary_action
         if animal.random_move(world):
             return True, "herd_reposition"
         return False, ""
 
-    herd_members = [member for member in herd if member is not animal and member.alive]
+    herd_members = [
+        member for member in herd if member is not animal and member.alive
+    ]
     if not herd_members:
         return False, ""
 
@@ -47,7 +53,10 @@ def maintain_group_cohesion(
         return _attempt_move(center, "herd_return_to_center")
 
     # On evite ensuite que deux individus se collent de facon non naturelle.
-    nearest = min(herd_members, key=lambda mate: animal.distance_to({"x": mate.x, "y": mate.y}))
+    nearest = min(
+        herd_members,
+        key=lambda mate: animal.distance_to({"x": mate.x, "y": mate.y}),
+    )
     separation = animal.distance_to({"x": nearest.x, "y": nearest.y})
 
     if separation < spacing * 0.6:

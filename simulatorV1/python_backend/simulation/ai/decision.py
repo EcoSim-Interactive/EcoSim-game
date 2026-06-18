@@ -1,4 +1,5 @@
 """Arbre de decision principal applique a chaque individu a chaque tour."""
+
 from __future__ import annotations
 
 from typing import Any, Dict, Optional
@@ -21,7 +22,9 @@ from ..ai.relationships import handle_species_relationships
 
 
 def _has_active_feeding_opportunity(animal) -> bool:
-    """Detecte une opportunite alimentaire sociale qui justifie d'interrompre le repos."""
+    """Detecte une opportunite alimentaire sociale qui justifie
+    d'interrompre le repos.
+    """
     pack_state = getattr(animal, "pack_state", None)
     if isinstance(pack_state, dict):
         shared_kill = pack_state.get("shared_kill")
@@ -33,16 +36,24 @@ def _has_active_feeding_opportunity(animal) -> bool:
         followed = scavenger_cfg.get("follow_packs")
         if isinstance(followed, (list, tuple, set)):
             for pack_id in followed:
-                state = animal.pack_state_for(str(pack_id)) if hasattr(animal, "pack_state_for") else None
+                state = (
+                    animal.pack_state_for(str(pack_id))
+                    if hasattr(animal, "pack_state_for")
+                    else None
+                )
                 if isinstance(state, dict):
                     shared_kill = state.get("shared_kill")
-                    if isinstance(shared_kill, dict) and shared_kill.get("food_id"):
+                    if isinstance(shared_kill, dict) and shared_kill.get(
+                        "food_id"
+                    ):
                         return True
     return False
 
 
-def _resolve_critical_hunger(animal, world, species_list, logger, record) -> bool:
-    """Force une recherche alimentaire active avant les besoins seulement moderes."""
+def _resolve_critical_hunger(
+    animal, world, species_list, logger, record
+) -> bool:
+    """Force une recherche alimentaire active avant les besoins seulement moderes."""  # noqa: E501
     if animal.hunger < HUNGER_CRITICAL_FEED_OVERRIDE:
         return False
 
@@ -65,7 +76,11 @@ def _resolve_critical_hunger(animal, world, species_list, logger, record) -> boo
     if animal.random_move(world):
         record("seek_food", "faim critique -> exploration", resolve_food=True)
     else:
-        record("seek_food_blocked", "faim critique mais deplacement impossible", resolve_food=True)
+        record(
+            "seek_food_blocked",
+            "faim critique mais deplacement impossible",
+            resolve_food=True,
+        )
     return True
 
 
@@ -77,14 +92,16 @@ def process_species(
     species_list,
     logger,
 ) -> Optional[Dict[str, Any]]:
-    """Applique l'arbre de decision et met a jour l'etat serialise de l'animal."""
+    """Applique l'arbre de decision et met a jour l'etat serialise de l'animal."""  # noqa: E501
     thirst = animal.thirst
     hunger = animal.hunger
     fatigue = animal.fatigue
     animal.resting = False
     food_result: Optional[Dict[str, Any]] = None
 
-    def record(action: str, motivation: str, *, resolve_food: bool = False) -> None:
+    def record(
+        action: str, motivation: str, *, resolve_food: bool = False
+    ) -> None:
         nonlocal food_result
         status["action"] = action
         status["motivation"] = motivation
@@ -105,13 +122,22 @@ def process_species(
             return food_result
         # If we cannot see/smell water, keep moving to find it.
         if animal.random_move(world):
-            record("seek_water", "soif critique -> exploration", resolve_food=True)
+            record(
+                "seek_water", "soif critique -> exploration", resolve_food=True
+            )
         else:
-            record("seek_water_blocked", "soif critique mais deplacement impossible", resolve_food=True)
+            record(
+                "seek_water_blocked",
+                "soif critique mais deplacement impossible",
+                resolve_food=True,
+            )
         return food_result
 
     # Priorite 2: une opportunite alimentaire sociale ne doit pas etre perdue.
-    if _has_active_feeding_opportunity(animal) and thirst < THIRST_CRITICAL_THRESHOLD:
+    if (
+        _has_active_feeding_opportunity(animal)
+        and thirst < THIRST_CRITICAL_THRESHOLD
+    ):
         related, action, motivation, resolve = handle_species_relationships(
             animal,
             species_list,
@@ -122,7 +148,7 @@ def process_species(
             record(action, motivation, resolve_food=resolve)
             return food_result
 
-    # Priorite 3: une faim critique passe avant le repos impose et la soif seulement moderee.
+    # Priorite 3: une faim critique passe avant le repos impose et la soif seulement moderee.  # noqa: E501
     if thirst < THIRST_CRITICAL_THRESHOLD and _resolve_critical_hunger(
         animal,
         world,
@@ -132,14 +158,17 @@ def process_species(
     ):
         return food_result
 
-    # Priorite 4: la fatigue critique impose un repos, sauf urgence hydrique ou alimentaire.
-    if fatigue > FATIGUE_CRITICAL_THRESHOLD and thirst < THIRST_BLOCKS_REST_THRESHOLD:
+    # Priorite 4: la fatigue critique impose un repos, sauf urgence hydrique ou alimentaire.  # noqa: E501
+    if (
+        fatigue > FATIGUE_CRITICAL_THRESHOLD
+        and thirst < THIRST_BLOCKS_REST_THRESHOLD
+    ):
         acted, action, motivation = animal.handle_fatigue(logger.log)
         if acted:
             record(action, motivation)
             return food_result
 
-    # Priorite 5: respect du cycle jour/nuit si l'animal n'est pas en deficit hydrique.
+    # Priorite 5: respect du cycle jour/nuit si l'animal n'est pas en deficit hydrique.  # noqa: E501
     is_day = world_time["is_day"]
     if (animal.diurnal and not is_day) or (not animal.diurnal and is_day):
         if thirst < THIRST_BLOCKS_REST_THRESHOLD:
@@ -149,7 +178,10 @@ def process_species(
                 return food_result
 
     # Un carnivore tres affame peut chasser avant de traiter une soif moderee.
-    if animal.diet == "carnivore" and hunger > HUNGER_OVERRIDES_THIRST_THRESHOLD:
+    if (
+        animal.diet == "carnivore"
+        and hunger > HUNGER_OVERRIDES_THIRST_THRESHOLD
+    ):
         related, action, motivation, resolve = handle_species_relationships(
             animal,
             species_list,
@@ -168,7 +200,10 @@ def process_species(
             return food_result
 
     # Priorite 7: fatigue moderee, tant que la soif reste sous controle.
-    if fatigue > FATIGUE_MODERATE_THRESHOLD and thirst < THIRST_BLOCKS_REST_THRESHOLD:
+    if (
+        fatigue > FATIGUE_MODERATE_THRESHOLD
+        and thirst < THIRST_BLOCKS_REST_THRESHOLD
+    ):
         acted, action, motivation = animal.handle_fatigue(logger.log)
         if acted:
             record(action, motivation)
@@ -195,9 +230,17 @@ def process_species(
     # Priorite 10: exploration si un besoin existe mais sans cible detectee.
     if hunger > EXPLORE_HUNGER_THRESHOLD or thirst > EXPLORE_THIRST_THRESHOLD:
         if animal.random_move(world):
-            record("explore_for_food_or_water", "faim/soif mais rien detecte -> exploration", resolve_food=True)
+            record(
+                "explore_for_food_or_water",
+                "faim/soif mais rien detecte -> exploration",
+                resolve_food=True,
+            )
         else:
-            record("explore_blocked", "faim/soif mais exploration impossible", resolve_food=True)
+            record(
+                "explore_blocked",
+                "faim/soif mais exploration impossible",
+                resolve_food=True,
+            )
         return food_result
 
     # Priorite 11: comportement neutre pilote par le temperament.

@@ -1,4 +1,7 @@
-"""Charge le monde et les especes a partir des fichiers JSON de configuration."""
+"""Charge le monde et les especes a partir des fichiers JSON
+de configuration.
+"""
+
 from __future__ import annotations
 
 import copy
@@ -17,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 SPECIES_PRESETS_DIR = Path(__file__).with_name("species")
 
-if getattr(sys, 'frozen', False):
+if getattr(sys, "frozen", False):
     APP_ROOT = Path(sys.executable).parent
 else:
     APP_ROOT = Path(__file__).parent.resolve()
@@ -34,14 +37,20 @@ def load_world(
     fallback_food: int = 30,
     fallback_water: int = 10,
 ) -> World:
-    """Charge un monde a partir d'une configuration, avec repli sur des valeurs par defaut."""
+    """Charge un monde a partir d'une configuration, avec repli
+    sur des valeurs par defaut.
+    """
     try:
         config, base_dir = load_config(config_path)
         return build_world_from_config(config, base_dir=base_dir)
     except FileNotFoundError:
-        logger.warning("World configuration file not found, using fallback generation.")
+        logger.warning(
+            "World configuration file not found, using fallback generation."
+        )
     except (ValueError, json.JSONDecodeError) as exc:
-        logger.warning("Invalid world configuration, using fallback generation: %s", exc)
+        logger.warning(
+            "Invalid world configuration, using fallback generation: %s", exc
+        )
 
     return _build_default_world(fallback_food, fallback_water)
 
@@ -52,18 +61,26 @@ def load_world_and_species(
     fallback_food: int = 30,
     fallback_water: int = 10,
 ) -> Tuple[World, List[Animal]]:
-    """Charge simultanement le monde et la population depuis la configuration JSON."""
+    """Charge simultanement le monde et la population depuis
+    la configuration JSON.
+    """
     try:
         config, base_dir = load_config(config_path)
         world = build_world_from_config(config, base_dir=base_dir)
-        species_list = build_species_from_config(config, world, base_dir=base_dir)
+        species_list = build_species_from_config(
+            config, world, base_dir=base_dir
+        )
         if not species_list:
             species_list = _build_default_species(world)
         return world, species_list
     except FileNotFoundError:
-        logger.warning("World configuration file not found, using fallback generation.")
+        logger.warning(
+            "World configuration file not found, using fallback generation."
+        )
     except (ValueError, json.JSONDecodeError) as exc:
-        logger.warning("Invalid world configuration, using fallback generation: %s", exc)
+        logger.warning(
+            "Invalid world configuration, using fallback generation: %s", exc
+        )
 
     world = _build_default_world(fallback_food, fallback_water)
     species_list = _build_default_species(world)
@@ -76,7 +93,9 @@ def load_world_from_file(config_path: Optional[str] = None) -> World:
     return build_world_from_config(config, base_dir=base_dir)
 
 
-def load_config(config_path: Optional[str] = None) -> Tuple[Dict[str, Any], Path]:
+def load_config(
+    config_path: Optional[str] = None,
+) -> Tuple[Dict[str, Any], Path]:
     resolved = _resolve_config_path(config_path)
 
     print(f"DEBUG: Chargement JSON depuis : {resolved}")
@@ -85,7 +104,9 @@ def load_config(config_path: Optional[str] = None) -> Tuple[Dict[str, Any], Path
         data = json.load(handle)
 
     if not isinstance(data, dict):
-        raise ValueError(f"Le fichier {resolved.name} doit contenir un objet JSON.")
+        raise ValueError(
+            f"Le fichier {resolved.name} doit contenir un objet JSON."
+        )
 
     return data, resolved.parent
 
@@ -94,14 +115,20 @@ def load_config(config_path: Optional[str] = None) -> Tuple[Dict[str, Any], Path
 # Construction des objets de domaine
 
 
-def build_world_from_config(config: Dict[str, Any], *, base_dir: Optional[Path] = None) -> World:
-    """Construit l'instance `World` a partir du dictionnaire de configuration."""
+def build_world_from_config(
+    config: Dict[str, Any], *, base_dir: Optional[Path] = None
+) -> World:
+    """Construit l'instance `World` a partir du dictionnaire
+    de configuration.
+    """
     world_cfg = config.get("world", {})
     width = _positive_int(world_cfg.get("width")) or 1000
     height = _positive_int(world_cfg.get("height")) or 1000
     minutes_per_step = _positive_int(world_cfg.get("minutes_per_step")) or 10
 
-    world = World(width=width, height=height, minutes_per_step=minutes_per_step)
+    world = World(
+        width=width, height=height, minutes_per_step=minutes_per_step
+    )
 
     apply_water_config(world, config.get("water"))
     apply_food_config(world, config.get("food"))
@@ -130,17 +157,27 @@ def build_species_from_config(
     if isinstance(population, list):
         for entry in population:
             if isinstance(entry, dict):
-                defaults_chain = [defaults] if isinstance(defaults, dict) else []
+                defaults_chain = (
+                    [defaults] if isinstance(defaults, dict) else []
+                )
                 combined_entries.append((entry, list(defaults_chain)))
 
     presets = section.get("presets")
     if isinstance(presets, list):
         for preset_spec in presets:
             if isinstance(preset_spec, dict):
-                preset_ref = preset_spec.get("preset") or preset_spec.get("path") or preset_spec.get("file")
+                preset_ref = (
+                    preset_spec.get("preset")
+                    or preset_spec.get("path")
+                    or preset_spec.get("file")
+                )
                 instances_raw = preset_spec.get("instances")
                 overrides = preset_spec.get("overrides")
-                instances = [inst for inst in instances_raw or [] if isinstance(inst, dict)]
+                instances = [
+                    inst
+                    for inst in instances_raw or []
+                    if isinstance(inst, dict)
+                ]
             else:
                 preset_ref = preset_spec
                 overrides = None
@@ -156,8 +193,12 @@ def build_species_from_config(
             }
             if isinstance(overrides, dict):
                 merged_overrides = dict(overrides)
-                if "traits" in overrides and isinstance(overrides["traits"], dict):
-                    base_traits = _extract_traits(preset_defaults.get("traits"))
+                if "traits" in overrides and isinstance(
+                    overrides["traits"], dict
+                ):
+                    base_traits = _extract_traits(
+                        preset_defaults.get("traits")
+                    )
                     override_traits = _extract_traits(overrides.get("traits"))
                     merged_traits = dict(base_traits)
                     merged_traits.update(override_traits)
@@ -187,23 +228,41 @@ def build_species_from_config(
             or f"Espece_{index}"
         )
 
-        vision = _resolve_float_attr("vision", entry, default_chain, fallback=80.0)
-        smell_range = _resolve_float_attr("smell_range", entry, default_chain, fallback=200.0)
-        speed = _resolve_float_attr("speed", entry, default_chain, fallback=10.0)
-        diurnal = _resolve_bool_attr("diurnal", entry, default_chain, fallback=True)
+        vision = _resolve_float_attr(
+            "vision", entry, default_chain, fallback=80.0
+        )
+        smell_range = _resolve_float_attr(
+            "smell_range", entry, default_chain, fallback=200.0
+        )
+        speed = _resolve_float_attr(
+            "speed", entry, default_chain, fallback=10.0
+        )
+        diurnal = _resolve_bool_attr(
+            "diurnal", entry, default_chain, fallback=True
+        )
         temperament = (
             _coerce_str(entry.get("temperament"))
             or _resolve_str_from_chain("temperament", default_chain)
             or "neutre"
         )
-        diet = _coerce_str(entry.get("diet")) or _resolve_str_from_chain("diet", default_chain) or "omnivore"
-        body_nutrition = _resolve_float_attr("body_nutrition", entry, default_chain, fallback=80.0)
-        body_nutrition_range = _resolve_float_range_attr("body_nutrition", entry, default_chain)
+        diet = (
+            _coerce_str(entry.get("diet"))
+            or _resolve_str_from_chain("diet", default_chain)
+            or "omnivore"
+        )
+        body_nutrition = _resolve_float_attr(
+            "body_nutrition", entry, default_chain, fallback=80.0
+        )
+        body_nutrition_range = _resolve_float_range_attr(
+            "body_nutrition", entry, default_chain
+        )
 
         requested_count = _positive_int(entry.get("count"))
         if requested_count is None:
             for defaults_source in default_chain:
-                requested_count = _positive_int(_extract_from_dict(defaults_source, "count"))
+                requested_count = _positive_int(
+                    _extract_from_dict(defaults_source, "count")
+                )
                 if requested_count:
                     break
         count = requested_count or 1
@@ -212,11 +271,15 @@ def build_species_from_config(
         if not explicit_positions:
             for defaults_source in default_chain:
                 explicit_positions.extend(
-                    _extract_positions(world, _extract_from_dict(defaults_source, "positions"))
+                    _extract_positions(
+                        world, _extract_from_dict(defaults_source, "positions")
+                    )
                 )
         position_candidates = [entry.get("position")]
         for defaults_source in default_chain:
-            position_candidates.append(_extract_from_dict(defaults_source, "position"))
+            position_candidates.append(
+                _extract_from_dict(defaults_source, "position")
+            )
         base_position = _extract_position(world, *position_candidates)
         if explicit_positions:
             positions = explicit_positions
@@ -237,26 +300,36 @@ def build_species_from_config(
             or name_base
         )
 
-        group_id = (
-            _coerce_str(entry.get("group_id"))
-            or _resolve_str_from_chain("group_id", default_chain)
-        )
-        pack_id = (
-            _coerce_str(entry.get("pack_id"))
-            or _resolve_str_from_chain("pack_id", default_chain)
+        group_id = _coerce_str(
+            entry.get("group_id")
+        ) or _resolve_str_from_chain("group_id", default_chain)
+        pack_id = _coerce_str(entry.get("pack_id")) or _resolve_str_from_chain(
+            "pack_id", default_chain
         )
         traits = _resolve_traits(entry, default_chain)
-        sex_value = _coerce_str(entry.get("sex")) or _resolve_str_from_chain("sex", default_chain)
-        age_stage_value = _coerce_str(entry.get("age_stage")) or _resolve_str_from_chain("age_stage", default_chain)
-        sprite_name_value = _coerce_str(entry.get("sprite_name")) or _resolve_str_from_chain("sprite_name", default_chain)
+        sex_value = _coerce_str(entry.get("sex")) or _resolve_str_from_chain(
+            "sex", default_chain
+        )
+        age_stage_value = _coerce_str(
+            entry.get("age_stage")
+        ) or _resolve_str_from_chain("age_stage", default_chain)
+        sprite_name_value = _coerce_str(
+            entry.get("sprite_name")
+        ) or _resolve_str_from_chain("sprite_name", default_chain)
 
         for offset in range(count):
-            final_name = name_base if count == 1 else f"{name_base}_{offset + 1}"
-            position = positions[offset] if offset < len(positions) else positions[-1]
+            final_name = (
+                name_base if count == 1 else f"{name_base}_{offset + 1}"
+            )
+            position = (
+                positions[offset] if offset < len(positions) else positions[-1]
+            )
             traits_payload = copy.deepcopy(traits)
             nutrition_value = body_nutrition
             if body_nutrition_range is not None:
-                nutrition_value = random.uniform(body_nutrition_range[0], body_nutrition_range[1])
+                nutrition_value = random.uniform(
+                    body_nutrition_range[0], body_nutrition_range[1]
+                )
             if sex_value and "sex" not in traits_payload:
                 traits_payload["sex"] = sex_value
             if age_stage_value and "age_stage" not in traits_payload:
@@ -294,6 +367,7 @@ def apply_food_config(world: World, section: Any) -> None:
     import copy
 
     from domain.food_generation import DEFAULT_FOOD_PROFILES
+
     profiles = copy.deepcopy(DEFAULT_FOOD_PROFILES)
     presets = section.get("presets")
     if isinstance(presets, dict):
@@ -322,9 +396,14 @@ def apply_food_config(world: World, section: Any) -> None:
     quantity_value = _positive_int(section.get("quantity"))
     type_weights = _extract_type_weights(section.get("type_weights"))
     if quantity_value:
-        world.add_food(quantity=quantity_value, type_weights=type_weights, profiles=profiles)
+        world.add_food(
+            quantity=quantity_value,
+            type_weights=type_weights,
+            profiles=profiles,
+        )
     elif type_weights:
-        # Allow pure weight-based generation by falling back to default quantity.
+        # Allow pure weight-based generation by falling back
+        # to default quantity.
         world.add_food(type_weights=type_weights, profiles=profiles)
 
 
@@ -396,7 +475,9 @@ def _extract_positions(world: World, value: Any) -> List[Tuple[float, float]]:
     return positions
 
 
-def _build_spawn_positions(world: World, anchor: Tuple[float, float], count: int) -> List[Tuple[float, float]]:
+def _build_spawn_positions(
+    world: World, anchor: Tuple[float, float], count: int
+) -> List[Tuple[float, float]]:
     if count <= 1:
         return [_clamp_position(anchor, world)]
 
@@ -411,11 +492,17 @@ def _build_spawn_positions(world: World, anchor: Tuple[float, float], count: int
             distance = random.uniform(radius * 0.25, radius)
             offset_x = math.cos(angle) * distance
             offset_y = math.sin(angle) * distance
-        positions.append(_clamp_position((anchor[0] + offset_x, anchor[1] + offset_y), world))
+        positions.append(
+            _clamp_position(
+                (anchor[0] + offset_x, anchor[1] + offset_y), world
+            )
+        )
     return positions
 
 
-def _clamp_position(position: Tuple[float, float], world: World) -> Tuple[float, float]:
+def _clamp_position(
+    position: Tuple[float, float], world: World
+) -> Tuple[float, float]:
     x = max(0.0, min(float(world.width), float(position[0])))
     y = max(0.0, min(float(world.height), float(position[1])))
     if hasattr(world, "relocate_off_water"):
@@ -432,19 +519,23 @@ def _coerce_position(value: Any) -> Optional[Tuple[float, float]]:
     return None
 
 
-def _safe_float_pair(x_value: Any, y_value: Any) -> Optional[Tuple[float, float]]:
+def _safe_float_pair(
+    x_value: Any, y_value: Any
+) -> Optional[Tuple[float, float]]:
     x = _coerce_float(x_value)
     y = _coerce_float(y_value)
     if x is None or y is None:
         return None
     return (x, y)
 
+
 def _resolve_config_path(config_path: Optional[str]) -> Path:
     """
     Transforme un chemin (relatif ou absolu) en chemin absolu valide.
     Cherche intelligemment à la racine OU dans le dossier 'app'.
     """
-    # 1. Si aucun chemin n'est donné, on prend le défaut (qui inclut déjà 'app')
+    # 1. Si aucun chemin n'est donné, on prend le défaut
+    # (qui inclut déjà 'app')
     if config_path is None:
         return DEFAULT_CONFIG_PATH
 
@@ -456,18 +547,21 @@ def _resolve_config_path(config_path: Optional[str]) -> Path:
 
     # 3. Si c'est relatif, on teste deux endroits :
 
-    # Tentative A : Directement à la racine (ex: dist_final/data/server/mon_fichier.json)
+    # Tentative A : Directement à la racine
+    # (ex: dist_final/data/server/mon_fichier.json)
     path_at_root = APP_ROOT / candidate
     if path_at_root.exists():
         return path_at_root.resolve()
 
-    # Tentative B : Dans le dossier 'app' (ex: dist_final/data/server/app/world_config.json)
+    # Tentative B : Dans le dossier 'app'
+    # (ex: dist_final/data/server/app/world_config.json)
     # C'est ça qui va sauver ton chargement !
     path_in_app = APP_ROOT / "app" / candidate
     if path_in_app.exists():
         return path_in_app.resolve()
 
-    # Si on ne trouve nulle part, on retourne le chemin racine par défaut (ça plantera après, mais proprement)
+    # Si on ne trouve nulle part, on retourne le chemin racine par défaut
+    # (ça plantera après, mais proprement)
     return path_at_root.resolve()
 
 
@@ -553,7 +647,9 @@ def _resolve_bool_attr(
     return fallback
 
 
-def _resolve_str_from_chain(key: str, default_chain: List[Dict[str, Any]]) -> Optional[str]:
+def _resolve_str_from_chain(
+    key: str, default_chain: List[Dict[str, Any]]
+) -> Optional[str]:
     for defaults_source in default_chain:
         value = _coerce_str(_extract_from_dict(defaults_source, key))
         if value:
@@ -561,7 +657,9 @@ def _resolve_str_from_chain(key: str, default_chain: List[Dict[str, Any]]) -> Op
     return None
 
 
-def _resolve_traits(entry: Dict[str, Any], default_chain: List[Dict[str, Any]]) -> Dict[str, Any]:
+def _resolve_traits(
+    entry: Dict[str, Any], default_chain: List[Dict[str, Any]]
+) -> Dict[str, Any]:
     merged: Dict[str, Any] = {}
     for defaults_source in reversed(default_chain):
         traits = _extract_traits(_extract_from_dict(defaults_source, "traits"))
@@ -601,7 +699,9 @@ def _resolve_float_range_attr(
         return resolved
 
     for defaults_source in default_chain:
-        resolved = _coerce_range(_extract_from_dict(defaults_source, range_key))
+        resolved = _coerce_range(
+            _extract_from_dict(defaults_source, range_key)
+        )
         if resolved is not None:
             return resolved
     return None
@@ -641,7 +741,9 @@ def _extract_from_dict(container: Any, key: str) -> Any:
     return None
 
 
-def _load_species_preset(ref: Any, base_dir: Optional[Path]) -> Optional[Dict[str, Any]]:
+def _load_species_preset(
+    ref: Any, base_dir: Optional[Path]
+) -> Optional[Dict[str, Any]]:
     if isinstance(ref, dict):
         if "preset" in ref or "path" in ref or "file" in ref:
             ref = ref.get("preset") or ref.get("path") or ref.get("file")
@@ -688,7 +790,9 @@ def _resolve_preset_path(ref: Any, base_dir: Optional[Path]) -> Optional[Path]:
         if ref_path.suffix == "":
             if base_dir is not None:
                 search_paths.append((base_dir / ref_path).with_suffix(".json"))
-            search_paths.append((SPECIES_PRESETS_DIR / ref_path).with_suffix(".json"))
+            search_paths.append(
+                (SPECIES_PRESETS_DIR / ref_path).with_suffix(".json")
+            )
 
     seen: set[Path] = set()
     for path in search_paths:

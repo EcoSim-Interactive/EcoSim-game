@@ -1,4 +1,5 @@
 """Outils de generation procedurale des ressources alimentaires."""
+
 from __future__ import annotations
 
 import random
@@ -44,7 +45,9 @@ def generate_food_sources(
                 continue
             food_type, profile = resolve_food_profile(raw_type, profiles)
             for _ in range(count_int):
-                specs.append(_build_random_food_spec(width, height, food_type, profile))
+                specs.append(
+                    _build_random_food_spec(width, height, food_type, profile)
+                )
         return specs
 
     qty = int(quantity) if quantity else 0
@@ -55,7 +58,9 @@ def generate_food_sources(
     for _ in range(qty):
         food_type = random.choices(types, weights=weights, k=1)[0]
         _, profile = resolve_food_profile(food_type, profiles)
-        specs.append(_build_random_food_spec(width, height, food_type, profile))
+        specs.append(
+            _build_random_food_spec(width, height, food_type, profile)
+        )
     return specs
 
 
@@ -82,8 +87,13 @@ def _build_random_food_spec(
     metadata = profile.get("metadata")
 
     nutrition_range = profile.get("nutrition_range")
-    if isinstance(nutrition_range, (list, tuple)) and len(nutrition_range) >= 2:
-        nutrition_value = random.uniform(nutrition_range[0], nutrition_range[1])
+    if (
+        isinstance(nutrition_range, (list, tuple))
+        and len(nutrition_range) >= 2
+    ):
+        nutrition_value = random.uniform(
+            nutrition_range[0], nutrition_range[1]
+        )
     else:
         nutrition_value = float(profile.get("nutrition", 28000.0))
 
@@ -105,7 +115,11 @@ def _prepare_weighted_types(
         types: List[str] = []
         weights: List[float] = []
         for raw_type, raw_weight in overrides.items():
-            weight = float(raw_weight) if isinstance(raw_weight, (int, float)) else 0.0
+            weight = (
+                float(raw_weight)
+                if isinstance(raw_weight, (int, float))
+                else 0.0
+            )
             if weight <= 0:
                 continue
             food_type, profile = resolve_food_profile(raw_type, profiles)
@@ -115,7 +129,9 @@ def _prepare_weighted_types(
             return types, weights
 
     types = list(profiles.keys())
-    weights = [float(profile.get("weight", 1)) for profile in profiles.values()]
+    weights = [
+        float(profile.get("weight", 1)) for profile in profiles.values()
+    ]
     return types, weights
 
 

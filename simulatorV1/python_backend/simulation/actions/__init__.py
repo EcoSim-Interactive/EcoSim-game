@@ -1,4 +1,4 @@
-"""Expose les comportements sociaux et avances reutilisables par les animaux."""
+"""Expose les comportements sociaux et avances reutilisables par les animaux."""  # noqa: E501
 
 from .grouping import maintain_group_cohesion
 from .predation import execute_predation_cycle

@@ -1,4 +1,7 @@
-"""Entite de domaine qui porte la carte, l'eau, la nourriture et les contraintes du monde."""
+"""Entite de domaine qui porte la carte, l'eau, la nourriture
+et les contraintes du monde.
+"""
+
 from __future__ import annotations
 
 import math
@@ -19,7 +22,11 @@ from .constants import (
     RELOCATE_OFF_WATER_FALLBACK_RADIUS,
     RELOCATE_OFF_WATER_RADIUS,
 )
-from .food_generation import DEFAULT_FOOD_PROFILES, generate_food_sources, resolve_food_profile
+from .food_generation import (
+    DEFAULT_FOOD_PROFILES,
+    generate_food_sources,
+    resolve_food_profile,
+)
 from .spatial_index import SpatialIndex
 from .water_generation import (
     generate_lake_specs,
@@ -33,9 +40,14 @@ SPATIAL_INDEX_CELL_SIZE = 64
 
 
 class World:
-    """Conteneur central des ressources et des regles spatiales de la simulation."""
+    """Conteneur central des ressources et des regles spatiales de la simulation."""  # noqa: E501
 
-    def __init__(self, width: int = 1000, height: int = 1000, minutes_per_step: int = DEFAULT_MINUTES_PER_STEP) -> None:
+    def __init__(
+        self,
+        width: int = 1000,
+        height: int = 1000,
+        minutes_per_step: int = DEFAULT_MINUTES_PER_STEP,
+    ) -> None:
         self.width = width
         self.height = height
         self.minutes_per_step = minutes_per_step
@@ -53,9 +65,15 @@ class World:
         self._spatial_cell_size = SPATIAL_INDEX_CELL_SIZE
         self._food_lookup: Dict[str, Dict[str, Any]] = {}
         self._water_lookup: Dict[str, Dict[str, Any]] = {}
-        self._food_spatial_index = SpatialIndex(self._spatial_cell_size, self.width, self.height)
-        self._water_spatial_index = SpatialIndex(self._spatial_cell_size, self.width, self.height)
-        self._shore_water_spatial_index = SpatialIndex(self._spatial_cell_size, self.width, self.height)
+        self._food_spatial_index = SpatialIndex(
+            self._spatial_cell_size, self.width, self.height
+        )
+        self._water_spatial_index = SpatialIndex(
+            self._spatial_cell_size, self.width, self.height
+        )
+        self._shore_water_spatial_index = SpatialIndex(
+            self._spatial_cell_size, self.width, self.height
+        )
         self._shore_water_dirty = True
         self._shore_tiles_by_source: Dict[str, List[Tuple[int, int]]] = {}
         self._shore_tiles_dirty = True
@@ -86,14 +104,18 @@ class World:
                         continue
                     nx = wx + dx
                     ny = wy + dy
-                    if nx < 0 or ny < 0 or nx >= self.width or ny >= self.height:
+                    if (
+                        nx < 0
+                        or ny < 0
+                        or nx >= self.width
+                        or ny >= self.height
+                    ):
                         continue
                     if self.is_water_at(nx, ny):
                         continue
                     cache.setdefault(key, set()).add((nx, ny))
         self._shore_tiles_by_source = {
-            key: sorted(tiles)
-            for key, tiles in cache.items()
+            key: sorted(tiles) for key, tiles in cache.items()
         }
         self._shore_tiles_dirty = False
 
@@ -116,7 +138,7 @@ class World:
         type_weights: Optional[Dict[str, float]] = None,
         profiles: Optional[Dict[str, Dict[str, Any]]] = None,
     ) -> None:
-        """Populate the world with randomly placed food sources of various vegetal types."""
+        """Populate the world with randomly placed food sources of various vegetal types."""  # noqa: E501
         specs = generate_food_sources(
             self.width,
             self.height,
@@ -139,7 +161,11 @@ class World:
                 sprite_name=spec.get("sprite_name"),
             )
 
-    def add_food_placements(self, placements: List[Dict[str, Any]], profiles: Optional[Dict[str, Dict[str, Any]]] = None) -> None:
+    def add_food_placements(
+        self,
+        placements: List[Dict[str, Any]],
+        profiles: Optional[Dict[str, Dict[str, Any]]] = None,
+    ) -> None:
         """Add explicit food positions defined in configuration files."""
         profiles = profiles or DEFAULT_FOOD_PROFILES
         for placement in placements or []:
@@ -151,17 +177,28 @@ class World:
                 continue
             raw_type = placement.get("type")
             food_type, profile = resolve_food_profile(raw_type, profiles)
-            nutrition_override = self._to_optional_float(placement.get("nutrition"))
+            nutrition_override = self._to_optional_float(
+                placement.get("nutrition")
+            )
             if nutrition_override is None:
                 nutrition_range = profile.get("nutrition_range")
-                if isinstance(nutrition_range, (list, tuple)) and len(nutrition_range) >= 2:
-                    nutrition_override = random.uniform(nutrition_range[0], nutrition_range[1])
+                if (
+                    isinstance(nutrition_range, (list, tuple))
+                    and len(nutrition_range) >= 2
+                ):
+                    nutrition_override = random.uniform(
+                        nutrition_range[0], nutrition_range[1]
+                    )
                 else:
                     nutrition_override = profile.get("nutrition", 28000.0)
             metadata = placement.get("metadata")
             if not isinstance(metadata, dict):
                 default_metadata = profile.get("metadata")
-                metadata = dict(default_metadata) if isinstance(default_metadata, dict) else None
+                metadata = (
+                    dict(default_metadata)
+                    if isinstance(default_metadata, dict)
+                    else None
+                )
             else:
                 metadata = dict(metadata)
             position = self._relocate_off_water(x, y)
@@ -174,7 +211,8 @@ class World:
                 nutrition=nutrition_override,
                 metadata=metadata,
                 food_class=placement.get("food_class", "plant"),
-                sprite_name=placement.get("sprite_name") or profile.get("sprite_name"),
+                sprite_name=placement.get("sprite_name")
+                or profile.get("sprite_name"),
             )
 
     # ------------------------------------------------------------------
@@ -195,10 +233,20 @@ class World:
             return
 
         fill_step = max(1, int(fill_step or 1))
-        river_segments = river_segments if river_segments is not None else max(3, quantity)
-        stagnant_count = stagnant_count if stagnant_count is not None else max(1, quantity // 3)
-        oasis_count = oasis_count if oasis_count is not None else max(1, quantity // 4)
-        lake_count = lake_count if lake_count is not None else max(1, quantity // 5)
+        river_segments = (
+            river_segments if river_segments is not None else max(3, quantity)
+        )
+        stagnant_count = (
+            stagnant_count
+            if stagnant_count is not None
+            else max(1, quantity // 3)
+        )
+        oasis_count = (
+            oasis_count if oasis_count is not None else max(1, quantity // 4)
+        )
+        lake_count = (
+            lake_count if lake_count is not None else max(1, quantity // 5)
+        )
 
         self.add_river(length=river_segments)
         self.add_stagnant_pools(count=stagnant_count, fill_step=fill_step)
@@ -206,77 +254,77 @@ class World:
         self.add_lakes(count=lake_count, fill_step=fill_step)
 
     def add_river(self, length: int = 8, *, max_step: int = 60) -> None:
-            if length <= 0:
-                return
+        if length <= 0:
+            return
 
-            river_label = f"river_{self._water_id_seq + 1}"
+        river_label = f"river_{self._water_id_seq + 1}"
 
-            # 1. Générer les points clés (éloignés les uns des autres)
-            key_segments = generate_river_segments(
-                self.width,
-                self.height,
-                length,
-                key_point_step=15,
+        # 1. Générer les points clés (éloignés les uns des autres)
+        key_segments = generate_river_segments(
+            self.width,
+            self.height,
+            length,
+            key_point_step=15,
+        )
+
+        if not key_segments:
+            return
+
+        # 2. RELIER LES POINTS (Interpolation)
+        # On crée un chemin continu pixel par pixel entre les points clés
+        full_path_coords = []
+        for i in range(len(key_segments) - 1):
+            p1 = key_segments[i]
+            p2 = key_segments[i + 1]
+
+            # C'est ici que la magie opère : on remplit le vide
+            segment_pixels = trace_line(
+                int(p1["x"]), int(p1["y"]), int(p2["x"]), int(p2["y"])
             )
+            full_path_coords.extend(segment_pixels)
 
-            if not key_segments:
-                return
+        # On nettoie les doublons potentiels tout en gardant l'ordre (si possible) ou set simple  # noqa: E501
+        # Pour une rivière, l'ordre compte pour la largeur, donc on fait attention  # noqa: E501
+        unique_path = []
+        seen = set()
+        for p in full_path_coords:
+            if p not in seen:
+                seen.add(p)
+                unique_path.append(p)
 
-            # 2. RELIER LES POINTS (Interpolation)
-            # On crée un chemin continu pixel par pixel entre les points clés
-            full_path_coords = []
-            for i in range(len(key_segments) - 1):
-                p1 = key_segments[i]
-                p2 = key_segments[i+1]
+        # 3. Élargissement progressif
+        MIN_WIDTH = 4
+        MAX_WIDTH = 28
+        total_len = len(unique_path)
+        registered = set()
 
-                # C'est ici que la magie opère : on remplit le vide
-                segment_pixels = trace_line(
-                    int(p1["x"]), int(p1["y"]),
-                    int(p2["x"]), int(p2["y"])
-                )
-                full_path_coords.extend(segment_pixels)
+        for i, (cx, cy) in enumerate(unique_path):
+            # Progression de 0.0 à 1.0 le long de la rivière
+            progress = i / max(1, total_len)
 
-            # On nettoie les doublons potentiels tout en gardant l'ordre (si possible) ou set simple
-            # Pour une rivière, l'ordre compte pour la largeur, donc on fait attention
-            unique_path = []
-            seen = set()
-            for p in full_path_coords:
-                if p not in seen:
-                    seen.add(p)
-                    unique_path.append(p)
+            # Largeur variable
+            current_width = MIN_WIDTH + (MAX_WIDTH - MIN_WIDTH) * progress
+            radius = max(1, int(current_width / 2))
 
-            # 3. Élargissement progressif
-            MIN_WIDTH = 4
-            MAX_WIDTH = 28
-            total_len = len(unique_path)
-            registered = set()
+            # Dessiner le cercle/carré d'eau autour du point
+            for dx in range(-radius, radius + 1):
+                for dy in range(-radius, radius + 1):
+                    # Astuce: (dx*dx + dy*dy) <= radius*radius fait un cercle au lieu d'un carré  # noqa: E501
+                    # mais un carré est plus simple et suffit souvent.
+                    nx, ny = cx + dx, cy + dy
 
-            for i, (cx, cy) in enumerate(unique_path):
-                # Progression de 0.0 à 1.0 le long de la rivière
-                progress = i / max(1, total_len)
-
-                # Largeur variable
-                current_width = MIN_WIDTH + (MAX_WIDTH - MIN_WIDTH) * progress
-                radius = max(1, int(current_width / 2))
-
-                # Dessiner le cercle/carré d'eau autour du point
-                for dx in range(-radius, radius + 1):
-                    for dy in range(-radius, radius + 1):
-                        # Astuce: (dx*dx + dy*dy) <= radius*radius fait un cercle au lieu d'un carré
-                        # mais un carré est plus simple et suffit souvent.
-                        nx, ny = cx + dx, cy + dy
-
-                        if 0 <= nx < self.width and 0 <= ny < self.height:
-                            if (nx, ny) in registered:
-                                continue
-                            registered.add((nx, ny))
-                            self._register_water_source(
-                                nx, ny,
-                                water_type="river",
-                                capacity=None,
-                                max_capacity=None,
-                                metadata={"river_id": river_label}
-                            )
+                    if 0 <= nx < self.width and 0 <= ny < self.height:
+                        if (nx, ny) in registered:
+                            continue
+                        registered.add((nx, ny))
+                        self._register_water_source(
+                            nx,
+                            ny,
+                            water_type="river",
+                            capacity=None,
+                            max_capacity=None,
+                            metadata={"river_id": river_label},
+                        )
 
     def add_stagnant_pools(
         self,
@@ -287,14 +335,18 @@ class World:
         fill_step: int = 1,
     ) -> None:
         """Create isolated stagnant water points with limited capacity."""
-        specs = generate_stagnant_pool_specs(self.width, self.height, count, capacity_range, radius_range)
+        specs = generate_stagnant_pool_specs(
+            self.width, self.height, count, capacity_range, radius_range
+        )
         for spec in specs:
             center_x = int(round(spec["x"]))
             center_y = int(round(spec["y"]))
             radius = int(round(spec.get("radius") or 0))
             if radius <= 0:
                 continue
-            body_id = self._create_water_body(spec["capacity"], spec["max_capacity"])
+            body_id = self._create_water_body(
+                spec["capacity"], spec["max_capacity"]
+            )
             fill_step = max(1, int(fill_step))
 
             blob_count = random.randint(3, 6)
@@ -308,12 +360,16 @@ class World:
                 offset_y = int(round(random.uniform(-0.4, 0.4) * radius))
                 blob_r = max(3, int(round(radius * random.uniform(0.25, 0.6))))
                 blobs.append((offset_x, offset_y, blob_r))
-                max_r = max(max_r, abs(offset_x) + blob_r, abs(offset_y) + blob_r)
+                max_r = max(
+                    max_r, abs(offset_x) + blob_r, abs(offset_y) + blob_r
+                )
 
             for _ in range(carve_count):
                 offset_x = int(round(random.uniform(-0.35, 0.35) * radius))
                 offset_y = int(round(random.uniform(-0.35, 0.35) * radius))
-                carve_r = max(2, int(round(radius * random.uniform(0.15, 0.3))))
+                carve_r = max(
+                    2, int(round(radius * random.uniform(0.15, 0.3)))
+                )
                 carves.append((offset_x, offset_y, carve_r))
 
             r_sq = float(radius * radius)
@@ -337,7 +393,11 @@ class World:
                         value = (bx * bx + by * by) / br_sq
                         if value <= 1.0:
                             inside = True
-                            min_value = value if min_value is None else min(min_value, value)
+                            min_value = (
+                                value
+                                if min_value is None
+                                else min(min_value, value)
+                            )
                     if inside and carves:
                         for off_x, off_y, carve_r in carves:
                             bx = dx - off_x
@@ -353,7 +413,10 @@ class World:
                         threshold = 1.0 + (random.random() - 0.5) * edge_noise
                         if min_value > threshold:
                             continue
-                        if min_value > 0.9 and random.random() < edge_hole_chance:
+                        if (
+                            min_value > 0.9
+                            and random.random() < edge_hole_chance
+                        ):
                             continue
 
                     nx, ny = center_x + dx, center_y + dy
@@ -377,14 +440,18 @@ class World:
         fill_step: int = 1,
     ) -> None:
         """Create oasis water points with limited but higher capacities."""
-        specs = generate_oasis_specs(self.width, self.height, count, capacity_range, radius_range)
+        specs = generate_oasis_specs(
+            self.width, self.height, count, capacity_range, radius_range
+        )
         for spec in specs:
             center_x = int(round(spec["x"]))
             center_y = int(round(spec["y"]))
             radius = int(round(spec.get("radius") or 0))
             if radius <= 0:
                 continue
-            body_id = self._create_water_body(spec["capacity"], spec["max_capacity"])
+            body_id = self._create_water_body(
+                spec["capacity"], spec["max_capacity"]
+            )
             fill_step = max(1, int(fill_step))
 
             blob_count = random.randint(4, 8)
@@ -396,14 +463,20 @@ class World:
             for _ in range(blob_count):
                 offset_x = int(round(random.uniform(-0.45, 0.45) * radius))
                 offset_y = int(round(random.uniform(-0.45, 0.45) * radius))
-                blob_r = max(3, int(round(radius * random.uniform(0.25, 0.65))))
+                blob_r = max(
+                    3, int(round(radius * random.uniform(0.25, 0.65)))
+                )
                 blobs.append((offset_x, offset_y, blob_r))
-                max_r = max(max_r, abs(offset_x) + blob_r, abs(offset_y) + blob_r)
+                max_r = max(
+                    max_r, abs(offset_x) + blob_r, abs(offset_y) + blob_r
+                )
 
             for _ in range(carve_count):
                 offset_x = int(round(random.uniform(-0.35, 0.35) * radius))
                 offset_y = int(round(random.uniform(-0.35, 0.35) * radius))
-                carve_r = max(2, int(round(radius * random.uniform(0.12, 0.28))))
+                carve_r = max(
+                    2, int(round(radius * random.uniform(0.12, 0.28)))
+                )
                 carves.append((offset_x, offset_y, carve_r))
 
             r_sq = float(radius * radius)
@@ -427,7 +500,11 @@ class World:
                         value = (bx * bx + by * by) / br_sq
                         if value <= 1.0:
                             inside = True
-                            min_value = value if min_value is None else min(min_value, value)
+                            min_value = (
+                                value
+                                if min_value is None
+                                else min(min_value, value)
+                            )
                     if inside and carves:
                         for off_x, off_y, carve_r in carves:
                             bx = dx - off_x
@@ -443,7 +520,10 @@ class World:
                         threshold = 1.0 + (random.random() - 0.5) * edge_noise
                         if min_value > threshold:
                             continue
-                        if min_value > 0.9 and random.random() < edge_hole_chance:
+                        if (
+                            min_value > 0.9
+                            and random.random() < edge_hole_chance
+                        ):
                             continue
 
                     nx, ny = center_x + dx, center_y + dy
@@ -504,8 +584,12 @@ class World:
             for _ in range(blob_count):
                 offset_x = int(round(random.uniform(-0.5, 0.5) * radius_x))
                 offset_y = int(round(random.uniform(-0.5, 0.5) * radius_y))
-                blob_rx = max(4, int(round(radius_x * random.uniform(0.2, 0.7))))
-                blob_ry = max(4, int(round(radius_y * random.uniform(0.2, 0.7))))
+                blob_rx = max(
+                    4, int(round(radius_x * random.uniform(0.2, 0.7)))
+                )
+                blob_ry = max(
+                    4, int(round(radius_y * random.uniform(0.2, 0.7)))
+                )
                 blobs.append((offset_x, offset_y, blob_rx, blob_ry))
                 max_rx = max(max_rx, abs(offset_x) + blob_rx)
                 max_ry = max(max_ry, abs(offset_y) + blob_ry)
@@ -513,8 +597,12 @@ class World:
             for _ in range(carve_count):
                 offset_x = int(round(random.uniform(-0.45, 0.45) * radius_x))
                 offset_y = int(round(random.uniform(-0.45, 0.45) * radius_y))
-                carve_rx = max(3, int(round(radius_x * random.uniform(0.12, 0.3))))
-                carve_ry = max(3, int(round(radius_y * random.uniform(0.12, 0.3))))
+                carve_rx = max(
+                    3, int(round(radius_x * random.uniform(0.12, 0.3)))
+                )
+                carve_ry = max(
+                    3, int(round(radius_y * random.uniform(0.12, 0.3)))
+                )
                 carves.append((offset_x, offset_y, carve_rx, carve_ry))
 
             for _ in range(arm_count):
@@ -528,7 +616,9 @@ class World:
                 max_rx = max(max_rx, int(abs(offset) + arm_len))
                 max_ry = max(max_ry, int(arm_w * 1.5))
 
-            body_id = self._create_water_body(spec["capacity"], spec["max_capacity"])
+            body_id = self._create_water_body(
+                spec["capacity"], spec["max_capacity"]
+            )
             fill_step = max(1, int(fill_step))
             rx_sq = float(radius_x * radius_x)
             ry_sq = float(radius_y * radius_y)
@@ -554,7 +644,11 @@ class World:
                         value = (bx * bx) / brx_sq + (by * by) / bry_sq
                         if value <= 1.0:
                             inside = True
-                            min_value = value if min_value is None else min(min_value, value)
+                            min_value = (
+                                value
+                                if min_value is None
+                                else min(min_value, value)
+                            )
 
                     if not inside and arms:
                         for cos_a, sin_a, arm_len, arm_w, offset in arms:
@@ -563,10 +657,16 @@ class World:
                             arm_x = px - offset
                             if arm_x < -arm_len * 0.2 or arm_x > arm_len:
                                 continue
-                            value = (arm_x * arm_x) / (arm_len * arm_len) + (py * py) / (arm_w * arm_w)
+                            value = (arm_x * arm_x) / (arm_len * arm_len) + (
+                                py * py
+                            ) / (arm_w * arm_w)
                             if value <= 1.0:
                                 inside = True
-                                min_value = value if min_value is None else min(min_value, value)
+                                min_value = (
+                                    value
+                                    if min_value is None
+                                    else min(min_value, value)
+                                )
                                 break
 
                     if inside and carves:
@@ -587,7 +687,10 @@ class World:
                         threshold = 1.0 + (random.random() - 0.5) * edge_noise
                         if min_value > threshold:
                             continue
-                        if min_value > 0.9 and random.random() < edge_hole_chance:
+                        if (
+                            min_value > 0.9
+                            and random.random() < edge_hole_chance
+                        ):
                             continue
 
                     nx, ny = center_x + dx, center_y + dy
@@ -602,14 +705,18 @@ class World:
                             body_id=body_id,
                         )
 
-    def _create_water_body(self, capacity: Optional[float], max_capacity: Optional[float]) -> Optional[str]:
+    def _create_water_body(
+        self, capacity: Optional[float], max_capacity: Optional[float]
+    ) -> Optional[str]:
         if capacity is None and max_capacity is None:
             return None
         self._water_body_seq += 1
         body_id = f"water_body_{self._water_body_seq}"
         self._water_bodies[body_id] = {
             "capacity": capacity,
-            "max_capacity": max_capacity if max_capacity is not None else capacity,
+            "max_capacity": max_capacity
+            if max_capacity is not None
+            else capacity,
         }
         return body_id
 
@@ -698,7 +805,6 @@ class World:
                         body_id=body_id,
                     )
 
-
     def add_water_placements(self, placements: List[Dict[str, Any]]) -> None:
         """Add explicit water sources defined in configuration files."""
         for placement in placements or []:
@@ -709,13 +815,22 @@ class World:
             if not isinstance(water_type, str) or not water_type:
                 water_type = "stagnant"
 
-            if water_type == "river" and isinstance(placement.get("points"), list):
+            if water_type == "river" and isinstance(
+                placement.get("points"), list
+            ):
                 points = placement["points"]
                 if not points:
                     continue
-                river_id = placement.get("river_id") or f"river_{self._water_id_seq + 1}"
+                river_id = (
+                    placement.get("river_id")
+                    or f"river_{self._water_id_seq + 1}"
+                )
                 base_metadata = placement.get("metadata")
-                base_metadata = dict(base_metadata) if isinstance(base_metadata, dict) else {}
+                base_metadata = (
+                    dict(base_metadata)
+                    if isinstance(base_metadata, dict)
+                    else {}
+                )
 
                 for segment, point in enumerate(points):
                     if not isinstance(point, dict):
@@ -779,7 +894,10 @@ class World:
     def water_has_supply(self, water: Dict[str, Any]) -> bool:
         """Return True if the source still provides drinkable water."""
         water_id = water.get("id")
-        if water_id is not None and self._water_lookup.get(str(water_id)) is not water:
+        if (
+            water_id is not None
+            and self._water_lookup.get(str(water_id)) is not water
+        ):
             return False
         body_id = water.get("body_id")
         if body_id and body_id in self._water_bodies:
@@ -791,10 +909,15 @@ class World:
             return True
         return water.get("capacity", 0.0) > 0.0
 
-    def consume_water(self, water: Dict[str, Any], amount: float = 10.0) -> bool:
+    def consume_water(
+        self, water: Dict[str, Any], amount: float = 10.0
+    ) -> bool:
         """Consume water from the source, returning True if successful."""
         water_id = water.get("id")
-        if water_id is not None and self._water_lookup.get(str(water_id)) is not water:
+        if (
+            water_id is not None
+            and self._water_lookup.get(str(water_id)) is not water
+        ):
             return False
 
         body_id = water.get("body_id")
@@ -819,7 +942,9 @@ class World:
         water["capacity"] = remaining
         return True
 
-    def refill_water_source(self, source_id: str, amount: float) -> Optional[Dict[str, Any]]:
+    def refill_water_source(
+        self, source_id: str, amount: float
+    ) -> Optional[Dict[str, Any]]:
         """Refill a limited source up to its maximum capacity."""
         water = self.get_water_by_id(source_id)
         if water is None:
@@ -827,8 +952,12 @@ class World:
                 capacity = self._water_bodies[source_id].get("capacity")
                 if capacity is None:
                     return None
-                max_capacity = self._water_bodies[source_id].get("max_capacity", capacity)
-                self._water_bodies[source_id]["capacity"] = min(max_capacity, capacity + amount)
+                max_capacity = self._water_bodies[source_id].get(
+                    "max_capacity", capacity
+                )
+                self._water_bodies[source_id]["capacity"] = min(
+                    max_capacity, capacity + amount
+                )
             return None
 
         body_id = water.get("body_id")
@@ -836,8 +965,12 @@ class World:
             capacity = self._water_bodies[body_id].get("capacity")
             if capacity is None:
                 return water
-            max_capacity = self._water_bodies[body_id].get("max_capacity", capacity)
-            self._water_bodies[body_id]["capacity"] = min(max_capacity, capacity + amount)
+            max_capacity = self._water_bodies[body_id].get(
+                "max_capacity", capacity
+            )
+            self._water_bodies[body_id]["capacity"] = min(
+                max_capacity, capacity + amount
+            )
             return water
 
         capacity = water.get("capacity")
@@ -848,7 +981,9 @@ class World:
         water["capacity"] = min(max_capacity, capacity + amount)
         return water
 
-    def drain_water_source(self, source_id: str, amount: float) -> Optional[Dict[str, Any]]:
+    def drain_water_source(
+        self, source_id: str, amount: float
+    ) -> Optional[Dict[str, Any]]:
         """Drain water from a limited source without removing it."""
         water = self.get_water_by_id(source_id)
         if water is None:
@@ -856,7 +991,9 @@ class World:
                 capacity = self._water_bodies[source_id].get("capacity")
                 if capacity is None:
                     return None
-                self._water_bodies[source_id]["capacity"] = max(0.0, capacity - amount)
+                self._water_bodies[source_id]["capacity"] = max(
+                    0.0, capacity - amount
+                )
             return None
 
         body_id = water.get("body_id")
@@ -864,7 +1001,9 @@ class World:
             capacity = self._water_bodies[body_id].get("capacity")
             if capacity is None:
                 return water
-            self._water_bodies[body_id]["capacity"] = max(0.0, capacity - amount)
+            self._water_bodies[body_id]["capacity"] = max(
+                0.0, capacity - amount
+            )
             return water
 
         capacity = water.get("capacity")
@@ -881,12 +1020,11 @@ class World:
     # Generation du terrain de base
 
     def generate_terrain(self, default_tile: int = 0) -> None:
-        """Generate a simple terrain grid filled with a default tile type. In the futur we can expand this to more complex terrain generation. (Bruit de Perlin or Biome generation)"""
+        """Generate a simple terrain grid filled with a default tile type. In the futur we can expand this to more complex terrain generation. (Bruit de Perlin or Biome generation)"""  # noqa: E501
         self.terrain = [
             [default_tile for _ in range(self.width)]
             for _ in range(self.height)
         ]
-
 
     # ------------------------------------------------------------------
     # Recherche spatiale et verification de franchissabilite
@@ -901,8 +1039,13 @@ class World:
         return self._food_spatial_index.search_nearest(
             x,
             y,
-            predicate=lambda food: self.food_has_supply(food) and self._food_matches_diet(food, diet),
-            distance_fn=lambda food: (float(food["x"]) - x) ** 2 + (float(food["y"]) - y) ** 2,
+            predicate=lambda food: (
+                self.food_has_supply(food)
+                and self._food_matches_diet(food, diet)
+            ),
+            distance_fn=lambda food: (
+                (float(food["x"]) - x) ** 2 + (float(food["y"]) - y) ** 2
+            ),
         )
 
     def water_depth_at(self, x: float, y: float) -> Optional[float]:
@@ -922,7 +1065,11 @@ class World:
         if not isinstance(traits, dict):
             traits = {}
 
-        water_traits = traits.get("water") if isinstance(traits.get("water"), dict) else {}
+        water_traits = (
+            traits.get("water")
+            if isinstance(traits.get("water"), dict)
+            else {}
+        )
 
         # Juvenile limits if provided.
         age_stage = getattr(entity, "age_stage", None)
@@ -964,8 +1111,9 @@ class World:
 
         return False
 
-
-    def _is_shore_water(self, water: Dict[str, Any], *, radius: int = 1) -> bool:
+    def _is_shore_water(
+        self, water: Dict[str, Any], *, radius: int = 1
+    ) -> bool:
         wx = int(round(float(water.get("x", 0.0))))
         wy = int(round(float(water.get("y", 0.0))))
         if not self.is_water_at(wx, wy):
@@ -995,7 +1143,9 @@ class World:
         attempts: int = RELOCATE_OFF_WATER_ATTEMPTS,
         radius: int = RELOCATE_OFF_WATER_RADIUS,
     ) -> Optional[Tuple[float, float]]:
-        position = self._relocate_off_water(x, y, attempts=attempts, radius=radius)
+        position = self._relocate_off_water(
+            x, y, attempts=attempts, radius=radius
+        )
         return position if position is not None else (x, y)
 
     def _relocate_off_water(
@@ -1017,7 +1167,6 @@ class World:
                 return (nx, ny)
         return None
 
-
     def find_shore_tile(
         self,
         x: float,
@@ -1026,7 +1175,7 @@ class World:
         *,
         min_radius: int = 0,
     ) -> Optional[Tuple[float, float]]:
-        """Return the nearest land tile adjacent to water within the given radius."""
+        """Return the nearest land tile adjacent to water within the given radius."""  # noqa: E501
         start_x = int(round(x))
         start_y = int(round(y))
         r_start = max(0, int(min_radius))
@@ -1040,7 +1189,12 @@ class World:
                 for dy in (-radius, radius):
                     nx = start_x + dx
                     ny = start_y + dy
-                    if nx < 0 or ny < 0 or nx >= self.width or ny >= self.height:
+                    if (
+                        nx < 0
+                        or ny < 0
+                        or nx >= self.width
+                        or ny >= self.height
+                    ):
                         continue
                     if self.is_water_at(nx, ny):
                         continue
@@ -1058,7 +1212,12 @@ class World:
                     for dx in (-radius, radius):
                         nx = start_x + dx
                         ny = start_y + dy
-                        if nx < 0 or ny < 0 or nx >= self.width or ny >= self.height:
+                        if (
+                            nx < 0
+                            or ny < 0
+                            or nx >= self.width
+                            or ny >= self.height
+                        ):
                             continue
                         if self.is_water_at(nx, ny):
                             continue
@@ -1110,7 +1269,9 @@ class World:
                     return True
         return False
 
-    def distance_to_water(self, x: float, y: float, water: Dict[str, Any]) -> float:
+    def distance_to_water(
+        self, x: float, y: float, water: Dict[str, Any]
+    ) -> float:
         dx = x - float(water.get("x", 0.0))
         dy = y - float(water.get("y", 0.0))
         dist = math.sqrt(dx * dx + dy * dy)
@@ -1140,8 +1301,6 @@ class World:
             return max(0.0, dist - rad)
 
         return dist
-
-
 
     def find_drink_target(
         self,
@@ -1176,10 +1335,16 @@ class World:
                 continue
             if dx * dx + dy * dy > max_radius * max_radius:
                 continue
-            if entity is not None and not self.can_entity_enter(entity, nx, ny):
+            if entity is not None and not self.can_entity_enter(
+                entity, nx, ny
+            ):
                 continue
             shoreline_gap = dx * dx + dy * dy
-            path_blocked = 1 if self._line_blocked_by_water(start_x, start_y, nx, ny) else 0
+            path_blocked = (
+                1
+                if self._line_blocked_by_water(start_x, start_y, nx, ny)
+                else 0
+            )
             dist_sq = (nx - x) ** 2 + (ny - y) ** 2
             score = (path_blocked, dist_sq, shoreline_gap)
             if best_score is None or score < best_score:
@@ -1192,7 +1357,9 @@ class World:
             return (float(water.get("x", 0.0)), float(water.get("y", 0.0)))
         return best
 
-    def get_nearest_water(self, x: float, y: float) -> Optional[Dict[str, Any]]:
+    def get_nearest_water(
+        self, x: float, y: float
+    ) -> Optional[Dict[str, Any]]:
         if not self.water_sources:
             return None
         if self._shore_water_dirty:
@@ -1202,7 +1369,9 @@ class World:
             x,
             y,
             predicate=self.water_has_supply,
-            distance_fn=lambda water: (float(water["x"]) - x) ** 2 + (float(water["y"]) - y) ** 2,
+            distance_fn=lambda water: (
+                (float(water["x"]) - x) ** 2 + (float(water["y"]) - y) ** 2
+            ),
         )
         if nearest_shore is not None:
             return nearest_shore
@@ -1219,19 +1388,32 @@ class World:
         hour = (total_minutes // 60) % 24
         return {
             "hour": hour,
-            "is_day": DAY_START_HOUR <= hour < DAY_END_HOUR,  # jour de 6h a 20h
+            "is_day": DAY_START_HOUR
+            <= hour
+            < DAY_END_HOUR,  # jour de 6h a 20h
         }
 
-    def consume_food(self, food: Dict[str, Any], requested_amount: float) -> Dict[str, Any]:
-        """Consomme une portion d'une source de nourriture et renvoie le resultat detaille."""
+    def consume_food(
+        self, food: Dict[str, Any], requested_amount: float
+    ) -> Dict[str, Any]:
+        """Consomme une portion d'une source de nourriture et renvoie le resultat detaille."""  # noqa: E501
         food_id = food.get("id")
-        if food_id is not None and self._food_lookup.get(str(food_id)) is not food:
+        if (
+            food_id is not None
+            and self._food_lookup.get(str(food_id)) is not food
+        ):
             return {"consumed": 0.0, "removed": False, "food": None}
 
-        remaining = float(food.get("remaining_nutrition", food.get("nutrition", 0.0)))
+        remaining = float(
+            food.get("remaining_nutrition", food.get("nutrition", 0.0))
+        )
         requested = max(0.0, float(requested_amount))
         if remaining <= 0.0 or requested <= 0.0:
-            return {"consumed": 0.0, "removed": False, "food": self._snapshot_food(food)}
+            return {
+                "consumed": 0.0,
+                "removed": False,
+                "food": self._snapshot_food(food),
+            }
 
         consumed = min(remaining, requested)
         new_remaining = remaining - consumed
@@ -1247,11 +1429,18 @@ class World:
 
     def food_has_supply(self, food: Dict[str, Any]) -> bool:
         food_id = food.get("id")
-        if food_id is not None and self._food_lookup.get(str(food_id)) is not food:
+        if (
+            food_id is not None
+            and self._food_lookup.get(str(food_id)) is not food
+        ):
             return False
-        return food.get("remaining_nutrition", food.get("nutrition", 0.0)) > 0.0
+        return (
+            food.get("remaining_nutrition", food.get("nutrition", 0.0)) > 0.0
+        )
 
-    def food_matches_diet(self, food: Dict[str, Any], diet: Optional[str]) -> bool:
+    def food_matches_diet(
+        self, food: Dict[str, Any], diet: Optional[str]
+    ) -> bool:
         return self._food_matches_diet(food, diet)
 
     # ------------------------------------------------------------------
@@ -1308,7 +1497,11 @@ class World:
         sprite_name: Optional[str] = None,
     ) -> Dict[str, Any]:
         self._food_id_seq += 1
-        nutrition_value = float(nutrition) if nutrition is not None else DEFAULT_FOOD_NUTRITION
+        nutrition_value = (
+            float(nutrition)
+            if nutrition is not None
+            else DEFAULT_FOOD_NUTRITION
+        )
         food: Dict[str, Any] = {
             "id": food_id or f"food_{self._food_id_seq}",
             "type": food_type,
@@ -1323,7 +1516,9 @@ class World:
             "max_nutrition": nutrition_value,
             "max_calories": nutrition_value,
         }
-        metadata_payload = dict(metadata) if isinstance(metadata, dict) else None
+        metadata_payload = (
+            dict(metadata) if isinstance(metadata, dict) else None
+        )
         if metadata_payload:
             food["metadata"] = metadata_payload
         self.food_sources.append(food)
@@ -1337,13 +1532,19 @@ class World:
         if hasattr(species, "estimate_carcass_calories"):
             nutrition_value = float(species.estimate_carcass_calories())
         if nutrition_value <= 0.0:
-            nutrition_value = float(getattr(species, "body_nutrition", DEFAULT_CARCASS_NUTRITION))
+            nutrition_value = float(
+                getattr(species, "body_nutrition", DEFAULT_CARCASS_NUTRITION)
+            )
         animal_id = getattr(species, "animal_id", None)
         source_name = getattr(species, "name", None)
         source_original_name = getattr(species, "original_name", source_name)
         source_species_type = getattr(species, "species_type", source_name)
         source_body_mass = getattr(species, "body_mass_kg", None)
-        carcass_id = f"carcass_{animal_id}_{self._food_id_seq + 1}" if animal_id is not None else None
+        carcass_id = (
+            f"carcass_{animal_id}_{self._food_id_seq + 1}"
+            if animal_id is not None
+            else None
+        )
         metadata = {
             "source_species": source_name,
             "source_original_name": source_original_name,
@@ -1355,7 +1556,11 @@ class World:
             "source_carcass_calories": nutrition_value,
             "linked_animal": True,
         }
-        carcass_sprite = f"carcass_{species.sprite_name}" if getattr(species, "sprite_name", None) else "carcass"
+        carcass_sprite = (
+            f"carcass_{species.sprite_name}"
+            if getattr(species, "sprite_name", None)
+            else "carcass"
+        )
         carcass = self._register_food_source(
             species.x,
             species.y,
@@ -1397,7 +1602,9 @@ class World:
         return True
 
     @staticmethod
-    def _snapshot_food(food: Dict[str, Any], *, override_remaining: Optional[float] = None) -> Dict[str, Any]:
+    def _snapshot_food(
+        food: Dict[str, Any], *, override_remaining: Optional[float] = None
+    ) -> Dict[str, Any]:
         snapshot = {
             "id": food.get("id"),
             "type": food.get("type"),
@@ -1416,9 +1623,15 @@ class World:
             else food.get("remaining_nutrition", food.get("nutrition")),
             "remaining_calories": override_remaining
             if override_remaining is not None
-            else food.get("remaining_calories", food.get("remaining_nutrition", food.get("nutrition"))),
+            else food.get(
+                "remaining_calories",
+                food.get("remaining_nutrition", food.get("nutrition")),
+            ),
             "max_nutrition": food.get("max_nutrition", food.get("nutrition")),
-            "max_calories": food.get("max_calories", food.get("max_nutrition", food.get("nutrition"))),
+            "max_calories": food.get(
+                "max_calories",
+                food.get("max_nutrition", food.get("nutrition")),
+            ),
         }
         metadata = food.get("metadata")
         if metadata is not None:

@@ -1,4 +1,5 @@
 """Routines comportementales elementaires separees du modele de donnees."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple
@@ -21,20 +22,28 @@ def _reposition_after_failed_move(
 ) -> Tuple[bool, str, str]:
     """Tente un decalage court lorsque la cible directe est inaccessible."""
     if animal.random_move(world):
-        log(f"{animal.name} tente un repositionnement pour contourner un blocage.")
+        log(
+            f"{animal.name} tente un repositionnement pour contourner un blocage."  # noqa: E501
+        )
         return True, action, motivation
     return False, "", ""
 
 
-def _resolve_water_source(world: Any, x: float, y: float) -> Optional[Dict[str, Any]]:
-    """Retrouve une source d'eau a partir d'une position memorisee ou observee."""
+def _resolve_water_source(
+    world: Any, x: float, y: float
+) -> Optional[Dict[str, Any]]:
+    """Retrouve une source d'eau a partir d'une position memorisee ou observee."""  # noqa: E501
     if not hasattr(world, "get_nearest_water"):
         return None
     return world.get_nearest_water(x, y)
 
 
-def _remember_water_access(animal: "Animal", water: Dict[str, Any], target: Tuple[float, float]) -> None:
-    animal.remember_water(float(water.get("x", animal.x)), float(water.get("y", animal.y)))
+def _remember_water_access(
+    animal: "Animal", water: Dict[str, Any], target: Tuple[float, float]
+) -> None:
+    animal.remember_water(
+        float(water.get("x", animal.x)), float(water.get("y", animal.y))
+    )
     animal.remember_water_target(target[0], target[1])
 
 
@@ -47,7 +56,9 @@ def _move_to_water_target(
     action: str,
     motivation: str,
 ) -> Tuple[bool, str, str]:
-    """Poursuit une cible de rive stable pour eviter les oscillations de bord d'eau."""
+    """Poursuit une cible de rive stable pour eviter les
+    oscillations de bord d'eau.
+    """
     if animal.distance_to({"x": target[0], "y": target[1]}) <= 1.0:
         animal.clear_water_target()
         return False, "", ""
@@ -81,7 +92,9 @@ def decide_idle_action(animal: "Animal") -> str:
     return "rest" if roll < 0.5 else "wander"
 
 
-def handle_thirst(animal: "Animal", world: Any, log: LogFn) -> Tuple[bool, str, str]:
+def handle_thirst(
+    animal: "Animal", world: Any, log: LogFn
+) -> Tuple[bool, str, str]:
     if animal.try_drink(world):
         animal.clear_water_target()
         log(f"{animal.name} a bu des qu'il a atteint la rive.")
@@ -108,9 +121,20 @@ def handle_thirst(animal: "Animal", world: Any, log: LogFn) -> Tuple[bool, str, 
 
     nearest = _resolve_water_source(world, animal.x, animal.y)
     if nearest is not None and hasattr(world, "distance_to_water"):
-        water_distance = float(world.distance_to_water(animal.x, animal.y, nearest))
+        water_distance = float(
+            world.distance_to_water(animal.x, animal.y, nearest)
+        )
         if water_distance <= animal.vision:
-            target = world.find_drink_target(animal.x, animal.y, nearest, entity=animal) if hasattr(world, "find_drink_target") else (float(nearest.get("x", animal.x)), float(nearest.get("y", animal.y)))
+            target = (
+                world.find_drink_target(
+                    animal.x, animal.y, nearest, entity=animal
+                )
+                if hasattr(world, "find_drink_target")
+                else (
+                    float(nearest.get("x", animal.x)),
+                    float(nearest.get("y", animal.y)),
+                )
+            )
             log(f"{animal.name} voit une source d'eau a proximite")
             _remember_water_access(animal, nearest, target)
             return _move_to_water_target(
@@ -122,7 +146,16 @@ def handle_thirst(animal: "Animal", world: Any, log: LogFn) -> Tuple[bool, str, 
                 motivation="soif (vue)",
             )
         if water_distance <= animal.smell_range:
-            target = world.find_drink_target(animal.x, animal.y, nearest, entity=animal) if hasattr(world, "find_drink_target") else (float(nearest.get("x", animal.x)), float(nearest.get("y", animal.y)))
+            target = (
+                world.find_drink_target(
+                    animal.x, animal.y, nearest, entity=animal
+                )
+                if hasattr(world, "find_drink_target")
+                else (
+                    float(nearest.get("x", animal.x)),
+                    float(nearest.get("y", animal.y)),
+                )
+            )
             log(f"{animal.name} sent de l'eau a proximite")
             _remember_water_access(animal, nearest, target)
             return _move_to_water_target(
@@ -142,7 +175,10 @@ def handle_thirst(animal: "Animal", world: Any, log: LogFn) -> Tuple[bool, str, 
     if shared is None and isinstance(animal.pack_state, dict):
         shared = animal.pack_state.get("last_water")
     if isinstance(shared, dict) and "x" in shared and "y" in shared:
-        memory_point = (float(shared.get("x", animal.x)), float(shared.get("y", animal.y)))
+        memory_point = (
+            float(shared.get("x", animal.x)),
+            float(shared.get("y", animal.y)),
+        )
         source = "groupe"
     else:
         recalled = animal.recall_water()
@@ -152,7 +188,10 @@ def handle_thirst(animal: "Animal", world: Any, log: LogFn) -> Tuple[bool, str, 
     if memory_point is None and hasattr(world, "get_nearest_water"):
         nearest = world.get_nearest_water(animal.x, animal.y)
         if nearest is not None:
-            memory_point = (float(nearest.get("x", animal.x)), float(nearest.get("y", animal.y)))
+            memory_point = (
+                float(nearest.get("x", animal.x)),
+                float(nearest.get("y", animal.y)),
+            )
             source = "repere"
 
     if memory_point is not None:
@@ -160,9 +199,18 @@ def handle_thirst(animal: "Animal", world: Any, log: LogFn) -> Tuple[bool, str, 
         if water is None:
             return False, "", ""
         if hasattr(world, "find_drink_target"):
-            shore = world.find_drink_target(animal.x, animal.y, water, entity=animal, search_radius=WATER_MEMORY_SEARCH_RADIUS)
+            shore = world.find_drink_target(
+                animal.x,
+                animal.y,
+                water,
+                entity=animal,
+                search_radius=WATER_MEMORY_SEARCH_RADIUS,
+            )
         else:
-            shore = (float(water.get("x", animal.x)), float(water.get("y", animal.y)))
+            shore = (
+                float(water.get("x", animal.x)),
+                float(water.get("y", animal.y)),
+            )
         log(f"{animal.name} se dirige vers un point d'eau (source {source}).")
         _remember_water_access(animal, water, shore)
         return _move_to_water_target(
@@ -191,7 +239,9 @@ def handle_cycle_rest(animal: "Animal", log: LogFn) -> Tuple[bool, str, str]:
     return True, "resting_cycle", "repos impose par le cycle jour/nuit"
 
 
-def handle_hunger(animal: "Animal", world: Any, log: LogFn) -> Tuple[bool, str, str]:
+def handle_hunger(
+    animal: "Animal", world: Any, log: LogFn
+) -> Tuple[bool, str, str]:
     food = world.get_nearest_food(animal.x, animal.y, diet=animal.diet)
     if food and animal.distance_to(food) <= animal.vision:
         log(f"{animal.name} voit de la nourriture a {food}")
@@ -244,10 +294,16 @@ def handle_idle(animal: "Animal", world: Any, log: LogFn) -> Tuple[str, str]:
         animal.resting = True
         animal.rest_steps += 1
         log(f"{animal.name} ne percoit rien. Il decide de se reposer.")
-        return "resting_idle", f"repos influence par temperament '{animal.temperament}'"
+        return (
+            "resting_idle",
+            f"repos influence par temperament '{animal.temperament}'",
+        )
 
     if animal.random_move(world):
         log(f"{animal.name} ne percoit rien. Il erre par reflexe.")
-        return "wander", f"errance influencee par temperament '{animal.temperament}'"
+        return (
+            "wander",
+            f"errance influencee par temperament '{animal.temperament}'",
+        )
     log(f"{animal.name} ne percoit rien mais reste bloque sur place.")
     return "idle_blocked", "errance impossible a cause d'un blocage spatial"
