@@ -40,7 +40,7 @@ export default function Team() {
               <span className="text-xs text-slate-500 font-mono">Ingénieur Données & Intégration</span>
             </div>
             <p className="text-xs text-slate-550 dark:text-slate-400 leading-relaxed font-light">
-              Abdelqodousse s'est occupé de connecter les calculs écologiques à la fenêtre 3D et a conçu le site de présentation pour rendre le projet accessible au public.
+              Abdelqodousse s'est occupé de connecter les calculs écologiques à la fenêtre de simulation et a conçu le site de présentation pour rendre le projet accessible au public.
             </p>
           </div>
         </div>
@@ -56,7 +56,7 @@ export default function Team() {
               <span className="text-xs text-slate-500 font-mono">Architecte Système & Graphismes</span>
             </div>
             <p className="text-xs text-slate-550 dark:text-slate-400 leading-relaxed font-light">
-              Nassim a structuré les outils de compilation automatique du projet et a mis en scène les graphismes 3D en concevant l'interface visuelle du logiciel.
+              Nassim a structuré les outils de compilation automatique du projet et a mis en scène les graphismes en concevant l'interface visuelle du logiciel.
             </p>
           </div>
         </div>

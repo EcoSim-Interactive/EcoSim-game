@@ -11,7 +11,7 @@ export default function Screenshots() {
         <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Interface Visuelle</span>
         <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Captures d'Écran du Logiciel</h2>
         <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
-          Découvrez l'interface interactive du simulateur 3D et ses outils de statistiques.
+          Découvrez l'interface interactive du simulateur et ses outils de statistiques.
         </p>
       </div>
 
@@ -45,7 +45,7 @@ export default function Screenshots() {
           {activeScreenTab === 'main' ? (
             <img 
               src={ecosimScreenshot} 
-              alt="Vue 3D de la simulation d'EcoSim" 
+              alt="Vue de la simulation d'EcoSim" 
               className="w-full h-full object-cover"
             />
           ) : (
@@ -59,7 +59,7 @@ export default function Screenshots() {
         
         <div className="p-6 text-left space-y-2">
           <h3 className="font-bold text-lg text-slate-900 dark:text-white">
-            {activeScreenTab === 'main' ? 'L\'Écosystème Interactif en 3D' : 'Le Tableau de Suivi Scientifique'}
+            {activeScreenTab === 'main' ? 'L\'Écosystème Interactif' : 'Le Tableau de Suivi Scientifique'}
           </h3>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {activeScreenTab === 'main' 

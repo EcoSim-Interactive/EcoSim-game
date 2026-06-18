@@ -13,7 +13,7 @@ export default function Footer() {
         </div>
 
         <p className="text-xs text-slate-400 dark:text-slate-550 font-mono">
-          Projet ETNA GPE 2026. Fiche Projet J-7. Tous droits réservés.
+          Projet ETNA GPE 2026. Tous droits réservés.
         </p>
 
         <div className="flex gap-4">

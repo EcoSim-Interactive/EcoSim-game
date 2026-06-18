@@ -8,7 +8,7 @@ export default function Architecture() {
         <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Fonctionnement</span>
         <h2 className="text-3xl font-bold text-slate-900 dark:text-white">Comment fonctionne le simulateur ?</h2>
         <p className="text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
-          L'application se compose de trois éléments simples qui collaborent pour donner vie à la savane virtuelle.
+          L'application se compose de trois éléments simples qui collaborent pour donner vie à l'environnement virtuel.
         </p>
       </div>
 
@@ -47,9 +47,9 @@ export default function Architecture() {
             <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center">
               <Monitor className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
             </div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-white">La Fenêtre Visuelle (Godot 3D)</h3>
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">La Fenêtre Visuelle (Godot)</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-              C'est la partie ludique du logiciel. Il affiche la savane en 3D avec des graphismes épurés, anime les animaux selon les informations reçues et fournit une interface avec des boutons pour contrôler l'écoulement du temps.
+              C'est la partie ludique du logiciel. Il affiche l'environnement avec des graphismes épurés, anime les animaux selon les informations reçues et fournit une interface avec des boutons pour contrôler l'écoulement du temps.
             </p>
           </div>
           <span className="text-[10px] font-bold text-slate-400 dark:text-slate-600 mt-6 tracking-widest uppercase text-left">INTERFACE GRAPHIQUE</span>

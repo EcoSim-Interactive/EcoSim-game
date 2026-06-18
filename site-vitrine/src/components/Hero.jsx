@@ -38,7 +38,7 @@ export default function Hero() {
         </h1>
 
         <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed font-light">
-          Découvrez les secrets de l'équilibre naturel. <strong>EcoSim Interactive</strong> modélise les comportements d'animaux virtuels au sein d'une savane en 3D. Observez comment les populations de lions, d'hyènes, de gazelles et d'éléphants évoluent, s'alimentent et interagissent avec leur environnement en temps réel.
+          Découvrez les secrets de l'équilibre naturel. <strong>EcoSim Interactive</strong> modélise les comportements d'animaux virtuels au sein d'un environnement simulé. Observez comment les populations de lions, d'hyènes, de gazelles et d'éléphants évoluent, s'alimentent et interagissent avec leur environnement en temps réel.
         </p>
 
         <div className="flex flex-col gap-4 pt-4">
@@ -86,7 +86,7 @@ export default function Hero() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent flex items-end p-6">
             <div className="text-left">
-              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block">Rendu 3D temps réel</span>
+              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest block">Rendu graphique temps réel</span>
               <span className="text-white font-bold text-base">La clairière et ses espèces vivantes</span>
             </div>
           </div>
