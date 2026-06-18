@@ -29,6 +29,26 @@ Ce backend Python alimente la simulation ecologique commandee par le client Godo
   uv run app/main.py
   ```
 
+## Tests et Qualité de code
+Voici les commandes utiles pour maintenir la qualité et la fiabilité du projet :
+
+- **Lancer les tests unitaires** :
+  ```bash
+  uv run python -m unittest discover tests
+  ```
+- **Vérifier le code avec le Linter (Ruff)** :
+  ```bash
+  uv run ruff check .
+  ```
+- **Corriger automatiquement les petits défauts détectés par le linter** :
+  ```bash
+  uv run ruff check --fix .
+  ```
+- **Formater le code automatiquement (PEP 8, sauts de ligne, etc.)** :
+  ```bash
+  uv run ruff format .
+  ```
+
 ## Architecture du package `python_backend`
 ```
 python_backend/
