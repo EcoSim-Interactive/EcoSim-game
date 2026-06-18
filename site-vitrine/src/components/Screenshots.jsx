@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import ecosimScreenshot from '../assets/ecosim_screenshot.png';
 import ecosimDashboard from '../assets/ecosim_dashboard.png';
 

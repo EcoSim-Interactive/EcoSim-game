@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Download, ChevronRight, CheckCircle, Loader2 } from 'lucide-react';
 import GithubIcon from './GithubIcon';
 
@@ -9,20 +9,23 @@ const FALLBACK_UPDATES = [
 ];
 
 export default function Changelog() {
-  const [os, setOs] = useState('Windows');
+
+  const getInitialOs = () => {
+  if (typeof window === 'undefined') return 'Windows'; 
+
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  if (userAgent.includes('mac')) return 'MacOs';
+  if (userAgent.includes('linux')) return 'Linux';
+  
+  return 'Windows'; 
+};
+
+
+
+  const [os] = useState(getInitialOs);
   const [releases, setReleases] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    if (userAgent.includes('mac')) {
-      setOs('MacOs');
-    } else if (userAgent.includes('linux')) {
-      setOs('Linux');
-    } else {
-      setOs('Windows');
-    }
-  }, []);
 
   useEffect(() => {
     // Tentative de récupération dynamique des releases depuis l'API GitHub

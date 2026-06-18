@@ -1,4 +1,3 @@
-import React from 'react';
 import GithubIcon from './GithubIcon';
 
 export default function Footer() {

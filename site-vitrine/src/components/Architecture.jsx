@@ -1,4 +1,3 @@
-import React from 'react';
 import { Server, RefreshCw, Monitor } from 'lucide-react';
 
 export default function Architecture() {

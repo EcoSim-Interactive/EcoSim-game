@@ -1,19 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Download, Sun, Moon } from 'lucide-react';
 
 export default function Navbar({ isDarkMode, onToggleTheme }) {
-  const [os, setOs] = useState('Windows');
+  const getInitialOs = () => {
+  // Safety check for Server-Side Rendering (Next.js, Remix, etc.)
+  if (typeof window === 'undefined') return 'Windows'; 
 
-  useEffect(() => {
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    if (userAgent.includes('mac')) {
-      setOs('MacOs');
-    } else if (userAgent.includes('linux')) {
-      setOs('Linux');
-    } else {
-      setOs('Windows');
-    }
-  }, []);
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  if (userAgent.includes('mac')) return 'MacOs';
+  if (userAgent.includes('linux')) return 'Linux';
+  
+  return 'Windows'; 
+};
+
+
+
+  const [os] = useState(getInitialOs);
 
   const downloadLink = `https://github.com/EcoSim-Interactive/EcoSim-game/releases/latest/download/EcoSim-${os}.zip`;
 

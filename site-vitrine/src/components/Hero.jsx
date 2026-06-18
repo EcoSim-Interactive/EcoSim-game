@@ -1,20 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Download, Heart, Monitor, Apple, Terminal } from 'lucide-react';
 import ecosimScreenshot from '../assets/ecosim_screenshot.png';
 
 export default function Hero() {
-  const [os, setOs] = useState('Windows');
+  const getInitialOs = () => {
+  if (typeof window === 'undefined') return 'Windows'; 
 
-  useEffect(() => {
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    if (userAgent.includes('mac')) {
-      setOs('MacOs');
-    } else if (userAgent.includes('linux')) {
-      setOs('Linux');
-    } else {
-      setOs('Windows');
-    }
-  }, []);
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  if (userAgent.includes('mac')) return 'MacOs';
+  if (userAgent.includes('linux')) return 'Linux';
+  
+  return 'Windows'; 
+};
+
+
+
+  const [os] = useState(getInitialOs);
 
   const downloadLinks = {
     Windows: "https://github.com/EcoSim-Interactive/EcoSim-game/releases/latest/download/EcoSim-Windows.zip",
