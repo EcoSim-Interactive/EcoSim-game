@@ -83,7 +83,7 @@ class AgeComponent:
     def tick_age(
         self, delta_years: float
     ) -> tuple[bool, Optional[Dict[str, Any]]]:
-        """        Vieillit l'entité. Retourne (is_dead_from_old_age,
+        """Vieillit l'entité. Retourne (is_dead_from_old_age,
         new_stage_metabolism_cfg).
         """
         if delta_years <= 0:

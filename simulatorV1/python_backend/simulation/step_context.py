@@ -90,7 +90,7 @@ def initialize_species_status(species: Any) -> Dict[str, Any]:
 def finalize_species_status(
     species: Any, status: Dict[str, Any]
 ) -> Dict[str, Any]:
-    """    Inject the updated state of the species once the behaviour has been
+    """Inject the updated state of the species once the behaviour has been
     resolved.
     """
     status.setdefault("food_event", None)
