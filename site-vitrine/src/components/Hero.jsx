@@ -8,7 +8,7 @@ export default function Hero() {
   useEffect(() => {
     const userAgent = window.navigator.userAgent.toLowerCase();
     if (userAgent.includes('mac')) {
-      setOs('Mac');
+      setOs('MacOs');
     } else if (userAgent.includes('linux')) {
       setOs('Linux');
     } else {
@@ -18,7 +18,7 @@ export default function Hero() {
 
   const downloadLinks = {
     Windows: "https://github.com/EcoSim-Interactive/EcoSim-game/releases/latest/download/EcoSim-Windows.zip",
-    Mac: "https://github.com/EcoSim-Interactive/EcoSim-game/releases/latest/download/EcoSim-Mac.zip",
+    MacOs: "https://github.com/EcoSim-Interactive/EcoSim-game/releases/latest/download/EcoSim-MacOs.zip",
     Linux: "https://github.com/EcoSim-Interactive/EcoSim-game/releases/latest/download/EcoSim-Linux.zip"
   };
 
@@ -58,7 +58,7 @@ export default function Hero() {
           <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-slate-500 dark:text-slate-400">
             <span>Autres versions :</span>
             <a href={downloadLinks.Windows} className="hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-1 transition-colors"><Monitor className="w-4 h-4"/> Windows</a>
-            <a href={downloadLinks.Mac} className="hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-1 transition-colors"><Apple className="w-4 h-4"/> Mac</a>
+            <a href={downloadLinks.MacOs} className="hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-1 transition-colors"><Apple className="w-4 h-4"/> Mac</a>
             <a href={downloadLinks.Linux} className="hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center gap-1 transition-colors"><Terminal className="w-4 h-4"/> Linux</a>
           </div>
         </div>
