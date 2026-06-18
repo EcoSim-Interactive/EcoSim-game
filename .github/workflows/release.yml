@@ -40,14 +40,14 @@ jobs:
         run: uv run ruff check .
 
       - name: Run Tests (Unittest)
-        run: uv run python -m unittest discover
+        run: uv run python -m unittest discover tests
 
   site-vitrine-lint:
     name: Site Vitrine Lint
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: site_vitrine 
+        working-directory: site-vitrine 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
