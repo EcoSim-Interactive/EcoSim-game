@@ -6,6 +6,10 @@ extends Node2D
 @onready var tooltip_label = $Label
 
 
+@export var texture_scale: float = 1.0
+@export var target_size: Vector2 = Vector2(32, 32)
+var icon: Texture2D = null
+
 func _ready() -> void:
 	tooltip_label.visible = false
 	queue_redraw()
@@ -14,7 +18,14 @@ func _ready() -> void:
 	tooltip_label.text = species_name
 
 func _draw() -> void:
-	draw_circle(Vector2.ZERO, radius, color)
+	if icon:
+		var size = icon.get_size()
+		var scale_factor = min(target_size.x / size.x, target_size.y / size.y)
+		var scaled_size = size * scale_factor * texture_scale
+		var dest_rect = Rect2(-scaled_size / 2, scaled_size)
+		draw_texture_rect(icon, dest_rect, false)
+	else:
+		draw_circle(Vector2.ZERO, radius, color)
 
 func _input(event):
 	if event is InputEventMouseMotion:

@@ -56,21 +56,14 @@ func refresh_from_world() -> void:
 	sample_rows = max(1, ceili(world_height / float(sample_step_y)))
 
 	var grass_layer = world_node.get_node_or_null("Grass")
-	if grass_layer and grass_layer.has_method("get_used_cells"):
-		var coarse_cells: Dictionary = {}
-		for cell in grass_layer.call("get_used_cells"):
-			if typeof(cell) != TYPE_VECTOR2I:
-				continue
-			var source_id := -1
-			if grass_layer.has_method("get_cell_source_id"):
-				source_id = int(grass_layer.call("get_cell_source_id", cell))
-			var block = Vector2i(cell.x / sample_step_x, cell.y / sample_step_y)
-			if not coarse_cells.has(block):
-				coarse_cells[block] = source_id
-			elif int(coarse_cells[block]) != 1 and source_id == 1:
-				coarse_cells[block] = 1
-		for block in coarse_cells.keys():
-			terrain_cells.append({"cell": block, "source_id": int(coarse_cells[block])})
+	if grass_layer and grass_layer.has_method("get_cell_source_id"):
+		for cy in range(sample_rows):
+			for cx in range(sample_columns):
+				var world_x = cx * sample_step_x
+				var world_y = cy * sample_step_y
+				var source_id = int(grass_layer.call("get_cell_source_id", Vector2i(world_x, world_y)))
+				if source_id != -1:
+					terrain_cells.append({"cell": Vector2i(cx, cy), "source_id": source_id})
 	queue_redraw()
 
 func _refresh_world_reference() -> void:

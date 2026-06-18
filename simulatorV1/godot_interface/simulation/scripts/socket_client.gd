@@ -78,7 +78,6 @@ func _process(_delta):
 	if not connected and state == WebSocketPeer.STATE_OPEN:
 		connected = true
 		print("[CLIENT] Connecte au serveur")
-		_send_cmd("get_world")
 		_send_cmd("get_species_catalog")
 
 	if state == WebSocketPeer.STATE_OPEN:
@@ -185,10 +184,6 @@ func _on_message(msg: String):
 			var payload = data.get("data", {})
 			var ok = bool(payload.get("ok", false))
 			emit_signal("world_configuration_saved", ok, payload)
-			_send_cmd("get_world")
-			if ok and pending_start_after_species_save:
-				pending_start_after_species_save = false
-				start_simulation()
 		"species_catalog":
 			var payload = data.get("data", {})
 			emit_signal("species_catalog_ready", payload)
@@ -278,6 +273,7 @@ func _request_precompute(force: bool = false):
 	if force:
 		precompute_ready = false
 	precompute_pending = true
+	emit_signal("simulation_computing")
 	_send_cmd("compute")
 	print("[CLIENT] Pre-calcul demande")
 
@@ -415,7 +411,12 @@ func _update_species_markers(step_data: Dictionary) -> void:
 
 		var marker = _ensure_species_marker(id)
 		if marker and pos_data.size() > 0:
-			marker.color = _get_species_color(entry.get("species_type", ""))
+			var species_type = String(entry.get("species_type", ""))
+			marker.color = _get_species_color(species_type)
+			
+			if species_type != "":
+				marker.icon = _get_dynamic_texture(species_type)
+			
 			marker.queue_redraw()
 			if pos_data.size() > 0:
 					var target = Vector2(
@@ -434,6 +435,27 @@ func _apply_food_updates(step_data: Dictionary) -> void:
 		_spawn_or_update_food(food)
 	for removed_id in step_data.get("removed_food_ids", []):
 		_remove_food_marker(String(removed_id))
+
+var _texture_cache: Dictionary = {}
+
+func _get_dynamic_texture(sprite_name: String) -> Texture2D:
+	if _texture_cache.has(sprite_name):
+		return _texture_cache[sprite_name]
+
+	var path = "res://sprites/" + sprite_name + ".png"
+	var icon: Texture2D = null
+
+	var global_path = ProjectSettings.globalize_path(path)
+	if FileAccess.file_exists(global_path):
+		var img = Image.load_from_file(global_path)
+		if img != null and not img.is_empty():
+			icon = ImageTexture.create_from_image(img)
+			
+	if icon == null and ResourceLoader.exists(path):
+		icon = load(path) # Fallback classique (et pour le jeu exporté)
+
+	_texture_cache[sprite_name] = icon
+	return icon
 
 func _spawn_or_update_food(food_data: Dictionary) -> void:
 	var food_id := String(food_data.get("id", ""))
@@ -454,7 +476,20 @@ func _spawn_or_update_food(food_data: Dictionary) -> void:
 
 	if marker.has_method("update_state"):
 		var color = _color_for_food_class(String(food_data.get("food_class", "plant")))
-		marker.update_state(food_data, null, color)
+		var icon: Texture2D = null
+		var sprite_name = String(food_data.get("sprite_name", ""))
+		
+		if sprite_name != "":
+			icon = _get_dynamic_texture(sprite_name)
+				
+		if icon != null:
+			if "use_sprite_sheet" in marker:
+				marker.use_sprite_sheet = false
+		else:
+			if "default_texture" in marker:
+				marker.default_texture = null
+				
+		marker.update_state(food_data, icon, color)
 func _get_species_color(type: String) -> Color:
 	match type:
 		"gazelle":
@@ -526,12 +561,11 @@ func _draw_terrain(terrain):
 	print("[DEBUG] TileMapLayer trouvé, dessin du terrain...")
 	print("[DEBUG] Chunks reçus : ", terrain.keys().size())
 	
+	var chunks_drawn = 0
 	for chunk_index in terrain.keys():
 		var chunk = terrain[chunk_index]
 		var y_start = chunk["y_start"]
 		var rows = chunk["rows"]
-		
-		print("[DEBUG] Chunk ", chunk_index, " - y_start: ", y_start, " - rows: ", len(rows))
 		
 		for y in range(len(rows)):
 			var row = rows[y]
@@ -541,7 +575,10 @@ func _draw_terrain(terrain):
 				
 				# Avec tile_id = 0, on place la tuile à atlas_coords (0,12), A CHANGER EN FONCTION DE CE QU'ON VEUT (EAU ETCETC)
 				tilemap_layer.set_cell(coords, 0, Vector2i(0, 12))
-		# await get_tree().process_frame
+		
+		chunks_drawn += 1
+		if chunks_drawn % 10 == 0:
+			await get_tree().process_frame
 				
 		print("[DEBUG] Chunk ", chunk_index, " dessiné")
 	

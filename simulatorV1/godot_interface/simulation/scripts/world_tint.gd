@@ -8,10 +8,10 @@ var display_label: Label = null
 
 func _ready():
 	sky_gradient = Gradient.new()
-	var night_color = Color("07070f")
-	var dawn_color = Color("5c6b96")
+	var night_color = Color("556688") # Nuit plus claire
+	var dawn_color = Color("8ea1cc")
 	var day_color = Color("ffffff")
-	var sunset_color = Color("d1855e")
+	var sunset_color = Color("e09c7a")
 	
 	sky_gradient.set_color(0, night_color)  # Point 0 par défaut
 	sky_gradient.set_offset(0, 0.0)

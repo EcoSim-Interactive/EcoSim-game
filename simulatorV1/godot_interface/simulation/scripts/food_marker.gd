@@ -7,6 +7,7 @@ extends Node2D
 @export var bar_size: Vector2 = Vector2(28, 4)
 @export var bar_offset: Vector2 = Vector2(0, -18)
 @export var fallback_radius: float = 10.0
+@export var target_size: Vector2 = Vector2(32, 32)
 
 @export var use_sprite_sheet: bool = true 
 @export var frame_size: Vector2 = Vector2(16, 16) 
@@ -58,7 +59,8 @@ func _draw() -> void:
 			draw_texture_rect_region(tex, dest_rect, src_rect)
 		else:
 			var original_size = tex.get_size()
-			var scaled_size = original_size * texture_scale
+			var scale_factor = min(target_size.x / original_size.x, target_size.y / original_size.y)
+			var scaled_size = original_size * scale_factor * texture_scale
 			var dest_rect = Rect2(-scaled_size / 2, scaled_size)
 			draw_texture_rect(tex, dest_rect, false)
 	else:

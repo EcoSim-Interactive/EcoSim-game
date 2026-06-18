@@ -10,8 +10,11 @@ extends Control
 @onready var loading_overlay = $MainVBox/MainHBox/MainArea/LoadingOverlay
 @onready var world = $MainVBox/MainHBox/MainArea/SubViewportContainer/SubViewport/World
 @onready var camera = $MainVBox/MainHBox/MainArea/SubViewportContainer/SubViewport/World/Camera2D
-@onready var zoom_in_btn = $MainVBox/TopBar/Margin/HBox/ZoomInBtn
-@onready var zoom_out_btn = $MainVBox/TopBar/Margin/HBox/ZoomOutBtn
+@onready var zoom_in_btn = $MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox/ZoomInBtn
+@onready var zoom_out_btn = $MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox/ZoomOutBtn
+@onready var speed_1x_btn = $MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox/Speed1x
+@onready var speed_2x_btn = $MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox/Speed2x
+@onready var speed_3x_btn = $MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox/Speed3x
 @onready var world_config_btn = $MainVBox/TopBar/Margin/HBox/WorldConfigBtn
 @onready var world_configurator = $WorldConfigurator
 
@@ -44,6 +47,12 @@ func _ready():
 		zoom_in_btn.pressed.connect(_on_zoom_in_pressed)
 	if zoom_out_btn:
 		zoom_out_btn.pressed.connect(_on_zoom_out_pressed)
+	if speed_1x_btn:
+		speed_1x_btn.pressed.connect(func(): if world and world.has_method("set_speed"): world.set_speed(300))
+	if speed_2x_btn:
+		speed_2x_btn.pressed.connect(func(): if world and world.has_method("set_speed"): world.set_speed(150))
+	if speed_3x_btn:
+		speed_3x_btn.pressed.connect(func(): if world and world.has_method("set_speed"): world.set_speed(50))
 	if mode_option:
 		var popup = mode_option.get_popup()
 		popup.add_theme_font_size_override("font_size", 35)
@@ -68,6 +77,8 @@ func _ready():
 		if world.has_signal("simulation_computed"):
 			world.simulation_computed.connect(_on_simulation_computed)
 		if not world.world_ready:
+			if loading_overlay.has_node("Label"):
+				loading_overlay.get_node("Label").text = "En attente du serveur..."
 			loading_overlay.visible = true
 
 	if logs_folder == "":
@@ -82,6 +93,26 @@ func _ready():
 
 	print("📂 Dossier de logs utilisé:", logs_folder)
 	load_all_logs()
+
+var _was_connected := false
+
+func _process(_delta: float) -> void:
+	if world and "connected" in world:
+		if world.connected and not _was_connected:
+			_was_connected = true
+			# Le serveur vient de se connecter, on cache l'ecran d'attente s'il ne charge pas deja le monde
+			if loading_overlay and loading_overlay.visible:
+				if loading_overlay.has_node("Label"):
+					var text = loading_overlay.get_node("Label").text
+					if text == "En attente du serveur...":
+						loading_overlay.visible = false
+		elif not world.connected and _was_connected:
+			_was_connected = false
+			# Deconnexion detectee, on remet l'ecran d'attente
+			if loading_overlay:
+				if loading_overlay.has_node("Label"):
+					loading_overlay.get_node("Label").text = "En attente du serveur..."
+				loading_overlay.visible = true
 
 # --- Charger tous les logs existants ---
 func load_all_logs():
@@ -335,6 +366,9 @@ func _on_world_loading():
 		loading_overlay.visible = true
 
 func _on_world_loaded():
+	if world and "precompute_pending" in world and world.precompute_pending:
+		# La simulation est deja en train d'etre generee derriere, on ne cache pas l'overlay !
+		return
 	if loading_overlay:
 		loading_overlay.visible = false
 

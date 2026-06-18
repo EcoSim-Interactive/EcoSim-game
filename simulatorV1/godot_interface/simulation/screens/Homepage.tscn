@@ -13,6 +13,20 @@
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
 bg_color = Color(0.059, 0.09, 0.165, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_floating"]
+bg_color = Color(0.118, 0.161, 0.231, 0.7)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.15, 0.18, 0.23, 0.5)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.2)
+shadow_size = 4
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.118, 0.161, 0.231, 0.95)
 border_width_left = 1
@@ -114,7 +128,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 0
+theme_override_constants/separation = 16
 
 [node name="TopBar" type="PanelContainer" parent="MainVBox" unique_id=1944546868]
 custom_minimum_size = Vector2(0, 60)
@@ -184,44 +198,6 @@ layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_start")
 text = "Start"
 script = ExtResource("4_1wvxa")
-world_path = NodePath("../../../../MainHBox/MainArea/SubViewportContainer/SubViewport/World")
-
-[node name="Speed1x" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=1043489598]
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-text = "1x"
-
-[node name="Speed2x" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=1089983416]
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-text = "2x"
-
-[node name="Speed3x" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=1610833238]
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-text = "3x"
-
-[node name="VSeparator3" type="VSeparator" parent="MainVBox/TopBar/Margin/HBox" unique_id=906286725]
-layout_mode = 2
-theme_override_constants/separation = 20
-
-[node name="ZoomInBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=1132157483]
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-text = "Zoom +"
-
-[node name="ZoomOutBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=1193441135]
-layout_mode = 2
-theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-text = "Zoom -"
-
-[node name="DayNightBtn" type="CheckButton" parent="MainVBox/TopBar/Margin/HBox" unique_id=950698932]
-layout_mode = 2
-button_pressed = true
-text = "Jour/Nuit"
-script = ExtResource("6_daynight")
 world_path = NodePath("../../../../MainHBox/MainArea/SubViewportContainer/SubViewport/World")
 
 [node name="Spacer" type="Control" parent="MainVBox/TopBar/Margin/HBox" unique_id=1698015496]
@@ -297,6 +273,61 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
 [node name="SubViewportContainer" type="SubViewportContainer" parent="MainVBox/MainHBox/MainArea" unique_id=404304916]
 layout_mode = 2
 stretch = true
+
+[node name="FloatingControls" type="PanelContainer" parent="MainVBox/MainHBox/MainArea"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_floating")
+
+[node name="Margin" type="MarginContainer" parent="MainVBox/MainHBox/MainArea/FloatingControls"]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 8
+
+[node name="HBox" type="HBoxContainer" parent="MainVBox/MainHBox/MainArea/FloatingControls/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Speed1x" type="Button" parent="MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox" unique_id=1043489598]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+text = "1x"
+
+[node name="Speed2x" type="Button" parent="MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox" unique_id=1089983416]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+text = "2x"
+
+[node name="Speed3x" type="Button" parent="MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox" unique_id=1610833238]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+text = "3x"
+
+[node name="VSeparator3" type="VSeparator" parent="MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox" unique_id=906286725]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="DayNightBtn" type="CheckButton" parent="MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox" unique_id=950698932]
+layout_mode = 2
+button_pressed = true
+text = "Jour/Nuit"
+script = ExtResource("6_daynight")
+world_path = NodePath("../../../../../SubViewportContainer/SubViewport/World")
+
+[node name="ZoomInBtn" type="Button" parent="MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox" unique_id=1132157483]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+text = "Zoom +"
+
+[node name="ZoomOutBtn" type="Button" parent="MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox" unique_id=1193441135]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
+text = "Zoom -"
 
 [node name="SubViewport" type="SubViewport" parent="MainVBox/MainHBox/MainArea/SubViewportContainer" unique_id=519707155]
 handle_input_locally = false

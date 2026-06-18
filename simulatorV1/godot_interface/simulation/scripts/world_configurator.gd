@@ -78,10 +78,16 @@ func _build_dialog() -> void:
 	dialog.size = Vector2i(780, 620)
 	add_child(dialog)
 
+	var scroll = ScrollContainer.new()
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.custom_minimum_size = Vector2(800, 600)
+	dialog.add_child(scroll)
+
 	var root = VBoxContainer.new()
 	root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	root.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	dialog.add_child(root)
+	scroll.add_child(root)
 
 	var header_label = Label.new()
 	header_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -269,7 +275,9 @@ func open_modal() -> void:
 			world.request_species_catalog()
 			if world.has_method("request_world_config"):
 				world.request_world_config()
-	dialog.popup_centered_ratio(0.72)
+	dialog.reset_size()
+	dialog.min_size = Vector2i(850, 650)
+	dialog.popup_centered(Vector2i(850, 650))
 
 func _on_species_catalog_ready(payload) -> void:
 	if typeof(payload) != TYPE_DICTIONARY:
