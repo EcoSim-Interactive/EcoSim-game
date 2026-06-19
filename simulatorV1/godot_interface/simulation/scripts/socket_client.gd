@@ -11,6 +11,7 @@ signal simulation_computing
 signal simulation_computed
 signal world_config_ready(payload)
 signal world_configuration_saved(ok, payload)
+signal step_received(step_data)
 
 var socket := WebSocketPeer.new()
 var connected := false
@@ -161,6 +162,7 @@ func _on_message(msg: String):
 				pending_steps.append(data["data"])
 			else:
 				_update_simulation(data["data"])
+			emit_signal("step_received", data["data"])
 		"status":
 			_handle_status(data["data"])
 		"summary":

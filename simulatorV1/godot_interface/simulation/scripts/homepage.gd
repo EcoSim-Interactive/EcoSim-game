@@ -76,6 +76,8 @@ func _ready():
 			world.simulation_computing.connect(_on_simulation_computing)
 		if world.has_signal("simulation_computed"):
 			world.simulation_computed.connect(_on_simulation_computed)
+		if world.has_signal("step_received"):
+			world.step_received.connect(log_simulation_step)
 		if not world.world_ready:
 			if loading_overlay.has_node("Label"):
 				loading_overlay.get_node("Label").text = "En attente du serveur..."
@@ -207,12 +209,25 @@ func _update_graphs(step_data: Dictionary):
 	var dead = 0
 	var total_energy = 0.0
 	
+	var species_counts = {}
+	
 	if step_data.has("species"):
 		for s in step_data["species"]:
-			var vitality = s.get("vitality", 0)
-			if vitality > 0:
+			var is_alive = false
+			if s.has("vitality"):
+				is_alive = s.get("vitality", 0) > 0
+			elif s.has("after") and s["after"] is Dictionary:
+				is_alive = s["after"].get("alive", false)
+			elif s.has("before") and s["before"] is Dictionary:
+				is_alive = s["before"].get("alive", false)
+			else:
+				is_alive = true # Fallback au cas où
+
+			if is_alive:
 				pop += 1
-				total_energy += vitality
+				total_energy += s.get("vitality", 0)
+				var s_name = s.get("name", "Inconnu").capitalize()
+				species_counts[s_name] = species_counts.get(s_name, 0) + 1
 			else:
 				dead += 1
 				
@@ -223,14 +238,47 @@ func _update_graphs(step_data: Dictionary):
 	if pop > 0:
 		avg_energy = total_energy / float(pop)
 		
-	if graph_population and graph_population.has_method("add_value"):
-		graph_population.add_value(pop)
+	var species_colors = {}
+	for s_name in species_counts.keys():
+		var h = float(s_name.hash() % 1000) / 1000.0
+		var c = Color.from_hsv(h, 0.8, 0.9)
+		species_colors[s_name] = c
+
+	if graph_population:
+		if graph_population.has_method("set_title"):
+			graph_population.set_title("Population par espèce")
+		if graph_population.has_method("set_bar_data") and not species_counts.is_empty():
+			graph_population.set_bar_data(species_counts, species_colors)
+		elif graph_population.has_method("add_value"):
+			graph_population.add_value(pop)
+
 	if graph_food and graph_food.has_method("add_value"):
 		graph_food.add_value(food)
 	if graph_death and graph_death.has_method("add_value"):
 		graph_death.add_value(dead)
 	if graph_energy and graph_energy.has_method("add_value"):
 		graph_energy.add_value(avg_energy)
+
+	# --- Mise à jour du résumé des espèces dans la barre latérale gauche ---
+	var vbox = $MainVBox/MainHBox/LeftSidebar/Margin/VBox
+	if vbox:
+		var summary_label = vbox.get_node_or_null("SpeciesSummaryLabel")
+		if summary_label == null:
+			summary_label = RichTextLabel.new()
+			summary_label.name = "SpeciesSummaryLabel"
+			summary_label.bbcode_enabled = true
+			summary_label.fit_content = true
+			vbox.add_child(summary_label)
+			vbox.move_child(summary_label, 2)
+			
+		var summary_text = ""
+		if species_counts.is_empty():
+			summary_text = "Aucune espèce en vie."
+		else:
+			for s_name in species_counts.keys():
+				var c_hex = species_colors[s_name].to_html(false)
+				summary_text += "[color=#%s]■ %s : %d[/color]\n" % [c_hex, s_name, species_counts[s_name]]
+		summary_label.text = summary_text
 
 # --- Générer un résumé global pour le fichier TXT ---
 func generate_summary_text() -> String:
