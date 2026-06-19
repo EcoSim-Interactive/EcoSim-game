@@ -402,7 +402,7 @@ func _update_species_markers(step_data: Dictionary) -> void:
 			continue
 
 	# ✅ ID unique (obligatoire)
-		var id = str(i) + "_" + base_name
+		var id = base_name + "_" + str(i)
 		active_names.append(id)
 
 		var pos_data: Dictionary = {}

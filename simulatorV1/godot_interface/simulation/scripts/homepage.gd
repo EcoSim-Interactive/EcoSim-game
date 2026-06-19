@@ -259,26 +259,6 @@ func _update_graphs(step_data: Dictionary):
 	if graph_energy and graph_energy.has_method("add_value"):
 		graph_energy.add_value(avg_energy)
 
-	# --- Mise à jour du résumé des espèces dans la barre latérale gauche ---
-	var vbox = $MainVBox/MainHBox/LeftSidebar/Margin/VBox
-	if vbox:
-		var summary_label = vbox.get_node_or_null("SpeciesSummaryLabel")
-		if summary_label == null:
-			summary_label = RichTextLabel.new()
-			summary_label.name = "SpeciesSummaryLabel"
-			summary_label.bbcode_enabled = true
-			summary_label.fit_content = true
-			vbox.add_child(summary_label)
-			vbox.move_child(summary_label, 2)
-			
-		var summary_text = ""
-		if species_counts.is_empty():
-			summary_text = "Aucune espèce en vie."
-		else:
-			for s_name in species_counts.keys():
-				var c_hex = species_colors[s_name].to_html(false)
-				summary_text += "[color=#%s]■ %s : %d[/color]\n" % [c_hex, s_name, species_counts[s_name]]
-		summary_label.text = summary_text
 
 # --- Générer un résumé global pour le fichier TXT ---
 func generate_summary_text() -> String:
@@ -374,6 +354,14 @@ func log_simulation_step(step_data: Dictionary):
 
 func clear_logs():
 	simulation_logs.clear()
+	if graph_population and graph_population.has_method("clear_data"):
+		graph_population.clear_data()
+	if graph_food and graph_food.has_method("clear_data"):
+		graph_food.clear_data()
+	if graph_death and graph_death.has_method("clear_data"):
+		graph_death.clear_data()
+	if graph_energy and graph_energy.has_method("clear_data"):
+		graph_energy.clear_data()
 
 # --- Gestion du Header ---
 func _on_settings_pressed():
@@ -408,6 +396,7 @@ func _on_mode_selected(index: int):
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
 
 func _on_world_loading():
+	clear_logs()
 	if loading_overlay:
 		if loading_overlay.has_node("Label"):
 			loading_overlay.get_node("Label").text = "Génération du monde en cours..."

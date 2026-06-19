@@ -16,12 +16,23 @@ var multi_colors: Dictionary = {}
 var graph_mode: String = "line"
 var bar_data: Dictionary = {}
 var bar_colors: Dictionary = {}
+var species_max: Dictionary = {}
 
 func _ready() -> void:
 	if title_label:
 		title_label.text = title
 	if graph_area:
 		graph_area.draw.connect(_on_graph_draw)
+
+func clear_data() -> void:
+	history.clear()
+	multi_history.clear()
+	multi_colors.clear()
+	bar_data.clear()
+	bar_colors.clear()
+	species_max.clear()
+	if graph_area:
+		graph_area.queue_redraw()
 
 func add_value(val: float) -> void:
 	history.append(val)
@@ -37,6 +48,12 @@ func set_bar_data(values: Dictionary, colors: Dictionary) -> void:
 	graph_mode = "bar"
 	bar_data = values
 	bar_colors = colors
+	
+	for k in values:
+		if not species_max.has(k):
+			species_max[k] = values[k]
+		else:
+			species_max[k] = max(species_max[k], values[k])
 	
 	if value_label:
 		value_label.visible = false # vire la population totale
@@ -182,9 +199,10 @@ func _draw_bar_chart() -> void:
 	if bar_data.is_empty():
 		return
 		
-	var max_val = 1.0
+	var total_val = 0.0
 	for k in bar_data:
-		max_val = max(max_val, bar_data[k])
+		total_val += bar_data[k]
+	var max_val = max(1.0, total_val)
 		
 	var species_list = bar_data.keys()
 	var num_bars = species_list.size()
@@ -194,7 +212,7 @@ func _draw_bar_chart() -> void:
 	var actual_bar_height = bar_height - spacing
 	
 	var text_margin = 80.0
-	var graph_w = w - text_margin - 30.0 # extra space for numbers at the end
+	var graph_w = w - text_margin - 60.0 # extra space for numbers at the end
 	
 	var font = ThemeDB.fallback_font
 	var font_size = 12
@@ -215,4 +233,6 @@ func _draw_bar_chart() -> void:
 		var rect = Rect2(text_margin, y_pos, bar_len, actual_bar_height)
 		graph_area.draw_rect(rect, c)
 		
-		graph_area.draw_string(font, Vector2(text_margin + bar_len + 5, y_pos + actual_bar_height/2.0 + font_size/3.0), str(int(val)), HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color.WHITE)
+		var max_s = species_max.get(species_name, val)
+		var label_text = "%d / %d" % [int(val), int(max_s)]
+		graph_area.draw_string(font, Vector2(text_margin + bar_len + 5, y_pos + actual_bar_height/2.0 + font_size/3.0), label_text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, Color.WHITE)
