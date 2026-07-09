@@ -23,6 +23,11 @@ extends Control
 @onready var graph_death = $MainVBox/MainHBox/RightSidebar/Margin/VBox/GraphDeath
 @onready var graph_energy = $MainVBox/MainHBox/RightSidebar/Margin/VBox/GraphEnergy
 
+@onready var sim_status_label = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox/SimStatusLabel
+@onready var sim_cycle_label = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox/SimCycleLabel
+@onready var sim_population_label = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox/SimPopulationLabel
+@onready var sim_time_label = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox/SimTimeLabel
+
 # --- Variables principales ---
 var simulation_logs = []          # Données chargées depuis summary.json
 var current_step_data = {}
@@ -100,6 +105,16 @@ var _was_connected := false
 
 func _process(_delta: float) -> void:
 	if world and "connected" in world:
+		if sim_status_label:
+			if not world.connected:
+				sim_status_label.text = "Statut : Déconnecté"
+			elif world.get("run_completed"):
+				sim_status_label.text = "Statut : Terminé"
+			elif world.get("running"):
+				sim_status_label.text = "Statut : En cours"
+			else:
+				sim_status_label.text = "Statut : En pause"
+
 		if world.connected and not _was_connected:
 			_was_connected = true
 			# Le serveur vient de se connecter, on cache l'ecran d'attente s'il ne charge pas deja le monde
@@ -258,6 +273,19 @@ func _update_graphs(step_data: Dictionary):
 		graph_death.add_value(dead)
 	if graph_energy and graph_energy.has_method("add_value"):
 		graph_energy.add_value(avg_energy)
+
+	if sim_population_label:
+		sim_population_label.text = "Population Totale : " + str(pop)
+		
+	if sim_cycle_label:
+		if step_data.has("step"):
+			sim_cycle_label.text = "Cycle : " + str(step_data["step"])
+		elif step_data.has("cycle"):
+			sim_cycle_label.text = "Cycle : " + str(step_data["cycle"])
+			
+	if sim_time_label and step_data.has("hour") and step_data.has("minute"):
+		sim_time_label.text = "Heure : %02d:%02d" % [int(step_data["hour"]), int(step_data["minute"])]
+
 
 
 # --- Générer un résumé global pour le fichier TXT ---

@@ -243,9 +243,32 @@ theme_override_constants/separation = 16
 [node name="InfoTitle" type="Label" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox" unique_id=1525976323]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
-text = "Informations (Gauche)"
+text = "Informations de Simulation"
 
 [node name="HSeparator" type="HSeparator" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox" unique_id=1828807360]
+layout_mode = 2
+
+[node name="SimulationInfoBox" type="VBoxContainer" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox" unique_id=987654321]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SimStatusLabel" type="Label" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox" unique_id=987654322]
+layout_mode = 2
+text = "Statut : En attente"
+
+[node name="SimCycleLabel" type="Label" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox" unique_id=987654323]
+layout_mode = 2
+text = "Cycle : 0"
+
+[node name="SimPopulationLabel" type="Label" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox" unique_id=987654324]
+layout_mode = 2
+text = "Population Totale : 0"
+
+[node name="SimTimeLabel" type="Label" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox" unique_id=987654325]
+layout_mode = 2
+text = "Heure : 00:00"
+
+[node name="HSeparator2" type="HSeparator" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox" unique_id=987654326]
 layout_mode = 2
 
 [node name="GraphPopulation" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox" unique_id=430219511 instance=ExtResource("8_graph")]
