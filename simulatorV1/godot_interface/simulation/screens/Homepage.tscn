@@ -13,20 +13,6 @@
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
 bg_color = Color(0.059, 0.09, 0.165, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_floating"]
-bg_color = Color(0.118, 0.161, 0.231, 0.7)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.15, 0.18, 0.23, 0.5)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
-shadow_color = Color(0, 0, 0, 0.2)
-shadow_size = 4
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.118, 0.161, 0.231, 0.95)
 border_width_left = 1
@@ -83,6 +69,20 @@ corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_floating"]
+bg_color = Color(0.118, 0.161, 0.231, 0.7)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.15, 0.18, 0.23, 0.5)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.2)
+shadow_size = 4
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Settings"]
 bg_color = Color(0.118, 0.161, 0.231, 0.95)
@@ -268,6 +268,18 @@ text = "Population Totale : 0"
 layout_mode = 2
 text = "Heure : 00:00"
 
+[node name="SimDayNightLabel" type="Label" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox" unique_id=987654327]
+layout_mode = 2
+text = "Période : Jour"
+
+[node name="SimSpeedLabel" type="Label" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox" unique_id=987654328]
+layout_mode = 2
+text = "Vitesse : 1x"
+
+[node name="SimZoomLabel" type="Label" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox" unique_id=987654329]
+layout_mode = 2
+text = "Zoom : 1.0x"
+
 [node name="HSeparator2" type="HSeparator" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox" unique_id=987654326]
 layout_mode = 2
 
@@ -276,6 +288,7 @@ layout_mode = 2
 title = "Population Totale"
 
 [node name="GraphFood" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox" unique_id=2126144090 instance=ExtResource("8_graph")]
+visible = false
 layout_mode = 2
 title = "Nourriture Disponible"
 line_color = Color(0.9, 0.6, 0.2, 1)
@@ -297,20 +310,27 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
 layout_mode = 2
 stretch = true
 
-[node name="FloatingControls" type="PanelContainer" parent="MainVBox/MainHBox/MainArea"]
+[node name="SubViewport" type="SubViewport" parent="MainVBox/MainHBox/MainArea/SubViewportContainer" unique_id=519707155]
+handle_input_locally = false
+size = Vector2i(1248, 972)
+render_target_update_mode = 4
+
+[node name="World" parent="MainVBox/MainHBox/MainArea/SubViewportContainer/SubViewport" unique_id=1173343557 instance=ExtResource("2_1n0mb")]
+
+[node name="FloatingControls" type="PanelContainer" parent="MainVBox/MainHBox/MainArea" unique_id=1393063826]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_floating")
 
-[node name="Margin" type="MarginContainer" parent="MainVBox/MainHBox/MainArea/FloatingControls"]
+[node name="Margin" type="MarginContainer" parent="MainVBox/MainHBox/MainArea/FloatingControls" unique_id=475446992]
 layout_mode = 2
 theme_override_constants/margin_left = 16
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 16
 theme_override_constants/margin_bottom = 8
 
-[node name="HBox" type="HBoxContainer" parent="MainVBox/MainHBox/MainArea/FloatingControls/Margin"]
+[node name="HBox" type="HBoxContainer" parent="MainVBox/MainHBox/MainArea/FloatingControls/Margin" unique_id=532315398]
 layout_mode = 2
 theme_override_constants/separation = 12
 
@@ -351,13 +371,6 @@ layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
 text = "Zoom -"
-
-[node name="SubViewport" type="SubViewport" parent="MainVBox/MainHBox/MainArea/SubViewportContainer" unique_id=519707155]
-handle_input_locally = false
-size = Vector2i(1248, 988)
-render_target_update_mode = 4
-
-[node name="World" parent="MainVBox/MainHBox/MainArea/SubViewportContainer/SubViewport" unique_id=1173343557 instance=ExtResource("2_1n0mb")]
 
 [node name="LoadingOverlay" type="Control" parent="MainVBox/MainHBox/MainArea" unique_id=691733600]
 visible = false

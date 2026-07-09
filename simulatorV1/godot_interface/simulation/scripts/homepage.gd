@@ -27,11 +27,15 @@ extends Control
 @onready var sim_cycle_label = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox/SimCycleLabel
 @onready var sim_population_label = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox/SimPopulationLabel
 @onready var sim_time_label = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox/SimTimeLabel
+@onready var sim_daynight_label = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox/SimDayNightLabel
+@onready var sim_speed_label = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox/SimSpeedLabel
+@onready var sim_zoom_label = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox/SimZoomLabel
 
 # --- Variables principales ---
 var simulation_logs = []          # Données chargées depuis summary.json
 var current_step_data = {}
 var simulation_data = {}          # Données du fichier simulation.json (actions, motivations)
+var current_speed_text = "1x"
 
 # --- Configuration ---
 @export var logs_folder: String = ""
@@ -53,11 +57,20 @@ func _ready():
 	if zoom_out_btn:
 		zoom_out_btn.pressed.connect(_on_zoom_out_pressed)
 	if speed_1x_btn:
-		speed_1x_btn.pressed.connect(func(): if world and world.has_method("set_speed"): world.set_speed(300))
+		speed_1x_btn.pressed.connect(func(): 
+			if world and world.has_method("set_speed"): world.set_speed(300)
+			current_speed_text = "1x"
+		)
 	if speed_2x_btn:
-		speed_2x_btn.pressed.connect(func(): if world and world.has_method("set_speed"): world.set_speed(150))
+		speed_2x_btn.pressed.connect(func(): 
+			if world and world.has_method("set_speed"): world.set_speed(150)
+			current_speed_text = "2x"
+		)
 	if speed_3x_btn:
-		speed_3x_btn.pressed.connect(func(): if world and world.has_method("set_speed"): world.set_speed(50))
+		speed_3x_btn.pressed.connect(func(): 
+			if world and world.has_method("set_speed"): world.set_speed(50)
+			current_speed_text = "3x"
+		)
 	if mode_option:
 		var popup = mode_option.get_popup()
 		popup.add_theme_font_size_override("font_size", 35)
@@ -107,13 +120,25 @@ func _process(_delta: float) -> void:
 	if world and "connected" in world:
 		if sim_status_label:
 			if not world.connected:
-				sim_status_label.text = "Statut : Déconnecté"
+				sim_status_label.text = "Simulation : Arrêt (Déconnecté)"
+				sim_status_label.add_theme_color_override("font_color", Color(0.8, 0.3, 0.3))
 			elif world.get("run_completed"):
-				sim_status_label.text = "Statut : Terminé"
+				sim_status_label.text = "Simulation : Arrêt (Terminé)"
+				sim_status_label.add_theme_color_override("font_color", Color(0.2, 0.6, 0.9))
 			elif world.get("running"):
-				sim_status_label.text = "Statut : En cours"
+				sim_status_label.text = "Simulation : Marche"
+				sim_status_label.add_theme_color_override("font_color", Color(0.2, 0.9, 0.4))
 			else:
-				sim_status_label.text = "Statut : En pause"
+				sim_status_label.text = "Simulation : Arrêt (Pause)"
+				sim_status_label.add_theme_color_override("font_color", Color(0.9, 0.7, 0.2))
+
+		if sim_speed_label:
+			sim_speed_label.text = "Vitesse : " + current_speed_text
+			sim_speed_label.add_theme_color_override("font_color", Color(0.9, 0.6, 0.3))
+			
+		if sim_zoom_label and camera:
+			sim_zoom_label.text = "Zoom : %.1fx" % camera.zoom.x
+			sim_zoom_label.add_theme_color_override("font_color", Color(0.7, 0.8, 0.9))
 
 		if world.connected and not _was_connected:
 			_was_connected = true
@@ -276,15 +301,27 @@ func _update_graphs(step_data: Dictionary):
 
 	if sim_population_label:
 		sim_population_label.text = "Population Totale : " + str(pop)
+		sim_population_label.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
 		
 	if sim_cycle_label:
+		sim_cycle_label.add_theme_color_override("font_color", Color(0.4, 0.9, 0.7))
 		if step_data.has("step"):
 			sim_cycle_label.text = "Cycle : " + str(step_data["step"])
 		elif step_data.has("cycle"):
 			sim_cycle_label.text = "Cycle : " + str(step_data["cycle"])
 			
 	if sim_time_label and step_data.has("hour") and step_data.has("minute"):
-		sim_time_label.text = "Heure : %02d:%02d" % [int(step_data["hour"]), int(step_data["minute"])]
+		var h = int(step_data["hour"])
+		var m = int(step_data["minute"])
+		sim_time_label.text = "Heure : %02d:%02d" % [h, m]
+		sim_time_label.add_theme_color_override("font_color", Color(0.4, 0.8, 0.9))
+		if sim_daynight_label:
+			if h >= 6 and h < 18:
+				sim_daynight_label.text = "Période : Jour"
+				sim_daynight_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.3))
+			else:
+				sim_daynight_label.text = "Période : Nuit"
+				sim_daynight_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.9))
 
 
 
