@@ -422,6 +422,33 @@ layout_mode = 2
 title = "Énergie Moyenne"
 line_color = Color(0.2, 0.6, 0.9, 1)
 
+[node name="HSeparator2" type="HSeparator" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox"]
+layout_mode = 2
+
+[node name="LogTitle" type="Label" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Journal des décès"
+
+[node name="DeathLogPanel" type="PanelContainer" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="DeathLogMargin" type="MarginContainer" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox/DeathLogPanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="DeathLogLabel" type="RichTextLabel" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox/DeathLogPanel/DeathLogMargin"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+text = "Aucun décès pour le moment."
+scroll_following = true
+
 [node name="SettingsPanel" type="Panel" parent="." unique_id=826769241]
 visible = false
 z_index = 10

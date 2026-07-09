@@ -30,12 +30,16 @@ extends Control
 @onready var sim_daynight_label = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox/SimDayNightLabel
 @onready var sim_speed_label = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox/SimSpeedLabel
 @onready var sim_zoom_label = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox/SimZoomLabel
+@onready var death_log_label = $MainVBox/MainHBox/RightSidebar/Margin/VBox/DeathLogPanel/DeathLogMargin/DeathLogLabel
 
 # --- Variables principales ---
 var simulation_logs = []          # Données chargées depuis summary.json
 var current_step_data = {}
 var simulation_data = {}          # Données du fichier simulation.json (actions, motivations)
 var current_speed_text = "1x"
+var previous_alive_states = {}
+var death_logs: Array = []
+
 
 # --- Configuration ---
 @export var logs_folder: String = ""
@@ -250,6 +254,7 @@ func _update_graphs(step_data: Dictionary):
 	var total_energy = 0.0
 	
 	var species_counts = {}
+	var newly_dead = []
 	
 	if step_data.has("species"):
 		for s in step_data["species"]:
@@ -263,14 +268,22 @@ func _update_graphs(step_data: Dictionary):
 			else:
 				is_alive = true # Fallback au cas où
 
+			var s_name = s.get("name", "Inconnu")
+			if previous_alive_states.has(s_name) and previous_alive_states[s_name] and not is_alive:
+				newly_dead.append(s_name)
+			previous_alive_states[s_name] = is_alive
+
 			if is_alive:
 				pop += 1
 				total_energy += s.get("vitality", 0)
-				var s_name = s.get("name", "Inconnu").capitalize()
-				species_counts[s_name] = species_counts.get(s_name, 0) + 1
+				var cap_name = s_name.capitalize()
+				species_counts[cap_name] = species_counts.get(cap_name, 0) + 1
 			else:
 				dead += 1
 				
+	for dead_name in newly_dead:
+		_add_death_log(dead_name, step_data)
+
 	if step_data.has("world_state") and step_data["world_state"].has("food_available"):
 		food = step_data["world_state"]["food_available"]
 	
@@ -324,6 +337,19 @@ func _update_graphs(step_data: Dictionary):
 				sim_daynight_label.add_theme_color_override("font_color", Color(0.5, 0.5, 0.9))
 
 
+
+func _add_death_log(animal_name: String, step_data: Dictionary):
+	var cycle = step_data.get("step", step_data.get("cycle", 0))
+	var time_str = "--:--"
+	if step_data.has("hour") and step_data.has("minute"):
+		time_str = "%02d:%02d" % [int(step_data["hour"]), int(step_data["minute"])]
+	var log_str = "[color=#e06c75][%s] C%s - [b]%s[/b][/color]" % [time_str, str(cycle), animal_name]
+	death_logs.push_front(log_str)
+	if death_logs.size() > 50:
+		death_logs.pop_back()
+		
+	if death_log_label:
+		death_log_label.text = "\n".join(death_logs)
 
 # --- Générer un résumé global pour le fichier TXT ---
 func generate_summary_text() -> String:
@@ -419,6 +445,10 @@ func log_simulation_step(step_data: Dictionary):
 
 func clear_logs():
 	simulation_logs.clear()
+	previous_alive_states.clear()
+	death_logs.clear()
+	if death_log_label:
+		death_log_label.text = "Aucun décès pour le moment."
 	if graph_population and graph_population.has_method("clear_data"):
 		graph_population.clear_data()
 	if graph_food and graph_food.has_method("clear_data"):
