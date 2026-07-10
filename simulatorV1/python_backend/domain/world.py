@@ -1240,6 +1240,7 @@ class World:
         y1: int,
         *,
         step: int = 3,
+        entity: Any = None,
     ) -> bool:
         """Return True if a straight line crosses water tiles."""
         dx = x1 - x0
@@ -1253,6 +1254,8 @@ class World:
             nx = int(round(x0 + dx * t))
             ny = int(round(y0 + dy * t))
             if self.is_water_at(nx, ny):
+                if entity is not None and self.can_entity_enter(entity, nx, ny):
+                    continue
                 return True
         return False
 

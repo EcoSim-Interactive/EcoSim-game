@@ -64,6 +64,8 @@ def initialize_species_status(species: Any) -> Dict[str, Any]:
         "group_id": getattr(species, "group_id", None),
         "pack_id": getattr(species, "pack_id", None),
         "temperament": getattr(species, "temperament", None),
+        "vision": float(getattr(species, "vision", 100.0)),
+        "smell_range": float(getattr(species, "smell_range", 50.0)),
         "traits": copy.deepcopy(getattr(species, "traits", {})),
         "before": {
             "x": species.x,

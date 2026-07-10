@@ -101,7 +101,7 @@ def _load_catalog_with_selection() -> Tuple[
         species_catalog_cache = species_store.load_catalog()
 
     if species_selection_cache is None:
-        species_selection_cache = species_store.build_selection_from_catalog(
+        species_selection_cache = species_store.load_selection(
             species_catalog_cache
         )
 
@@ -121,7 +121,7 @@ def _build_config_with_species_selection(
 async def _send_species_catalog(
     websocket: websockets.WebSocketServerProtocol,
 ) -> None:
-    catalog, _ = _load_catalog_with_selection()
+    catalog, selection = _load_catalog_with_selection()
     config, _ = load_config(DEFAULT_SETTINGS.world_config_path)
     world_section = config.get("world", {}) if isinstance(config, dict) else {}
     world_width = (
@@ -140,7 +140,7 @@ async def _send_species_catalog(
                 "type": "species_catalog",
                 "data": {
                     "templates": catalog.get("templates", []),
-                    "selection": catalog.get("default_selection", []),
+                    "selection": selection,
                     "world_width": world_width,
                     "world_height": world_height,
                 },

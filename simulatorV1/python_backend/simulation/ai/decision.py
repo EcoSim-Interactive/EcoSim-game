@@ -29,6 +29,13 @@ def _has_active_feeding_opportunity(animal) -> bool:
     if isinstance(pack_state, dict):
         shared_kill = pack_state.get("shared_kill")
         if isinstance(shared_kill, dict) and shared_kill.get("food_id"):
+            fed_animals = shared_kill.get("fed_animals", set())
+            if animal.animal_id in fed_animals:
+                if animal.fatigue > FATIGUE_MODERATE_THRESHOLD or animal.thirst > THIRST_BLOCKS_REST_THRESHOLD:
+                    return False
+            else:
+                if animal.fatigue > FATIGUE_CRITICAL_THRESHOLD or animal.thirst > THIRST_CRITICAL_THRESHOLD:
+                    return False
             return True
 
     scavenger_cfg = animal.get_trait("scavenger")
@@ -46,6 +53,13 @@ def _has_active_feeding_opportunity(animal) -> bool:
                     if isinstance(shared_kill, dict) and shared_kill.get(
                         "food_id"
                     ):
+                        fed_animals = shared_kill.get("fed_animals", set())
+                        if animal.animal_id in fed_animals:
+                            if animal.fatigue > FATIGUE_MODERATE_THRESHOLD or animal.thirst > THIRST_BLOCKS_REST_THRESHOLD:
+                                continue
+                        else:
+                            if animal.fatigue > FATIGUE_CRITICAL_THRESHOLD or animal.thirst > THIRST_CRITICAL_THRESHOLD:
+                                continue
                         return True
     return False
 
@@ -105,6 +119,8 @@ def process_species(
         nonlocal food_result
         status["action"] = action
         status["motivation"] = motivation
+        if action in {"pack_guard_stand", "pack_waiting_guard"}:
+            animal.resting = True
         if resolve_food:
             result = resolve_consumption(world, animal, logger.log)
             if result["action_suffix"]:
@@ -113,6 +129,24 @@ def process_species(
             if event:
                 status["food_event"] = event
             food_result = result
+
+    # Priorite 0: Fuite de panique sous attaque d'un predateur.
+    under_attack = animal.recall_social("under_attack") if hasattr(animal, "recall_social") else None
+    if under_attack:
+        import math
+        predator_x, predator_y = under_attack
+        dx = animal.x - predator_x
+        dy = animal.y - predator_y
+        dist = math.sqrt(dx**2 + dy**2)
+        animal.remember_social("under_attack", None)
+        if dist > 0:
+            target_point = {
+                "x": animal.x + (dx / dist) * animal.speed * 1.5,
+                "y": animal.y + (dy / dist) * animal.speed * 1.5,
+            }
+            if animal.move_towards(target_point, world):
+                record("flee_predator", "sous attaque de predateur -> fuite de panique")
+                return food_result
 
     # Priorite 1: la soif critique passe avant tout le reste.
     if thirst > THIRST_CRITICAL_THRESHOLD:

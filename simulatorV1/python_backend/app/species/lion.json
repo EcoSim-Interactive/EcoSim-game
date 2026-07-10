@@ -9,6 +9,16 @@
   "diet": "carnivore",
   "body_nutrition": 180000,
   "traits": {
+    "predator": true,
+    "hunt": {
+      "targets": ["gazelle"],
+      "attack_range": 70.0,
+      "feed_priority": 30.0,
+      "feed_radius": 60.0,
+      "guard_radius": 90.0,
+      "hunger_threshold": 75.0,
+      "success_rate": 0.45
+    },
     "metabolism": {
       "body_mass_kg": 150,
       "daily_food_intake_kg": 5.5,

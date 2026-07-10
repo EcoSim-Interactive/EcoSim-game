@@ -342,7 +342,7 @@ class Species:
                 and CARNIVORE_EAT_DISTANCE > distance_threshold
             ):
                 distance_threshold = CARNIVORE_EAT_DISTANCE
-            if self.distance_to(food) < distance_threshold:
+            if self.distance_to(food) <= distance_threshold:
                 required = self._compute_required_food_amount(food)
                 result = (
                     world.consume_food(food, required)

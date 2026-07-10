@@ -104,9 +104,17 @@ class SpeciesCatalogStore:
                     profiles[str(key)] = value
 
         templates: List[Dict[str, Any]] = []
+        species_dir = self.base_dir.parent / "species"
         if isinstance(templates_raw, list):
             for entry in templates_raw:
                 if isinstance(entry, dict):
+                    template_id = entry.get("id")
+                    if isinstance(template_id, str) and template_id.strip():
+                        preset_file = species_dir / f"{template_id.strip()}.json"
+                        if preset_file.exists():
+                            preset_data = self._load_json(preset_file)
+                            if isinstance(preset_data, dict):
+                                entry = self._deep_merge(entry, preset_data)
                     normalized = self._normalize_template(entry, profiles)
                     template_id = normalized.get("id")
                     if isinstance(template_id, str) and template_id.strip():
@@ -276,18 +284,25 @@ class SpeciesCatalogStore:
                 {"selection": selection}, handle, ensure_ascii=False, indent=2
             )
 
-    @staticmethod
     def selection_to_species_config(
+        self,
         selection: List[Dict[str, Any]],
     ) -> Dict[str, Any]:
         defaults = {
-            "vision": 110,
-            "smell_range": 220,
-            "speed": 12,
+            "vision": 110.0,
+            "smell_range": 220.0,
+            "speed": 12.0,
             "diurnal": True,
             "temperament": "neutre",
-            "position": [500, 500],
+            "position": [500.0, 500.0],
         }
+
+        catalog = self.load_catalog()
+        templates = catalog.get("templates", [])
+        template_by_id = {}
+        for t in templates:
+            if isinstance(t, dict) and "id" in t:
+                template_by_id[t["id"]] = t
 
         population: List[Dict[str, Any]] = []
         for entry in selection:
@@ -307,6 +322,9 @@ class SpeciesCatalogStore:
                 or entry.get("template_id")
                 or "species"
             )
+            template_id = entry.get("template_id") or entry.get("id") or species_type
+            tpl = template_by_id.get(template_id, {})
+
             nutrition_range = (
                 entry.get("nutrition_range")
                 if isinstance(entry.get("nutrition_range"), dict)
@@ -326,16 +344,16 @@ class SpeciesCatalogStore:
                 ),
                 "species_type": species_type,
                 "count": count_int,
-                "vision": float(entry.get("vision", defaults["vision"])),
+                "vision": float(entry.get("vision", tpl.get("vision", defaults["vision"]))),
                 "smell_range": float(
-                    entry.get("smell_range", defaults["smell_range"])
+                    entry.get("smell_range", tpl.get("smell_range", defaults["smell_range"]))
                 ),
-                "speed": float(entry.get("speed", defaults["speed"])),
-                "diurnal": bool(entry.get("diurnal", defaults["diurnal"])),
+                "speed": float(entry.get("speed", tpl.get("speed", defaults["speed"]))),
+                "diurnal": bool(entry.get("diurnal", tpl.get("diurnal", defaults["diurnal"]))),
                 "temperament": str(
-                    entry.get("temperament", defaults["temperament"])
+                    entry.get("temperament", tpl.get("temperament", defaults["temperament"]))
                 ),
-                "diet": str(entry.get("diet", "omnivore")),
+                "diet": str(entry.get("diet", tpl.get("diet", "omnivore"))),
                 "traits": copy.deepcopy(traits),
                 "body_nutrition_range": {
                     "min": float(nutrition_range.get("min", 80.0)),

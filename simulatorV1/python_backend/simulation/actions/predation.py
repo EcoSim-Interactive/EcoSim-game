@@ -88,7 +88,14 @@ def _nearest_prey(
     animals: Iterable[Animal],
     targets: Optional[Set[str]] = None,
     world: Any | None = None,
+    max_distance: Optional[float] = None,
 ) -> Optional[Animal]:
+    if max_distance is None:
+        raw_hunt_cfg = animal.get_trait("hunt")
+        hunt_cfg = raw_hunt_cfg if isinstance(raw_hunt_cfg, dict) else {}
+        attack_range = float(hunt_cfg.get("attack_range", max(40.0, animal.vision * 0.3)))
+        max_distance = float(hunt_cfg.get("chase_range", max(animal.vision, attack_range * 2.0)))
+
     best: Optional[Animal] = None
     best_distance: Optional[float] = None
     for creature in animals:
@@ -96,15 +103,18 @@ def _nearest_prey(
             continue
         if not _prey_matches_targets(creature, targets):
             continue
+        distance = animal.distance_to({"x": creature.x, "y": creature.y})
+        if distance > max_distance:
+            continue
         if world is not None and hasattr(world, "_line_blocked_by_water"):
             if world._line_blocked_by_water(
                 int(round(animal.x)),
                 int(round(animal.y)),
                 int(round(creature.x)),
                 int(round(creature.y)),
+                entity=animal,
             ):
                 continue
-        distance = animal.distance_to({"x": creature.x, "y": creature.y})
         if best_distance is None or distance < best_distance:
             best = creature
             best_distance = distance
@@ -200,23 +210,32 @@ def _resolve_pack_target(
     animals: Iterable[Animal],
     targets: Optional[Set[str]],
     world,
+    chase_range: Optional[float] = None,
 ) -> Optional[Animal]:
+    if chase_range is None:
+        raw_hunt_cfg = animal.get_trait("hunt")
+        hunt_cfg = raw_hunt_cfg if isinstance(raw_hunt_cfg, dict) else {}
+        attack_range = float(hunt_cfg.get("attack_range", max(40.0, animal.vision * 0.3)))
+        chase_range = float(hunt_cfg.get("chase_range", max(animal.vision, attack_range * 2.0)))
+
     shared_target = (
         animal.pack_state.get("shared_target") if animal.pack_id else None
     )
     if isinstance(shared_target, dict):
         prey = _find_prey_by_id(animals, shared_target.get("prey_id"))
         if prey is not None and _prey_matches_targets(prey, targets):
-            shared_target["position"] = (prey.x, prey.y)
-            shared_target["stale_steps"] = 0
-            return prey
+            distance = animal.distance_to({"x": prey.x, "y": prey.y})
+            if distance <= chase_range:
+                shared_target["position"] = (prey.x, prey.y)
+                shared_target["stale_steps"] = 0
+                return prey
         stale_steps = int(shared_target.get("stale_steps", 0)) + 1
         if stale_steps > PACK_TARGET_STALE_STEPS:
             animal.pack_state.pop("shared_target", None)
         else:
             shared_target["stale_steps"] = stale_steps
 
-    prey = _nearest_prey(animal, animals, targets, world)
+    prey = _nearest_prey(animal, animals, targets, world, max_distance=chase_range)
     if prey is not None:
         _sync_shared_target(animal, prey)
     return prey
@@ -280,6 +299,20 @@ def _pending_required_members(
     ]
 
 
+def _pack_has_active_leader_or_successor(pack_members: Iterable[Animal]) -> bool:
+    has_leader = False
+    has_adult_male = False
+    for other in pack_members:
+        if not other.alive:
+            continue
+        role = other.get_trait("role")
+        if role == "leader":
+            has_leader = True
+        if other.sex == "male" and other.age_stage == "adult":
+            has_adult_male = True
+    return has_leader or has_adult_male
+
+
 def _handle_shared_kill(
     animal: Animal,
     pack_members: Iterable[Animal],
@@ -326,12 +359,18 @@ def _handle_shared_kill(
             pack_kill.clear()
             return False, "", False
 
+    pack_members = list(pack_members)
     participants = _sync_pack_participants(pack_kill, pack_members)
     participants[animal.animal_id] = feed_priority
 
     blocked = _state_set(pack_kill, "blocked")
     fed_animals = _state_set(pack_kill, "fed_animals")
     wait_counters = _state_dict(pack_kill, "wait_counters")
+
+    # Si la meute n'a plus de leader ni de successeur, ou s'il ne reste qu'un seul membre, on arrete la garde
+    if len(pack_members) <= 1 or not _pack_has_active_leader_or_successor(pack_members):
+        pack_kill.clear()
+        return False, "", False
 
     if animal.animal_id in blocked:
         return False, "", False
@@ -346,6 +385,7 @@ def _handle_shared_kill(
             int(round(animal.y)),
             int(round(target_point["x"])),
             int(round(target_point["y"])),
+            entity=animal,
         ):
             if animal.random_move(world):
                 return True, "pack_reposition_for_carcass", False
@@ -375,6 +415,7 @@ def _handle_shared_kill(
             int(round(origin[1])),
             int(round(target_point["x"])),
             int(round(target_point["y"])),
+            entity=animal,
         )
 
     if pending_required and not force_feed:
@@ -396,7 +437,14 @@ def _handle_shared_kill(
     if force_feed:
         wait_counters[animal.animal_id] = 0
 
+    # Le leader ou tout animal déjà nourri s'arrête de garder dès que le leader a mangé
+    leader_member = next((m for m in pack_members if m.get_trait("role") == "leader"), None)
+    leader_has_eaten = (leader_member is None) or (leader_member.animal_id in fed_animals)
+
     if animal.animal_id in fed_animals and not force_feed:
+        if leader_has_eaten:
+            return False, "", False
+
         if distance > guard_radius:
             previous = (animal.x, animal.y)
             if animal.move_towards(target_point, world):
@@ -516,7 +564,7 @@ def execute_predation_cycle(
     if animal.hunger < hunger_threshold:
         return False, "", False
 
-    prey = _resolve_pack_target(animal, animals, target_set, world)
+    prey = _resolve_pack_target(animal, animals, target_set, world, chase_range=chase_range)
     if not prey:
         return False, "", False
 
@@ -538,6 +586,7 @@ def execute_predation_cycle(
         )
 
     if random.random() > success_rate:
+        prey.remember_social("under_attack", (animal.x, animal.y))
         if not animal.move_towards(prey_point, world):
             moved, action, resolve = _reposition_pack_member(
                 animal, world, "pack_reposition_after_attack_fail"

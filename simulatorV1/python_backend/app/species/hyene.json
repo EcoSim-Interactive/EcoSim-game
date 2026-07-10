@@ -9,6 +9,18 @@
   "diet": "carnivore",
   "body_nutrition": 120000,
   "traits": {
+    "scavenger": {
+      "follow_packs": ["pride_central"]
+    },
+    "hunt": {
+      "targets": ["gazelle"],
+      "attack_range": 50.0,
+      "feed_priority": 30.0,
+      "feed_radius": 45.0,
+      "guard_radius": 65.0,
+      "hunger_threshold": 70.0,
+      "success_rate": 0.35
+    },
     "metabolism": {
       "body_mass_kg": 60,
       "daily_food_intake_kg": 4.2,

@@ -419,6 +419,9 @@ func _update_species_markers(step_data: Dictionary) -> void:
 			if species_type != "":
 				marker.icon = _get_dynamic_texture(species_type)
 			
+			marker.vision = float(entry.get("vision", 100.0))
+			marker.smell_range = float(entry.get("smell_range", 50.0))
+			
 			marker.queue_redraw()
 			if pos_data.size() > 0:
 					var target = Vector2(
@@ -455,6 +458,12 @@ func _get_dynamic_texture(sprite_name: String) -> Texture2D:
 			
 	if icon == null and ResourceLoader.exists(path):
 		icon = load(path) # Fallback classique (et pour le jeu exporté)
+
+	if icon == null and sprite_name.begins_with("carcass_") and sprite_name != "carcass":
+		var fallback_icon = _get_dynamic_texture("carcass")
+		if fallback_icon != null:
+			_texture_cache[sprite_name] = fallback_icon
+			return fallback_icon
 
 	_texture_cache[sprite_name] = icon
 	return icon
