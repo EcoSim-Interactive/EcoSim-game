@@ -110,7 +110,8 @@ class SpeciesCatalogStore:
                 if isinstance(entry, dict):
                     template_id = entry.get("id")
                     if isinstance(template_id, str) and template_id.strip():
-                        preset_file = species_dir / f"{template_id.strip()}.json"
+                        t_name = f"{template_id.strip()}.json"
+                        preset_file = species_dir / t_name
                         if preset_file.exists():
                             preset_data = self._load_json(preset_file)
                             if isinstance(preset_data, dict):
@@ -215,15 +216,16 @@ class SpeciesCatalogStore:
 
             for field in ("vision", "smell_range", "speed"):
                 try:
-                    merged[field] = float(
-                        merged.get(
-                            field, template_by_id[template_id].get(field, 0.0)
-                        )
-                    )
+                    val = float(merged.get(field, 0.0))
                 except (TypeError, ValueError):
-                    merged[field] = float(
-                        template_by_id[template_id].get(field, 0.0)
-                    )
+                    val = 0.0
+                if val <= 0.0:
+                    try:
+                        tpl_entry = template_by_id[template_id]
+                        val = float(tpl_entry.get(field, 0.0))
+                    except (TypeError, ValueError):
+                        val = 0.0
+                merged[field] = val
 
             if "diurnal" in merged:
                 merged["diurnal"] = bool(merged["diurnal"])
@@ -322,7 +324,11 @@ class SpeciesCatalogStore:
                 or entry.get("template_id")
                 or "species"
             )
-            template_id = entry.get("template_id") or entry.get("id") or species_type
+            template_id = (
+                entry.get("template_id")
+                or entry.get("id")
+                or species_type
+            )
             tpl = template_by_id.get(template_id, {})
 
             nutrition_range = (
@@ -336,6 +342,21 @@ class SpeciesCatalogStore:
                 else {}
             )
 
+            def _resolve_val(key: str, default_val: float) -> float:
+                try:
+                    e_val = float(entry.get(key, 0.0))
+                except (TypeError, ValueError):
+                    e_val = 0.0
+                if e_val > 0.0:
+                    return e_val
+                try:
+                    t_val = float(tpl.get(key, 0.0))
+                except (TypeError, ValueError):
+                    t_val = 0.0
+                if t_val > 0.0:
+                    return t_val
+                return default_val
+
             pop_entry: Dict[str, Any] = {
                 "name": str(
                     entry.get("display_name")
@@ -344,14 +365,21 @@ class SpeciesCatalogStore:
                 ),
                 "species_type": species_type,
                 "count": count_int,
-                "vision": float(entry.get("vision", tpl.get("vision", defaults["vision"]))),
-                "smell_range": float(
-                    entry.get("smell_range", tpl.get("smell_range", defaults["smell_range"]))
+                "vision": _resolve_val("vision", defaults["vision"]),
+                "smell_range": _resolve_val(
+                    "smell_range", defaults["smell_range"]
                 ),
-                "speed": float(entry.get("speed", tpl.get("speed", defaults["speed"]))),
-                "diurnal": bool(entry.get("diurnal", tpl.get("diurnal", defaults["diurnal"]))),
+                "speed": _resolve_val("speed", defaults["speed"]),
+                "diurnal": bool(
+                    entry.get(
+                        "diurnal", tpl.get("diurnal", defaults["diurnal"])
+                    )
+                ),
                 "temperament": str(
-                    entry.get("temperament", tpl.get("temperament", defaults["temperament"]))
+                    entry.get(
+                        "temperament",
+                        tpl.get("temperament", defaults["temperament"]),
+                    )
                 ),
                 "diet": str(entry.get("diet", tpl.get("diet", "omnivore"))),
                 "traits": copy.deepcopy(traits),

@@ -93,8 +93,12 @@ def _nearest_prey(
     if max_distance is None:
         raw_hunt_cfg = animal.get_trait("hunt")
         hunt_cfg = raw_hunt_cfg if isinstance(raw_hunt_cfg, dict) else {}
-        attack_range = float(hunt_cfg.get("attack_range", max(40.0, animal.vision * 0.3)))
-        max_distance = float(hunt_cfg.get("chase_range", max(animal.vision, attack_range * 2.0)))
+        attack_range = float(
+            hunt_cfg.get("attack_range", max(40.0, animal.vision * 0.3))
+        )
+        max_distance = float(
+            hunt_cfg.get("chase_range", max(animal.vision, attack_range * 2.0))
+        )
 
     best: Optional[Animal] = None
     best_distance: Optional[float] = None
@@ -215,8 +219,12 @@ def _resolve_pack_target(
     if chase_range is None:
         raw_hunt_cfg = animal.get_trait("hunt")
         hunt_cfg = raw_hunt_cfg if isinstance(raw_hunt_cfg, dict) else {}
-        attack_range = float(hunt_cfg.get("attack_range", max(40.0, animal.vision * 0.3)))
-        chase_range = float(hunt_cfg.get("chase_range", max(animal.vision, attack_range * 2.0)))
+        attack_range = float(
+            hunt_cfg.get("attack_range", max(40.0, animal.vision * 0.3))
+        )
+        chase_range = float(
+            hunt_cfg.get("chase_range", max(animal.vision, attack_range * 2.0))
+        )
 
     shared_target = (
         animal.pack_state.get("shared_target") if animal.pack_id else None
@@ -235,7 +243,9 @@ def _resolve_pack_target(
         else:
             shared_target["stale_steps"] = stale_steps
 
-    prey = _nearest_prey(animal, animals, targets, world, max_distance=chase_range)
+    prey = _nearest_prey(
+        animal, animals, targets, world, max_distance=chase_range
+    )
     if prey is not None:
         _sync_shared_target(animal, prey)
     return prey
@@ -299,7 +309,9 @@ def _pending_required_members(
     ]
 
 
-def _pack_has_active_leader_or_successor(pack_members: Iterable[Animal]) -> bool:
+def _pack_has_active_leader_or_successor(
+    pack_members: Iterable[Animal],
+) -> bool:
     has_leader = False
     has_adult_male = False
     for other in pack_members:
@@ -367,8 +379,10 @@ def _handle_shared_kill(
     fed_animals = _state_set(pack_kill, "fed_animals")
     wait_counters = _state_dict(pack_kill, "wait_counters")
 
-    # Si la meute n'a plus de leader ni de successeur, ou s'il ne reste qu'un seul membre, on arrete la garde
-    if len(pack_members) <= 1 or not _pack_has_active_leader_or_successor(pack_members):
+    # Arrete la garde si pas de leader/successeur ou membre unique.
+    if len(pack_members) <= 1 or not _pack_has_active_leader_or_successor(
+        pack_members
+    ):
         pack_kill.clear()
         return False, "", False
 
@@ -437,9 +451,13 @@ def _handle_shared_kill(
     if force_feed:
         wait_counters[animal.animal_id] = 0
 
-    # Le leader ou tout animal déjà nourri s'arrête de garder dès que le leader a mangé
-    leader_member = next((m for m in pack_members if m.get_trait("role") == "leader"), None)
-    leader_has_eaten = (leader_member is None) or (leader_member.animal_id in fed_animals)
+    # Le leader ou tout animal nourri s'arrete de garder.
+    leader_member = next(
+        (m for m in pack_members if m.get_trait("role") == "leader"), None
+    )
+    leader_has_eaten = (leader_member is None) or (
+        leader_member.animal_id in fed_animals
+    )
 
     if animal.animal_id in fed_animals and not force_feed:
         if leader_has_eaten:
@@ -473,9 +491,11 @@ def _handle_shared_kill(
     pack_kill.setdefault("feed_log", []).append(
         {"animal": animal.animal_id, "priority": feed_priority}
     )
-    log(
-        f"{animal.name} consomme la carcasse partagee (priorite {feed_priority})."  # noqa: E501
+    msg = (
+        f"{animal.name} consomme la carcasse partagee "
+        f"(priorite {feed_priority})."
     )
+    log(msg)
     animal.memory = target_point
     return True, "pack_feed_from_carcass", True
 
@@ -486,7 +506,17 @@ def execute_predation_cycle(
     world,
     log,
 ) -> Tuple[bool, str, bool]:
-    """Pilote la sequence complete de chasse, kill partage et ordre de nourrissage."""  # noqa: E501
+    """Drives the complete hunting sequence, shared kill, and feeding order.
+
+    Args:
+        animal (Animal): Predator animal taking turn.
+        animals (Iterable[Animal]): All active animals in simulation.
+        world: Simulation environment.
+        log: Logger function.
+
+    Returns:
+        Tuple[bool, str, bool]: (acted, action_name, state_changed)
+    """
     if animal.diet != "carnivore":
         return False, "", False
 
@@ -564,7 +594,9 @@ def execute_predation_cycle(
     if animal.hunger < hunger_threshold:
         return False, "", False
 
-    prey = _resolve_pack_target(animal, animals, target_set, world, chase_range=chase_range)
+    prey = _resolve_pack_target(
+        animal, animals, target_set, world, chase_range=chase_range
+    )
     if not prey:
         return False, "", False
 
@@ -631,9 +663,11 @@ def execute_predation_cycle(
         pack_kill.setdefault("feed_log", []).append(
             {"animal": animal.animal_id, "priority": feed_priority}
         )
-        log(
-            f"{animal.name} abat {prey.name} et commence a manger ({consumed:.1f})."  # noqa: E501
+        msg = (
+            f"{animal.name} abat {prey.name} et commence a manger "
+            f"({consumed:.1f})."
         )
+        log(msg)
         return True, "pack_hunt_success", False
 
     log(f"{animal.name} abat {prey.name} et cree une carcasse partagee.")

@@ -40,7 +40,7 @@ SPATIAL_INDEX_CELL_SIZE = 64
 
 
 class World:
-    """Conteneur central des ressources et des regles spatiales de la simulation."""  # noqa: E501
+    """Central container for grid resources, entities, and spatial laws."""
 
     def __init__(
         self,
@@ -138,7 +138,9 @@ class World:
         type_weights: Optional[Dict[str, float]] = None,
         profiles: Optional[Dict[str, Dict[str, Any]]] = None,
     ) -> None:
-        """Populate the world with randomly placed food sources of various vegetal types."""  # noqa: E501
+        """Populates the world with randomly placed food sources of various
+        vegetal types.
+        """
         specs = generate_food_sources(
             self.width,
             self.height,
@@ -283,8 +285,8 @@ class World:
             )
             full_path_coords.extend(segment_pixels)
 
-        # On nettoie les doublons potentiels tout en gardant l'ordre (si possible) ou set simple  # noqa: E501
-        # Pour une rivière, l'ordre compte pour la largeur, donc on fait attention  # noqa: E501
+        # On nettoie les doublons potentiels tout en gardant l'ordre.
+        # Pour une riviere, l'ordre compte pour la largeur.
         unique_path = []
         seen = set()
         for p in full_path_coords:
@@ -292,25 +294,21 @@ class World:
                 seen.add(p)
                 unique_path.append(p)
 
-        # 3. Élargissement progressif
-        MIN_WIDTH = 4
-        MAX_WIDTH = 28
+        # 3. Elargissement progressif
+        min_width = 4
+        max_width = 28
         total_len = len(unique_path)
         registered = set()
 
         for i, (cx, cy) in enumerate(unique_path):
-            # Progression de 0.0 à 1.0 le long de la rivière
             progress = i / max(1, total_len)
 
-            # Largeur variable
-            current_width = MIN_WIDTH + (MAX_WIDTH - MIN_WIDTH) * progress
+            current_width = min_width + (max_width - min_width) * progress
             radius = max(1, int(current_width / 2))
 
-            # Dessiner le cercle/carré d'eau autour du point
             for dx in range(-radius, radius + 1):
                 for dy in range(-radius, radius + 1):
-                    # Astuce: (dx*dx + dy*dy) <= radius*radius fait un cercle au lieu d'un carré  # noqa: E501
-                    # mais un carré est plus simple et suffit souvent.
+                    # Astuce: (dx*dx + dy*dy) <= radius*radius fait un cercle.
                     nx, ny = cx + dx, cy + dy
 
                     if 0 <= nx < self.width and 0 <= ny < self.height:
@@ -1020,7 +1018,11 @@ class World:
     # Generation du terrain de base
 
     def generate_terrain(self, default_tile: int = 0) -> None:
-        """Generate a simple terrain grid filled with a default tile type. In the futur we can expand this to more complex terrain generation. (Bruit de Perlin or Biome generation)"""  # noqa: E501
+        """Generates a simple terrain grid filled with a default tile type.
+
+        Args:
+            default_tile (int): Base tile numerical identifier.
+        """
         self.terrain = [
             [default_tile for _ in range(self.width)]
             for _ in range(self.height)
@@ -1175,7 +1177,17 @@ class World:
         *,
         min_radius: int = 0,
     ) -> Optional[Tuple[float, float]]:
-        """Return the nearest land tile adjacent to water within the given radius."""  # noqa: E501
+        """Returns nearest walkable land tile adjacent to a water body.
+
+        Args:
+            x (float): Origin x coordinate.
+            y (float): Origin y coordinate.
+            max_radius (int): Maximum search radius.
+            min_radius (int): Minimum search radius offset.
+
+        Returns:
+            Optional[Tuple[float, float]]: Nearest shore tile coordinates.
+        """
         start_x = int(round(x))
         start_y = int(round(y))
         r_start = max(0, int(min_radius))
@@ -1254,7 +1266,9 @@ class World:
             nx = int(round(x0 + dx * t))
             ny = int(round(y0 + dy * t))
             if self.is_water_at(nx, ny):
-                if entity is not None and self.can_entity_enter(entity, nx, ny):
+                if entity is not None and self.can_entity_enter(
+                    entity, nx, ny
+                ):
                     continue
                 return True
         return False
@@ -1399,7 +1413,15 @@ class World:
     def consume_food(
         self, food: Dict[str, Any], requested_amount: float
     ) -> Dict[str, Any]:
-        """Consomme une portion d'une source de nourriture et renvoie le resultat detaille."""  # noqa: E501
+        """Consumes a portion of a food source and returns detailed results.
+
+        Args:
+            food (Dict[str, Any]): Food source dictionary.
+            requested_amount (float): Requested caloric amount to eat.
+
+        Returns:
+            Dict[str, Any]: Consumption result payload.
+        """
         food_id = food.get("id")
         if (
             food_id is not None

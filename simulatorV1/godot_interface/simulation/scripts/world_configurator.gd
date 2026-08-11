@@ -375,9 +375,25 @@ func _clear_editor() -> void:
 func _load_entry_into_editor(entry: Dictionary) -> void:
 	is_populating_form = true
 	count_input.value = float(entry.get("count", 0))
-	vision_input.value = float(entry.get("vision", 0))
-	smell_input.value = float(entry.get("smell_range", 0))
-	speed_input.value = float(entry.get("speed", 0))
+
+	var tpl_id = String(entry.get("template_id", entry.get("id", entry.get("species_type", ""))))
+	var tpl = templates_by_id.get(tpl_id, {})
+
+	var v = float(entry.get("vision", 0))
+	if v <= 0 and typeof(tpl) == TYPE_DICTIONARY:
+		v = float(tpl.get("vision", 110.0))
+	vision_input.value = v
+
+	var s = float(entry.get("smell_range", 0))
+	if s <= 0 and typeof(tpl) == TYPE_DICTIONARY:
+		s = float(tpl.get("smell_range", 220.0))
+	smell_input.value = s
+
+	var sp = float(entry.get("speed", 0))
+	if sp <= 0 and typeof(tpl) == TYPE_DICTIONARY:
+		sp = float(tpl.get("speed", 12.0))
+	speed_input.value = sp
+
 	var nr = entry.get("nutrition_range", {})
 	nutrition_min_input.value = float(nr.get("min", 80.0))
 	nutrition_max_input.value = float(nr.get("max", 80.0))

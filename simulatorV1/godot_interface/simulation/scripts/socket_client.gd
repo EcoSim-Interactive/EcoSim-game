@@ -208,6 +208,7 @@ func _handle_status(payload):
 			if status_str.find("started") != -1 or status_str.find("resumed") != -1:
 				running = true
 				run_completed = false
+				species_configured = true
 				emit_signal("simulation_computed")
 			if status_str.find("paused") != -1:
 				running = false
@@ -220,6 +221,7 @@ func _handle_status(payload):
 			if payload.get("state", "") == "computed":
 				precompute_ready = true
 				precompute_pending = false
+				species_configured = true
 				print("[CLIENT] Pre-calcul termine :", payload)
 				emit_signal("simulation_computed")
 			else:
@@ -305,7 +307,7 @@ func apply_world_configuration(payload: Dictionary, start_after_apply: bool = fa
 	_send_cmd("configure_world", payload)
 
 func start_simulation():
-	if not species_configured:
+	if not species_configured and not precompute_ready and not run_completed:
 		request_species_catalog()
 		emit_signal("species_configuration_required")
 		return
@@ -325,6 +327,11 @@ func start_simulation():
 			_request_precompute()
 			run_completed = false
 			print("[CLIENT] Start en attente de chargement du monde")
+		elif precompute_ready:
+			_send_cmd("resume")
+			running = true
+			run_completed = false
+			print("[CLIENT] Resume envoye")
 		else:
 			_request_precompute()
 			_send_cmd("start")
@@ -364,10 +371,11 @@ func rerun_simulation(sim_data: Dictionary):
 	if not connected:
 		print("[CLIENT] Rerun impossible : client non connecte")
 		return
+	species_configured = true
+	precompute_ready = true
 	stop_simulation()
 	_reset_visuals()
 	world_ready = false
-	precompute_ready = false
 	precompute_pending = false
 	resume_after_world_ready = true
 	var steps_count := 0
@@ -396,13 +404,30 @@ func _update_species_markers(step_data: Dictionary) -> void:
 		if typeof(entry) != TYPE_DICTIONARY:
 			continue
 
-	
 		var base_name := String(entry.get("name", ""))
 		if base_name.is_empty():
+			base_name = String(entry.get("display_name", entry.get("original_name", "Species")))
+
+		# Ne pas afficher les espèces mortes
+		var is_alive := true
+		if entry.has("after") and typeof(entry["after"]) == TYPE_DICTIONARY:
+			is_alive = bool(entry["after"].get("alive", true))
+			if entry["after"].has("vitality"):
+				is_alive = is_alive and (float(entry["after"].get("vitality", 0.0)) > 0.0)
+		elif entry.has("vitality"):
+			is_alive = float(entry.get("vitality", 0.0)) > 0.0
+
+		if not is_alive:
 			continue
 
-	# ✅ ID unique (obligatoire)
-		var id = base_name + "_" + str(i)
+		# Clé unique stable basée sur animal_id pour éviter tout décalage d'index lors des décès
+		var animal_id = entry.get("animal_id")
+		var id: String
+		if animal_id != null and str(animal_id) != "":
+			id = base_name + "_" + str(animal_id)
+		else:
+			id = base_name + "_" + str(i)
+
 		active_names.append(id)
 
 		var pos_data: Dictionary = {}
@@ -411,25 +436,26 @@ func _update_species_markers(step_data: Dictionary) -> void:
 		elif entry.has("before") and typeof(entry["before"]) == TYPE_DICTIONARY:
 			pos_data = entry["before"]
 
-		var marker = _ensure_species_marker(id)
+		var target_pos := Vector2.ZERO
+		if pos_data.size() > 0:
+			target_pos = Vector2(
+				float(pos_data.get("x", 0.0)),
+				float(pos_data.get("y", 0.0))
+			)
+
+		var marker = _ensure_species_marker(id, target_pos)
 		if marker and pos_data.size() > 0:
 			var species_type = String(entry.get("species_type", ""))
 			marker.color = _get_species_color(species_type)
-			
+
 			if species_type != "":
 				marker.icon = _get_dynamic_texture(species_type)
-			
+
 			marker.vision = float(entry.get("vision", 100.0))
 			marker.smell_range = float(entry.get("smell_range", 50.0))
-			
-			marker.queue_redraw()
-			if pos_data.size() > 0:
-					var target = Vector2(
-					float(pos_data.get("x", marker.position.x)),
-					float(pos_data.get("y", marker.position.y))
-					)
-					marker.position = marker.position.lerp(target, 0.3)
 
+			marker.queue_redraw()
+			marker.position = marker.position.lerp(target_pos, 0.3)
 
 	_remove_inactive_species_markers(active_names)
 
@@ -615,7 +641,7 @@ func _draw_water(world_data):
 		# Exemple : tuile d’eau située à (5,15) dans l’atlas (1 is water_layer)
 		tilemap_layer.set_cell(Vector2i(x, y), 1, Vector2i(4, 16))
 
-func _ensure_species_marker(species_name: String) -> Node2D:
+func _ensure_species_marker(species_name: String, initial_pos: Vector2 = Vector2.ZERO) -> Node2D:
 	if species_marker_template == null:
 		return null
 
@@ -624,11 +650,10 @@ func _ensure_species_marker(species_name: String) -> Node2D:
 		if is_instance_valid(existing):
 			return existing
 
-
 	var marker = species_marker_template.duplicate()
 	marker.visible = true
 	marker.name = "SpeciesMarker_%s" % species_name
-	marker.position = Vector2.ZERO
+	marker.position = initial_pos
 	marker.add_to_group("species_markers")
 	add_child(marker)
 	species_markers[species_name] = marker
@@ -661,6 +686,8 @@ func _reset_visuals() -> void:
 
 func import_simulation(sim_data: Dictionary) -> void:
 	print("[CLIENT] Import simulation...")
+	species_configured = true
+	precompute_ready = true
 
 	if sim_data.has("world"):
 		print("[CLIENT] Import world")
@@ -671,7 +698,6 @@ func import_simulation(sim_data: Dictionary) -> void:
 		_update_simulation(sim_data["step"])
 
 	running = false
-	precompute_ready = false
 	precompute_pending = false
 
 	print("[CLIENT] Simulation importée avec succès")

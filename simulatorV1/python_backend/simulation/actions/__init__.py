@@ -1,4 +1,4 @@
-"""Expose les comportements sociaux et avances reutilisables par les animaux."""  # noqa: E501
+"""Social and advanced behavior modules for animal simulation engine."""
 
 from .grouping import maintain_group_cohesion
 from .predation import execute_predation_cycle

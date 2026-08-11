@@ -1,24 +1,48 @@
-"""Composants encapsulant les logiques vitales complexes de l'Animal."""
+"""Components encapsulating vital, aging, and metabolic logic."""
+
+from __future__ import annotations
 
 import random
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 
 class AgeComponent:
-    """Gère le profil de vieillissement et la survie de vieillesse."""
+    """Manages aging progression profiles and old-age survival.
+
+    Attributes:
+        age_years (float): Current age of the entity in years.
+        age_units (str): Unit measurement tag (defaults to 'years').
+        age_profile (list[Dict[str, Any]]): Normalized life stages.
+        age_stage (str): Active stage label ('juvenile', 'adult').
+    """
 
     def __init__(
         self,
         age_years: float,
         age_profile_spec: Any,
         default_units: str = "years",
-    ):
+    ) -> None:
+        """Initializes AgeComponent with age state and configuration.
+
+        Args:
+            age_years (float): Initial age value.
+            age_profile_spec (Any): Stage specification dictionary.
+            default_units (str): Default time unit tag. Defaults to "years".
+        """
         self.age_years = age_years
         self.age_units = default_units
         self.age_profile = self._normalize_age_profile(age_profile_spec)
         self.age_stage = self._compute_age_stage()
 
     def _normalize_age_profile(self, spec: Any) -> list[Dict[str, Any]]:
+        """Normalizes and sorts raw age profile specifications into a list.
+
+        Args:
+            spec (Any): Raw age profile specification object.
+
+        Returns:
+            list[Dict[str, Any]]: Sorted stage configuration dictionaries.
+        """
         stages: list[Dict[str, Any]] = []
         if isinstance(spec, dict):
             self.age_units = (
@@ -70,21 +94,31 @@ class AgeComponent:
         return stages
 
     def _compute_age_stage(self) -> str:
+        """Computes active age stage name based on current age_years.
+
+        Returns:
+            str: Stage name identifier (e.g., 'adult', 'juvenile').
+        """
         if not self.age_profile:
             return "adult"
         for stage in self.age_profile:
             if stage["min"] <= self.age_years < stage["max"]:
                 return str(stage["name"])
-        # Fallback to the last stage if age exceeds the highest max
         if self.age_profile:
             return str(self.age_profile[-1]["name"])
         return "adult"
 
     def tick_age(
         self, delta_years: float
-    ) -> tuple[bool, Optional[Dict[str, Any]]]:
-        """Vieillit l'entité. Retourne (is_dead_from_old_age,
-        new_stage_metabolism_cfg).
+    ) -> Tuple[bool, Optional[Dict[str, Any]]]:
+        """Advances entity age and evaluates old-age mortality risk.
+
+        Args:
+            delta_years (float): Increment of time in years.
+
+        Returns:
+            Tuple[bool, Optional[Dict[str, Any]]]: Tuple of (is_dead_from_age,
+            new_metabolism_config_if_stage_changed).
         """
         if delta_years <= 0:
             return False, None
@@ -93,7 +127,6 @@ class AgeComponent:
         self.age_years += delta_years
         self.age_stage = self._compute_age_stage()
 
-        # Determine if death from old age occurs
         prob = 0.0
         current_cfg = None
         for stage in self.age_profile:
@@ -113,7 +146,20 @@ class AgeComponent:
 
 
 class MetabolismComponent:
-    """Gère la nutrition, les réserves caloriques et les masses."""
+    """Manages nutrition, caloric reserves, body mass, and carcass values.
+
+    Attributes:
+        daily_calorie_need (float): Daily energetic requirement in kcal.
+        calorie_reserve_days (float): Reserve endurance capacity in days.
+        max_calories (float): Maximum energetic reserve capacity.
+        calories (float): Current stored calories.
+        meal_calories (float): Caloric intake capacity per meal.
+        base_body_mass_kg (float): Unscaled baseline body mass in kg.
+        body_mass_kg (float): Scaled body mass in kg.
+        carcass_edible_ratio (float): Edible mass percentage.
+        carcass_calories_per_kg (float): Caloric density per kg of meat.
+        body_nutrition (float): Total carcass nutritional yield.
+    """
 
     def __init__(
         self,
@@ -121,7 +167,15 @@ class MetabolismComponent:
         initial_calories: float = 0.0,
         initial_max: float = 0.0,
         initial_body_nutrition: float = 0.0,
-    ):
+    ) -> None:
+        """Initializes MetabolismComponent with configuration dictionary.
+
+        Args:
+            cfg (Dict[str, Any]): Metabolism configuration mapping.
+            initial_calories (float): Initial calories. Defaults to 0.0.
+            initial_max (float): Initial max capacity. Defaults to 0.0.
+            initial_body_nutrition (float): Explicit body nutrition override.
+        """
         self.daily_calorie_need = self._resolve_daily_calorie_need(cfg)
         self.calorie_reserve_days = self._coerce_positive_float(
             cfg.get("reserve_days"), fallback=3.0
@@ -150,6 +204,7 @@ class MetabolismComponent:
 
     @staticmethod
     def _coerce_positive_float(value: Any, *, fallback: float) -> float:
+        """Coerces input value to a positive float or returns fallback."""
         try:
             number = float(value)
         except (TypeError, ValueError):
@@ -157,6 +212,7 @@ class MetabolismComponent:
         return number if number > 0.0 else fallback
 
     def _resolve_daily_calorie_need(self, cfg: Dict[str, Any]) -> float:
+        """Calculates daily calorie requirement from configuration keys."""
         explicit = self._coerce_positive_float(
             cfg.get("daily_calorie_need"), fallback=0.0
         )
@@ -173,6 +229,7 @@ class MetabolismComponent:
         return 2400.0
 
     def _resolve_meal_calories(self, cfg: Dict[str, Any]) -> float:
+        """Calculates meal caloric intake capacity from configuration keys."""
         explicit = self._coerce_positive_float(
             cfg.get("meal_calories"), fallback=0.0
         )
@@ -195,6 +252,14 @@ class MetabolismComponent:
         sex: str,
         traits: Dict[str, Any],
     ) -> None:
+        """Applies new metabolic parameters and updates body dimensions.
+
+        Args:
+            metabolism_cfg (Dict[str, Any]): Updated metabolism config mapping.
+            age_stage (str): Active age stage string.
+            sex (str): Sex identifier string.
+            traits (Dict[str, Any]): Animal traits dictionary.
+        """
         self.daily_calorie_need = self._resolve_daily_calorie_need(
             metabolism_cfg
         )
@@ -223,6 +288,13 @@ class MetabolismComponent:
     def refresh_body_profile(
         self, age_stage: str, sex: str, traits: Dict[str, Any]
     ) -> None:
+        """Refreshes body mass scaling and carcass nutritional value.
+
+        Args:
+            age_stage (str): Active age stage string.
+            sex (str): Sex identifier string.
+            traits (Dict[str, Any]): Animal traits dictionary.
+        """
         if self.base_body_mass_kg <= 0.0:
             return
 

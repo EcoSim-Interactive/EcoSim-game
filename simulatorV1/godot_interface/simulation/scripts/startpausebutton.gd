@@ -10,22 +10,25 @@ func _ready() -> void:
 		world = get_node(world_path)
 
 	toggled.connect(_on_toggled)
-	_update_visuals(button_pressed)
+	if world and world.has_method("is_running"):
+		set_pressed_no_signal(world.is_running())
+		_update_visuals(world.is_running())
+	else:
+		_update_visuals(false)
 
 func _process(_delta: float) -> void:
 	if world == null or not world.has_method("is_running"):
 		return
-		
+
 	var is_generating = false
 	if "start_after_world_ready" in world and "precompute_pending" in world:
 		is_generating = world.start_after_world_ready or world.precompute_pending
-		
-	if disabled != is_generating:
-		disabled = is_generating
-		_update_visuals(world.is_running())
 
 	var actually_running = world.is_running()
-	if button_pressed != actually_running:
+	var expected_text = "Pause" if actually_running else "Start"
+
+	if disabled != is_generating or button_pressed != actually_running or text != expected_text:
+		disabled = is_generating
 		set_pressed_no_signal(actually_running)
 		_update_visuals(actually_running)
 
@@ -38,12 +41,16 @@ func _on_toggled(pressed_state: bool) -> void:
 	else:
 		world.pause_simulation()
 
+	var state = world.is_running() if world.has_method("is_running") else pressed_state
+	set_pressed_no_signal(state)
+	_update_visuals(state)
+
 func _update_visuals(is_playing: bool):
 	var normal_style = StyleBoxFlat.new()
 	var hover_style = StyleBoxFlat.new()
 	var pressed_style = StyleBoxFlat.new()
 	var disabled_style = StyleBoxFlat.new()
-	
+
 	for style in [normal_style, hover_style, pressed_style, disabled_style]:
 		style.corner_radius_top_left = 8
 		style.corner_radius_top_right = 8
@@ -63,7 +70,7 @@ func _update_visuals(is_playing: bool):
 	else:
 		text = "Start"
 		base_color = Color("#10B981") # Emerald 500
-		
+
 	normal_style.bg_color = base_color
 	hover_style.bg_color = base_color.lightened(0.1)
 	pressed_style.bg_color = base_color.darkened(0.1)
@@ -74,7 +81,7 @@ func _update_visuals(is_playing: bool):
 	add_theme_color_override("font_pressed_color", Color(0.9, 0.9, 0.9))
 	add_theme_color_override("font_disabled_color", Color(0.8, 0.8, 0.8))
 	add_theme_font_size_override("font_size", 18)
-	
+
 	add_theme_stylebox_override("normal", normal_style)
 	add_theme_stylebox_override("hover", hover_style)
 	add_theme_stylebox_override("pressed", pressed_style)

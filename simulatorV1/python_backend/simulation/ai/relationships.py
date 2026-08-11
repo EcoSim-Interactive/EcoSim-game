@@ -40,7 +40,17 @@ def handle_species_relationships(
     world,
     log,
 ) -> Tuple[bool, str, str, bool]:
-    """Applique les comportements sociaux avant les routines de survie generiques."""  # noqa: E501
+    """Applies social and pack behaviors before generic survival routines.
+
+    Args:
+        animal (Animal): Target animal acting.
+        animals (Iterable[Animal]): All active animals in simulation.
+        world: World environment.
+        log: Logger function.
+
+    Returns:
+        Tuple[bool, str, str, bool]: (acted, action, motivation, resolve_food)
+    """
     traits = animal.get_traits()
     if not traits:
         return False, "", "", False

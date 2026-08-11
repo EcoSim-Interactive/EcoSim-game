@@ -1,6 +1,4 @@
-"""Charge le monde et les especes a partir des fichiers JSON
-de configuration.
-"""
+"""Loads world environment and animal species population from JSON files."""
 
 from __future__ import annotations
 
@@ -27,9 +25,6 @@ else:
 
 DEFAULT_CONFIG_PATH = APP_ROOT / "app" / "world_config.json"
 
-# ---------------------------------------------------------------------------
-# Fonctions publiques de chargement
-
 
 def load_world(
     config_path: Optional[str] = None,
@@ -37,8 +32,15 @@ def load_world(
     fallback_food: int = 30,
     fallback_water: int = 10,
 ) -> World:
-    """Charge un monde a partir d'une configuration, avec repli
-    sur des valeurs par defaut.
+    """Loads World instance from JSON config file or falls back to defaults.
+
+    Args:
+        config_path (Optional[str]): Path to world_config.json file.
+        fallback_food (int): Quantity of food if config fails.
+        fallback_water (int): Quantity of water if config fails.
+
+    Returns:
+        World: Configured or fallback World instance.
     """
     try:
         config, base_dir = load_config(config_path)
@@ -61,8 +63,15 @@ def load_world_and_species(
     fallback_food: int = 30,
     fallback_water: int = 10,
 ) -> Tuple[World, List[Animal]]:
-    """Charge simultanement le monde et la population depuis
-    la configuration JSON.
+    """Loads both World and Animal species population simultaneously.
+
+    Args:
+        config_path (Optional[str]): Path to world_config.json file.
+        fallback_food (int): Quantity of food if config fails.
+        fallback_water (int): Quantity of water if config fails.
+
+    Returns:
+        Tuple[World, List[Animal]]: Tuple containing World and Animal list.
     """
     try:
         config, base_dir = load_config(config_path)
@@ -88,7 +97,14 @@ def load_world_and_species(
 
 
 def load_world_from_file(config_path: Optional[str] = None) -> World:
-    """Charge uniquement le monde a partir d'un fichier de configuration."""
+    """Loads World instance strictly from JSON file.
+
+    Args:
+        config_path (Optional[str]): Path to world_config.json file.
+
+    Returns:
+        World: Constructed World domain object.
+    """
     config, base_dir = load_config(config_path)
     return build_world_from_config(config, base_dir=base_dir)
 
@@ -96,6 +112,17 @@ def load_world_from_file(config_path: Optional[str] = None) -> World:
 def load_config(
     config_path: Optional[str] = None,
 ) -> Tuple[Dict[str, Any], Path]:
+    """Reads JSON config file and returns dict with base directory.
+
+    Args:
+        config_path (Optional[str]): Target configuration file path.
+
+    Returns:
+        Tuple[Dict[str, Any], Path]: Tuple of (config_dict, base_dir_path).
+
+    Raises:
+        ValueError: If file content is not a valid JSON dictionary.
+    """
     resolved = _resolve_config_path(config_path)
 
     print(f"DEBUG: Chargement JSON depuis : {resolved}")
@@ -111,15 +138,17 @@ def load_config(
     return data, resolved.parent
 
 
-# ---------------------------------------------------------------------------
-# Construction des objets de domaine
-
-
 def build_world_from_config(
     config: Dict[str, Any], *, base_dir: Optional[Path] = None
 ) -> World:
-    """Construit l'instance `World` a partir du dictionnaire
-    de configuration.
+    """Constructs World instance from configuration mapping.
+
+    Args:
+        config (Dict[str, Any]): Parsed JSON configuration mapping.
+        base_dir (Optional[Path]): Base path for relative resource resolution.
+
+    Returns:
+        World: Configured World instance.
     """
     world_cfg = config.get("world", {})
     width = _positive_int(world_cfg.get("width")) or 1000
@@ -141,7 +170,16 @@ def build_species_from_config(
     *,
     base_dir: Optional[Path] = None,
 ) -> List[Animal]:
-    """Construit la liste des animaux a partir des presets et des overrides."""
+    """Constructs species list from presets and population specs.
+
+    Args:
+        config (Dict[str, Any]): Parsed JSON configuration mapping.
+        world (World): World instance for spatial clamping and placement.
+        base_dir (Optional[Path]): Base path for preset resolution.
+
+    Returns:
+        List[Animal]: Initialized Animal instances.
+    """
     section = config.get("species")
     if not isinstance(section, dict):
         return []
@@ -356,15 +394,15 @@ def build_species_from_config(
     return species_list
 
 
-# ---------------------------------------------------------------------------
-# Configuration application
-
-
 def apply_food_config(world: World, section: Any) -> None:
+    """Applies food source configuration to World instance.
+
+    Args:
+        world (World): World instance to populate with food.
+        section (Any): Parsed food section from JSON config.
+    """
     if not isinstance(section, dict):
         return
-
-    import copy
 
     from domain.food_generation import DEFAULT_FOOD_PROFILES
 
@@ -402,12 +440,16 @@ def apply_food_config(world: World, section: Any) -> None:
             profiles=profiles,
         )
     elif type_weights:
-        # Allow pure weight-based generation by falling back
-        # to default quantity.
         world.add_food(type_weights=type_weights, profiles=profiles)
 
 
 def apply_water_config(world: World, section: Any) -> None:
+    """Applies water resource configuration to World instance.
+
+    Args:
+        world (World): World instance to populate with water features.
+        section (Any): Parsed water section from JSON config.
+    """
     if not isinstance(section, dict):
         return
 
@@ -427,11 +469,8 @@ def apply_water_config(world: World, section: Any) -> None:
         )
 
 
-# ---------------------------------------------------------------------------
-# Helpers & coercers
-
-
 def _build_default_world(fallback_food: int, fallback_water: int) -> World:
+    """Constructs default World instance with fallback food and water."""
     world = World()
     if fallback_food > 0:
         world.add_food(quantity=fallback_food)
@@ -441,6 +480,7 @@ def _build_default_world(fallback_food: int, fallback_water: int) -> World:
 
 
 def _build_default_species(world: World) -> List[Animal]:
+    """Constructs default Chasseron species instance placed at world center."""
     center = (world.width / 2.0, world.height / 2.0)
     return [
         Animal(
@@ -457,6 +497,7 @@ def _build_default_species(world: World) -> List[Animal]:
 
 
 def _extract_position(world: World, *candidates: Any) -> Tuple[float, float]:
+    """Extracts valid clamped position tuple from candidate objects."""
     for candidate in candidates:
         coords = _coerce_position(candidate)
         if coords is not None:
@@ -465,6 +506,7 @@ def _extract_position(world: World, *candidates: Any) -> Tuple[float, float]:
 
 
 def _extract_positions(world: World, value: Any) -> List[Tuple[float, float]]:
+    """Extracts list of clamped position tuples from raw config value."""
     if not isinstance(value, Iterable) or isinstance(value, (str, bytes)):
         return []
     positions: List[Tuple[float, float]] = []
@@ -478,6 +520,7 @@ def _extract_positions(world: World, value: Any) -> List[Tuple[float, float]]:
 def _build_spawn_positions(
     world: World, anchor: Tuple[float, float], count: int
 ) -> List[Tuple[float, float]]:
+    """Generates circular spawn position clusters around an anchor point."""
     if count <= 1:
         return [_clamp_position(anchor, world)]
 
@@ -503,6 +546,7 @@ def _build_spawn_positions(
 def _clamp_position(
     position: Tuple[float, float], world: World
 ) -> Tuple[float, float]:
+    """Clamps position within world bounds and relocates off water."""
     x = max(0.0, min(float(world.width), float(position[0])))
     y = max(0.0, min(float(world.height), float(position[1])))
     if hasattr(world, "relocate_off_water"):
@@ -511,6 +555,7 @@ def _clamp_position(
 
 
 def _coerce_position(value: Any) -> Optional[Tuple[float, float]]:
+    """Coerces list/tuple/dict position specification to (x, y) tuple."""
     if isinstance(value, (list, tuple)) and len(value) >= 2:
         return _safe_float_pair(value[0], value[1])
     if isinstance(value, dict):
@@ -522,6 +567,7 @@ def _coerce_position(value: Any) -> Optional[Tuple[float, float]]:
 def _safe_float_pair(
     x_value: Any, y_value: Any
 ) -> Optional[Tuple[float, float]]:
+    """Safe conversion of x and y raw inputs to float pair."""
     x = _coerce_float(x_value)
     y = _coerce_float(y_value)
     if x is None or y is None:
@@ -530,42 +576,27 @@ def _safe_float_pair(
 
 
 def _resolve_config_path(config_path: Optional[str]) -> Path:
-    """
-    Transforme un chemin (relatif ou absolu) en chemin absolu valide.
-    Cherche intelligemment à la racine OU dans le dossier 'app'.
-    """
-    # 1. Si aucun chemin n'est donné, on prend le défaut
-    # (qui inclut déjà 'app')
+    """Resolves relative or absolute path to a valid config file location."""
     if config_path is None:
         return DEFAULT_CONFIG_PATH
 
     candidate = Path(config_path)
-
-    # 2. Si c'est déjà un chemin absolu (C:/...), on le retourne
     if candidate.is_absolute():
         return candidate.resolve()
 
-    # 3. Si c'est relatif, on teste deux endroits :
-
-    # Tentative A : Directement à la racine
-    # (ex: dist_final/data/server/mon_fichier.json)
     path_at_root = APP_ROOT / candidate
     if path_at_root.exists():
         return path_at_root.resolve()
 
-    # Tentative B : Dans le dossier 'app'
-    # (ex: dist_final/data/server/app/world_config.json)
-    # C'est ça qui va sauver ton chargement !
     path_in_app = APP_ROOT / "app" / candidate
     if path_in_app.exists():
         return path_in_app.resolve()
 
-    # Si on ne trouve nulle part, on retourne le chemin racine par défaut
-    # (ça plantera après, mais proprement)
     return path_at_root.resolve()
 
 
 def _positive_int(value: Any) -> Optional[int]:
+    """Coerces input value to a positive integer or None."""
     try:
         integer = int(value)
     except (TypeError, ValueError):
@@ -574,6 +605,7 @@ def _positive_int(value: Any) -> Optional[int]:
 
 
 def _positive_float(value: Any) -> Optional[float]:
+    """Coerces input value to a positive float or None."""
     try:
         number = float(value)
     except (TypeError, ValueError):
@@ -582,6 +614,7 @@ def _positive_float(value: Any) -> Optional[float]:
 
 
 def _coerce_float(value: Any) -> Optional[float]:
+    """Coerces input value to float or None."""
     if value is None:
         return None
     try:
@@ -591,6 +624,7 @@ def _coerce_float(value: Any) -> Optional[float]:
 
 
 def _coerce_str(value: Any) -> Optional[str]:
+    """Coerces input value to stripped string or None."""
     if value is None:
         return None
     if isinstance(value, str):
@@ -600,6 +634,7 @@ def _coerce_str(value: Any) -> Optional[str]:
 
 
 def _coerce_bool(value: Any) -> Optional[bool]:
+    """Coerces input value to boolean representation or None."""
     if isinstance(value, bool):
         return value
     if isinstance(value, (int, float)):
@@ -620,11 +655,12 @@ def _resolve_float_attr(
     *,
     fallback: float,
 ) -> float:
-    value = _coerce_float(entry.get(key))
+    """Resolves float attribute value across inheritance chain."""
+    value = _positive_float(entry.get(key))
     if value is not None:
         return value
     for defaults_source in default_chain:
-        value = _coerce_float(_extract_from_dict(defaults_source, key))
+        value = _positive_float(_extract_from_dict(defaults_source, key))
         if value is not None:
             return value
     return fallback
@@ -637,6 +673,7 @@ def _resolve_bool_attr(
     *,
     fallback: bool,
 ) -> bool:
+    """Resolves boolean attribute value across inheritance chain."""
     value = _coerce_bool(entry.get(key))
     if value is not None:
         return value
@@ -650,6 +687,7 @@ def _resolve_bool_attr(
 def _resolve_str_from_chain(
     key: str, default_chain: List[Dict[str, Any]]
 ) -> Optional[str]:
+    """Resolves string attribute value across inheritance chain."""
     for defaults_source in default_chain:
         value = _coerce_str(_extract_from_dict(defaults_source, key))
         if value:
@@ -660,6 +698,7 @@ def _resolve_str_from_chain(
 def _resolve_traits(
     entry: Dict[str, Any], default_chain: List[Dict[str, Any]]
 ) -> Dict[str, Any]:
+    """Merges traits dictionaries across inheritance chain."""
     merged: Dict[str, Any] = {}
     for defaults_source in reversed(default_chain):
         traits = _extract_traits(_extract_from_dict(defaults_source, "traits"))
@@ -672,6 +711,7 @@ def _resolve_traits(
 
 
 def _coerce_range(value: Any) -> Optional[Tuple[float, float]]:
+    """Coerces range specification to positive (min, max) tuple."""
     if isinstance(value, (list, tuple)) and len(value) >= 2:
         lower = _coerce_float(value[0])
         upper = _coerce_float(value[1])
@@ -693,6 +733,7 @@ def _resolve_float_range_attr(
     entry: Dict[str, Any],
     default_chain: List[Dict[str, Any]],
 ) -> Optional[Tuple[float, float]]:
+    """Resolves float range attribute value across inheritance chain."""
     range_key = f"{key}_range"
     resolved = _coerce_range(entry.get(range_key))
     if resolved is not None:
@@ -708,6 +749,7 @@ def _resolve_float_range_attr(
 
 
 def _extract_distribution(value: Any) -> Dict[str, int]:
+    """Extracts food distribution dictionary mapping species to quantities."""
     if not isinstance(value, dict):
         return {}
     distribution: Dict[str, int] = {}
@@ -719,6 +761,7 @@ def _extract_distribution(value: Any) -> Dict[str, int]:
 
 
 def _extract_type_weights(value: Any) -> Dict[str, float]:
+    """Extracts type weight dictionary mapping food classes to weights."""
     if not isinstance(value, dict):
         return {}
     weights: Dict[str, float] = {}
@@ -730,12 +773,14 @@ def _extract_type_weights(value: Any) -> Dict[str, float]:
 
 
 def _extract_traits(value: Any) -> Dict[str, Any]:
+    """Extracts traits dictionary from arbitrary input."""
     if not isinstance(value, dict):
         return {}
     return {str(k): v for k, v in value.items()}
 
 
 def _extract_from_dict(container: Any, key: str) -> Any:
+    """Safely extracts value from dictionary if container is a dict."""
     if isinstance(container, dict):
         return container.get(key)
     return None
@@ -744,6 +789,7 @@ def _extract_from_dict(container: Any, key: str) -> Any:
 def _load_species_preset(
     ref: Any, base_dir: Optional[Path]
 ) -> Optional[Dict[str, Any]]:
+    """Loads species preset JSON file by path reference."""
     if isinstance(ref, dict):
         if "preset" in ref or "path" in ref or "file" in ref:
             ref = ref.get("preset") or ref.get("path") or ref.get("file")
@@ -772,7 +818,7 @@ def _load_species_preset(
 
 
 def _resolve_preset_path(ref: Any, base_dir: Optional[Path]) -> Optional[Path]:
-    candidate: Optional[Path] = None
+    """Resolves relative preset path across search directories."""
     if isinstance(ref, dict):
         ref = ref.get("preset") or ref.get("path") or ref.get("file")
     if not isinstance(ref, str) or not ref.strip():
@@ -801,6 +847,5 @@ def _resolve_preset_path(ref: Any, base_dir: Optional[Path]) -> Optional[Path]:
             continue
         seen.add(normalized)
         if path.exists():
-            candidate = path
-            break
-    return candidate
+            return path
+    return None

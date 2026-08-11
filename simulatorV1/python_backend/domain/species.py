@@ -1,9 +1,8 @@
-"""Entite de domaine representant un individu vivant dans le monde."""
-
 from __future__ import annotations
 
 import math
 import random
+from abc import ABC
 from typing import Any, Dict, Optional, Tuple
 
 from .constants import (
@@ -39,8 +38,31 @@ from .constants import (
 )
 
 
-class Species:
-    """Modele de base partage par toutes les entites animales simulables."""
+class Species(ABC):
+    """Abstract domain entity representing a living creature in the simulation.
+
+    Defines core physical capabilities, vital status tracking, spatial
+    movement algorithms, and resource consumption methods.
+
+    Attributes:
+        name (str): Identifier or species name.
+        sprite_name (str): Visual asset identifier for rendering.
+        x (float): Horizontal position coordinate.
+        y (float): Vertical position coordinate.
+        vision (float): Sensory vision range radius.
+        smell_range (float): Olfactory perception range radius.
+        speed (float): Maximum movement speed per step.
+        diurnal (bool): True if active during daytime, False if nocturnal.
+        temperament (str): Behavioral trait (e.g., 'neutre', 'agressif').
+        diet (str): Dietary classification ('herbivore', 'carnivore', etc.).
+        vitality (float): Current health/vitality score (0 to 100).
+        calories (float): Current energetic reserve in kcal.
+        hunger (float): Hunger gauge percentage derived from calorie deficit.
+        thirst (float): Thirst level percentage (0 to 100).
+        fatigue (float): Exhaustion level percentage (0 to 100).
+        resting (bool): Indicates if entity is currently sleeping/resting.
+        alive (bool): Living status flag.
+    """
 
     def __init__(
         self,
@@ -146,7 +168,11 @@ class Species:
 
     @hunger.setter
     def hunger(self, value: float) -> None:
-        """Accepte encore une faim en pourcentage pour conserver la compatibilite."""  # noqa: E501
+        """Sets hunger gauge percentage by updating internal calorie count.
+
+        Args:
+            value (float): Target hunger percentage (0 to 100).
+        """
         try:
             hunger_percent = float(value)
         except (TypeError, ValueError):
@@ -155,10 +181,22 @@ class Species:
         self.calories = self.max_calories * (1.0 - (hunger_percent / 100.0))
 
     def calorie_deficit(self) -> float:
+        """Computes current missing calories required to reach max capacity.
+
+        Returns:
+            float: Calorie deficit in kcal.
+        """
         return max(0.0, self.max_calories - self.calories)
 
     def apply_calories(self, value: float) -> float:
-        """Ajoute des calories dans la reserve et renvoie le reellement absorbe."""  # noqa: E501
+        """Adds calories to reserve and returns amount actually absorbed.
+
+        Args:
+            value (float): Amount of calories to add.
+
+        Returns:
+            float: Net calories added to reserve.
+        """
         try:
             delta = float(value)
         except (TypeError, ValueError):
@@ -170,7 +208,14 @@ class Species:
         return self.calories - previous
 
     def burn_calories(self, value: float) -> float:
-        """Retire des calories de la reserve et renvoie le reellement depense."""  # noqa: E501
+        """Consumes calories from reserve and returns amount actually spent.
+
+        Args:
+            value (float): Amount of calories to burn.
+
+        Returns:
+            float: Net calories deducted from reserve.
+        """
         try:
             delta = float(value)
         except (TypeError, ValueError):
@@ -394,7 +439,8 @@ class Species:
                 return True
             return False
 
-        # Autorise la consommation si l'animal se trouve au bord d'une zone d'eau.  # noqa: E501
+        # Autorise la consommation si l'animal se trouve au bord
+        # d'une zone d'eau.
         if hasattr(world, "_water_tiles") and hasattr(
             world, "_water_tile_lookup"
         ):

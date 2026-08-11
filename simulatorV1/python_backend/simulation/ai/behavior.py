@@ -22,9 +22,11 @@ def _reposition_after_failed_move(
 ) -> Tuple[bool, str, str]:
     """Tente un decalage court lorsque la cible directe est inaccessible."""
     if animal.random_move(world):
-        log(
-            f"{animal.name} tente un repositionnement pour contourner un blocage."  # noqa: E501
+        msg = (
+            f"{animal.name} tente un repositionnement pour "
+            f"contourner un blocage."
         )
+        log(msg)
         return True, action, motivation
     return False, "", ""
 
@@ -32,7 +34,16 @@ def _reposition_after_failed_move(
 def _resolve_water_source(
     world: Any, x: float, y: float
 ) -> Optional[Dict[str, Any]]:
-    """Retrouve une source d'eau a partir d'une position memorisee ou observee."""  # noqa: E501
+    """Retrieves a water source from a remembered or observed position.
+
+    Args:
+        world (Any): World simulation state.
+        x (float): Horizontal position coordinate.
+        y (float): Vertical position coordinate.
+
+    Returns:
+        Optional[Dict[str, Any]]: Water source entity or None.
+    """
     if not hasattr(world, "get_nearest_water"):
         return None
     return world.get_nearest_water(x, y)

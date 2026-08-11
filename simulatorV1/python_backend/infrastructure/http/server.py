@@ -312,8 +312,8 @@ async def get_world(websocket: websockets.WebSocketServerProtocol) -> None:
     )
     _reset_runtime_state()
 
-    CHUNK_SIZE = 50
-    total_chunks = ceil(len(world.terrain) / CHUNK_SIZE)
+    chunk_size = 50
+    total_chunks = ceil(len(world.terrain) / chunk_size)
 
     await websocket.send(
         json.dumps(
@@ -333,8 +333,8 @@ async def get_world(websocket: websockets.WebSocketServerProtocol) -> None:
     logger.info("Métadonnées du monde envoyées, envoi des chunks terrain...")
 
     for i in range(total_chunks):
-        start = i * CHUNK_SIZE
-        end = start + CHUNK_SIZE
+        start = i * chunk_size
+        end = start + chunk_size
         chunk_rows = world.terrain[start:end]
 
         await websocket.send(
@@ -373,9 +373,12 @@ def format_step_summary(step_data: Dict[str, Any]) -> str:
             if isinstance(calories, (int, float))
             else ""
         )
-        species_states.append(
-            f"{status.get('name', 'Inconnu')} pos=({x:.2f}, {y:.2f}) vitalite={vitality:.0f} faim={hunger:.0f} soif={thirst:.0f} fatigue={fatigue:.0f}{calories_fragment}"  # noqa: E501
+        msg = (
+            f"{status.get('name', 'Inconnu')} pos=({x:.2f}, {y:.2f}) "
+            f"vitalite={vitality:.0f} faim={hunger:.0f} "
+            f"soif={thirst:.0f} fatigue={fatigue:.0f}{calories_fragment}"
         )
+        species_states.append(msg)
 
     return " | ".join(species_states) if species_states else "aucune espece"
 
@@ -400,7 +403,7 @@ async def _compute_steps() -> None:
         Optional[str],
         Optional[float],
     ]:
-        assert sim is not None  # pour mypy
+        assert sim is not None
         steps = sim.generate_all_steps()
         summary = sim.save_summary()
         return (
@@ -410,7 +413,6 @@ async def _compute_steps() -> None:
             sim.summary_file,
             getattr(sim, "last_generation_duration", None),
         )
-
     (
         steps,
         summary,
@@ -430,7 +432,8 @@ async def _compute_steps() -> None:
     bundle_info = steps_file or "<memoire>"
     summary_info = summary_file or "<memoire>"
     logger.info(
-        "Pre-calcul termine : %s steps stockes (simulation=%s, resume=%s, duree=%.3fs).",  # noqa: E501
+        "Pre-calcul termine : %s steps stockes "
+        "(simulation=%s, resume=%s, duree=%.3fs).",
         len(precomputed_steps),
         bundle_info,
         summary_info,
@@ -561,7 +564,7 @@ async def _send_world_snapshot(
     websocket: websockets.WebSocketServerProtocol,
     payload: Optional[Dict[str, Any]] = None,
 ) -> None:
-    """Envoie les metadonnees du monde (et eventuellement le terrain) au client."""  # noqa: E501
+    """Sends world metadata and optional terrain map to client."""
     source: Dict[str, Any] = {}
     if isinstance(payload, dict):
         source = payload
@@ -588,8 +591,8 @@ async def _send_world_snapshot(
     if not isinstance(terrain_rows, list):
         terrain_rows = []
 
-    CHUNK_SIZE = 50
-    total_chunks = ceil(len(terrain_rows) / CHUNK_SIZE) if terrain_rows else 0
+    chunk_size = 50
+    total_chunks = ceil(len(terrain_rows) / chunk_size) if terrain_rows else 0
 
     await websocket.send(
         json.dumps(
@@ -609,8 +612,8 @@ async def _send_world_snapshot(
 
     if terrain_rows:
         for i in range(total_chunks):
-            start = i * CHUNK_SIZE
-            end = start + CHUNK_SIZE
+            start = i * chunk_size
+            end = start + chunk_size
             chunk_rows = terrain_rows[start:end]
             await websocket.send(
                 json.dumps(

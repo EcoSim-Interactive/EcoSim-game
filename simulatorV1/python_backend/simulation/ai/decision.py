@@ -31,10 +31,16 @@ def _has_active_feeding_opportunity(animal) -> bool:
         if isinstance(shared_kill, dict) and shared_kill.get("food_id"):
             fed_animals = shared_kill.get("fed_animals", set())
             if animal.animal_id in fed_animals:
-                if animal.fatigue > FATIGUE_MODERATE_THRESHOLD or animal.thirst > THIRST_BLOCKS_REST_THRESHOLD:
+                if (
+                    animal.fatigue > FATIGUE_MODERATE_THRESHOLD
+                    or animal.thirst > THIRST_BLOCKS_REST_THRESHOLD
+                ):
                     return False
             else:
-                if animal.fatigue > FATIGUE_CRITICAL_THRESHOLD or animal.thirst > THIRST_CRITICAL_THRESHOLD:
+                if (
+                    animal.fatigue > FATIGUE_CRITICAL_THRESHOLD
+                    or animal.thirst > THIRST_CRITICAL_THRESHOLD
+                ):
                     return False
             return True
 
@@ -55,10 +61,16 @@ def _has_active_feeding_opportunity(animal) -> bool:
                     ):
                         fed_animals = shared_kill.get("fed_animals", set())
                         if animal.animal_id in fed_animals:
-                            if animal.fatigue > FATIGUE_MODERATE_THRESHOLD or animal.thirst > THIRST_BLOCKS_REST_THRESHOLD:
+                            if (
+                                animal.fatigue > FATIGUE_MODERATE_THRESHOLD
+                                or animal.thirst > THIRST_BLOCKS_REST_THRESHOLD
+                            ):
                                 continue
                         else:
-                            if animal.fatigue > FATIGUE_CRITICAL_THRESHOLD or animal.thirst > THIRST_CRITICAL_THRESHOLD:
+                            if (
+                                animal.fatigue > FATIGUE_CRITICAL_THRESHOLD
+                                or animal.thirst > THIRST_CRITICAL_THRESHOLD
+                            ):
                                 continue
                         return True
     return False
@@ -67,7 +79,7 @@ def _has_active_feeding_opportunity(animal) -> bool:
 def _resolve_critical_hunger(
     animal, world, species_list, logger, record
 ) -> bool:
-    """Force une recherche alimentaire active avant les besoins seulement moderes."""  # noqa: E501
+    """Forces active food search before moderate needs."""
     if animal.hunger < HUNGER_CRITICAL_FEED_OVERRIDE:
         return False
 
@@ -106,7 +118,19 @@ def process_species(
     species_list,
     logger,
 ) -> Optional[Dict[str, Any]]:
-    """Applique l'arbre de decision et met a jour l'etat serialise de l'animal."""  # noqa: E501
+    """Evaluates decision tree and updates serialized animal status.
+
+    Args:
+        animal (Animal): Target animal entity evaluating actions.
+        status (Dict[str, Any]): Mutable status dictionary for serialization.
+        world_time (Dict[str, Any]): Environment time context mapping.
+        world: World environment instance.
+        species_list: Active species list.
+        logger: Event logger adapter.
+
+    Returns:
+        Optional[Dict[str, Any]]: Food resolution payload if food was eaten.
+    """
     thirst = animal.thirst
     hunger = animal.hunger
     fatigue = animal.fatigue
@@ -131,9 +155,14 @@ def process_species(
             food_result = result
 
     # Priorite 0: Fuite de panique sous attaque d'un predateur.
-    under_attack = animal.recall_social("under_attack") if hasattr(animal, "recall_social") else None
+    under_attack = (
+        animal.recall_social("under_attack")
+        if hasattr(animal, "recall_social")
+        else None
+    )
     if under_attack:
         import math
+
         predator_x, predator_y = under_attack
         dx = animal.x - predator_x
         dy = animal.y - predator_y
@@ -145,7 +174,10 @@ def process_species(
                 "y": animal.y + (dy / dist) * animal.speed * 1.5,
             }
             if animal.move_towards(target_point, world):
-                record("flee_predator", "sous attaque de predateur -> fuite de panique")
+                record(
+                    "flee_predator",
+                    "sous attaque de predateur -> fuite de panique",
+                )
                 return food_result
 
     # Priorite 1: la soif critique passe avant tout le reste.
@@ -182,7 +214,7 @@ def process_species(
             record(action, motivation, resolve_food=resolve)
             return food_result
 
-    # Priorite 3: une faim critique passe avant le repos impose et la soif seulement moderee.  # noqa: E501
+    # Priorite 3: faim critique avant repos et soif moderee.
     if thirst < THIRST_CRITICAL_THRESHOLD and _resolve_critical_hunger(
         animal,
         world,
@@ -192,7 +224,7 @@ def process_species(
     ):
         return food_result
 
-    # Priorite 4: la fatigue critique impose un repos, sauf urgence hydrique ou alimentaire.  # noqa: E501
+    # Priorite 4: fatigue critique impose un repos.
     if (
         fatigue > FATIGUE_CRITICAL_THRESHOLD
         and thirst < THIRST_BLOCKS_REST_THRESHOLD
@@ -202,7 +234,7 @@ def process_species(
             record(action, motivation)
             return food_result
 
-    # Priorite 5: respect du cycle jour/nuit si l'animal n'est pas en deficit hydrique.  # noqa: E501
+    # Priorite 5: respect du cycle jour/nuit.
     is_day = world_time["is_day"]
     if (animal.diurnal and not is_day) or (not animal.diurnal and is_day):
         if thirst < THIRST_BLOCKS_REST_THRESHOLD:

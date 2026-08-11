@@ -1,24 +1,25 @@
-import subprocess
-import time
-import os
-import sys
-import platform
+"""Launcher script for running the simulation server and client binary."""
 
-def main():
+import os
+import platform
+import subprocess
+import sys
+import time
+
+
+def main() -> None:
+    """Launches server binary in background and starts main client process."""
     base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
     system = platform.system()
-    
-    
+
     ext = ".exe" if system == "Windows" else ""
-    
     server_exe = os.path.join(base_dir, "data", "server", f"server{ext}")
-    
-    
+
     if system == "Windows":
         game_name = "game.exe"
-    elif system == "Darwin": 
-        game_name = "game.app/Contents/MacOS/game" 
-    else: 
+    elif system == "Darwin":
+        game_name = "game.app/Contents/MacOS/game"
+    else:
         game_name = "game.x86_64"
 
     game_exe = os.path.join(base_dir, "data", game_name)
@@ -29,20 +30,20 @@ def main():
 
     print("--- Démarrage ---")
 
-    
-    server_process = subprocess.Popen([server_exe], cwd=os.path.dirname(server_exe))
-    time.sleep(0.5) 
+    server_process = subprocess.Popen(
+        [server_exe], cwd=os.path.dirname(server_exe)
+    )
+    time.sleep(0.5)
 
-    
     try:
         subprocess.run([game_exe], check=False)
     except Exception as e:
         print(f"Erreur lancement jeu : {e}")
 
-    
     print("Arrêt du serveur...")
     server_process.terminate()
     server_process.wait()
+
 
 if __name__ == "__main__":
     main()

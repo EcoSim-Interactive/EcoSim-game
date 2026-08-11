@@ -1,4 +1,4 @@
-"""Construit les snapshots de contexte utilises a chaque pas de simulation."""
+"""Constructs step context snapshots and frame payloads."""
 
 from __future__ import annotations
 
@@ -7,7 +7,15 @@ from typing import Any, Dict, List
 
 
 def compute_world_time(world: Any, step_index: int) -> Dict[str, int | bool]:
-    """Calcule l'heure logique du monde pour le pas courant."""
+    """Calculates logical world time metadata for the active step.
+
+    Args:
+        world (Any): World instance containing minutes_per_step setting.
+        step_index (int): 0-based simulation step index.
+
+    Returns:
+        Dict[str, int | bool]: Time metadata payload dictionary.
+    """
     total_minutes = step_index * world.minutes_per_step
     hour = (total_minutes // 60) % 24
     minute = total_minutes % 60
@@ -23,7 +31,15 @@ def compute_world_time(world: Any, step_index: int) -> Dict[str, int | bool]:
 def build_step_frame(
     step_index: int, world_time: Dict[str, Any]
 ) -> Dict[str, Any]:
-    """Initialise la structure standard de donnees pour un tour de simulation."""  # noqa: E501
+    """Initializes standard frame data structure for a simulation step.
+
+    Args:
+        step_index (int): 0-based step index.
+        world_time (Dict[str, Any]): Time metadata payload.
+
+    Returns:
+        Dict[str, Any]: Initialized step frame dictionary.
+    """
     return {
         "step": step_index + 1,
         "hour": int(world_time["hour"]),
@@ -38,7 +54,14 @@ def build_step_frame(
 
 
 def initialize_species_status(species: Any) -> Dict[str, Any]:
-    """Capture the state of a species before applying the behaviour rules."""
+    """Captures entity initial state snapshot before applying AI rules.
+
+    Args:
+        species (Any): Animal instance to record.
+
+    Returns:
+        Dict[str, Any]: Pre-action status payload dictionary.
+    """
     display_name = (
         species.get_display_name()
         if hasattr(species, "get_display_name")
@@ -92,8 +115,14 @@ def initialize_species_status(species: Any) -> Dict[str, Any]:
 def finalize_species_status(
     species: Any, status: Dict[str, Any]
 ) -> Dict[str, Any]:
-    """Inject the updated state of the species once the behaviour has been
-    resolved.
+    """Injects updated post-action entity state after AI execution.
+
+    Args:
+        species (Any): Animal instance after step resolution.
+        status (Dict[str, Any]): Pre-action status payload dictionary.
+
+    Returns:
+        Dict[str, Any]: Complete step status payload.
     """
     status.setdefault("food_event", None)
     status["after"] = {
@@ -128,7 +157,15 @@ def finalize_species_status(
 def build_summary_payload(
     species_list: List[Any], world: Any
 ) -> Dict[str, Any]:
-    """Return an aggregate snapshot of the world after the simulation run."""
+    """Constructs final aggregate snapshot payload of simulation.
+
+    Args:
+        species_list (List[Any]): List of all species/animal entities.
+        world (Any): World instance.
+
+    Returns:
+        Dict[str, Any]: Summary containing populations and resources.
+    """
     return {
         "species": [
             {

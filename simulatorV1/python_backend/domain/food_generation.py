@@ -1,4 +1,4 @@
-"""Outils de generation procedurale des ressources alimentaires."""
+"""Procedural food and plant resource generation utilities."""
 
 from __future__ import annotations
 
@@ -34,7 +34,19 @@ def generate_food_sources(
     type_weights: Optional[Dict[str, float]] = None,
     profiles: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> List[Dict[str, Any]]:
-    """Return a list of food source specifications with vegetal types."""
+    """Generates a list of food source specifications with plant profiles.
+
+    Args:
+        width (int): Grid width constraint.
+        height (int): Grid height constraint.
+        quantity (int): Total count of food items if no explicit distribution.
+        distribution (Optional[Dict[str, int]]): Count mapping per food type.
+        type_weights (Optional[Dict[str, float]]): Weight mapping for types.
+        profiles (Optional[Dict[str, Dict[str, Any]]]): Profile metadata.
+
+    Returns:
+        List[Dict[str, Any]]: List of food source specifications.
+    """
     profiles = profiles or DEFAULT_FOOD_PROFILES
     specs: List[Dict[str, Any]] = []
 
@@ -68,6 +80,15 @@ def resolve_food_profile(
     food_type: Optional[str],
     profiles: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> Tuple[str, Dict[str, Any]]:
+    """Resolves food type identifier to a valid profile dictionary.
+
+    Args:
+        food_type (Optional[str]): Target food type string.
+        profiles (Optional[Dict[str, Dict[str, Any]]]): Profile lookup map.
+
+    Returns:
+        Tuple[str, Dict[str, Any]]: (normalized_type, profile_dictionary).
+    """
     profiles = profiles or DEFAULT_FOOD_PROFILES
     normalized = _normalize_type(food_type)
     if normalized in profiles:
@@ -82,6 +103,7 @@ def _build_random_food_spec(
     food_type: str,
     profile: Dict[str, Any],
 ) -> Dict[str, Any]:
+    """Builds a single randomly placed food source specification."""
     x = random.randint(0, width)
     y = random.randint(0, height)
     metadata = profile.get("metadata")
@@ -111,6 +133,7 @@ def _prepare_weighted_types(
     profiles: Dict[str, Dict[str, Any]],
     overrides: Optional[Dict[str, float]],
 ) -> Tuple[List[str], List[float]]:
+    """Prepares parallel type lists and probability weight arrays."""
     if overrides:
         types: List[str] = []
         weights: List[float] = []
@@ -136,6 +159,7 @@ def _prepare_weighted_types(
 
 
 def _normalize_type(name: Optional[str]) -> str:
+    """Normalizes string identifier to standard food type format."""
     if not name or not isinstance(name, str):
         return DEFAULT_FOOD_TYPE
     return name.strip().lower().replace(" ", "_")

@@ -58,7 +58,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def parse_seed_list(raw_value: str) -> List[int]:
-    """Convertit une chaine CSV en liste de seeds uniques conservees dans l'ordre."""  # noqa: E501
+    """Converts CSV seed string to list of unique integers preserving order."""
     seeds: List[int] = []
     seen: set[int] = set()
     for chunk in (raw_value or "").split(","):
@@ -147,7 +147,7 @@ def run_single_benchmark(
 
 
 def build_aggregate_report(runs: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
-    """Agrege les indicateurs principaux pour comparer les seeds entre elles."""  # noqa: E501
+    """Aggregates primary KPIs across seeds for comparison."""
     run_list = list(runs)
     engine_values = [float(item["engine_seconds"]) for item in run_list]
     wall_values = [float(item["wall_seconds"]) for item in run_list]
@@ -191,14 +191,16 @@ def print_report(report: Dict[str, Any]) -> None:
     for run in report["runs"]:
         print(
             f"seed={run['seed']} steps={run['steps']} "
-            f"engine={run['engine_seconds']:.3f}s wall={run['wall_seconds']:.3f}s "  # noqa: E501
+            f"engine={run['engine_seconds']:.3f}s "
+            f"wall={run['wall_seconds']:.3f}s "
             f"alive={run['alive']}/{run['total']} dead={run['dead']} "
             f"food={run['remaining_food']} water={run['remaining_water']}"
         )
         for species_type, values in sorted(run["species"].items()):
             print(
                 f"  species={species_type} "
-                f"alive={values['alive']}/{values['total']} dead={values['dead']}"  # noqa: E501
+                f"alive={values['alive']}/{values['total']} "
+                f"dead={values['dead']}"
             )
 
 

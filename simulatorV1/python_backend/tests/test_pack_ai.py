@@ -11,7 +11,11 @@ from domain import World
 from simulation import SimulationEngine
 from simulation.action_executor import resolve_consumption
 from simulation.actions.grouping import maintain_group_cohesion
-from simulation.actions.predation import _nearest_prey, execute_predation_cycle, _handle_shared_kill
+from simulation.actions.predation import (
+    _handle_shared_kill,
+    _nearest_prey,
+    execute_predation_cycle,
+)
 from simulation.actions.scavenging import seek_carcass_opportunity
 from simulation.ai.behavior import handle_thirst
 from simulation.ai.decision import process_species
@@ -889,7 +893,7 @@ class PackAITestCase(unittest.TestCase):
             },
         )
 
-    def test_process_species_prioritizes_critical_hunger_before_moderate_thirst(  # noqa: E501
+    def test_process_species_prioritizes_hunger_over_thirst(
         self,
     ) -> None:
         class SilentLogger:
@@ -991,71 +995,138 @@ class PackAITestCase(unittest.TestCase):
 
     def test_prey_fleeing_on_attack_failed(self) -> None:
         world = World(width=500, height=500)
-        hunter = _build_hunter("Lion", (100.0, 100.0), pack_id="pride", role="hunter", feed_priority=30)
+        hunter = _build_hunter(
+            "Lion",
+            (100.0, 100.0),
+            pack_id="pride",
+            role="hunter",
+            feed_priority=30,
+        )
         hunter.traits["hunt"]["success_rate"] = 0.0
-        
-        prey = Animal("Gazelle", (120.0, 100.0), diet="herbivore", species_type="gazelle")
+
+        prey = Animal(
+            "Gazelle", (120.0, 100.0), diet="herbivore", species_type="gazelle"
+        )
         prey.speed = 10.0
-        
+
         class Logger:
             def log(self, msg):
                 pass
-        
-        acted, action, resolve = execute_predation_cycle(hunter, [hunter, prey], world, Logger().log)
+
+        acted, action, resolve = execute_predation_cycle(
+            hunter, [hunter, prey], world, Logger().log
+        )
         self.assertTrue(acted)
         self.assertEqual(action, "pack_attack_failed")
-        
+
         under_attack = prey.recall_social("under_attack")
         self.assertIsNotNone(under_attack)
         self.assertEqual(under_attack, (100.0, 100.0))
-        
+
         status = {}
         world_time = {"is_day": True}
-        process_species(prey, status, world_time, world, [hunter, prey], Logger())
-        
+        process_species(
+            prey, status, world_time, world, [hunter, prey], Logger()
+        )
+
         self.assertEqual(status.get("action"), "flee_predator")
         self.assertGreater(prey.x, 120.0)
         self.assertIsNone(prey.recall_social("under_attack"))
 
     def test_nearest_prey_respects_chase_range(self) -> None:
         world = World(width=500, height=500)
-        hunter = _build_hunter("Lion", (100.0, 100.0), pack_id="pride", role="hunter", feed_priority=30)
+        hunter = _build_hunter(
+            "Lion",
+            (100.0, 100.0),
+            pack_id="pride",
+            role="hunter",
+            feed_priority=30,
+        )
         hunter.traits["hunt"]["chase_range"] = 100.0
-        
-        far_prey = Animal("FarGazelle", (250.0, 100.0), diet="herbivore", species_type="gazelle")
-        near_prey = Animal("NearGazelle", (150.0, 100.0), diet="herbivore", species_type="gazelle")
-        
-        prey = _nearest_prey(hunter, [far_prey], {"gazelle"}, world, max_distance=100.0)
+
+        far_prey = Animal(
+            "FarGazelle",
+            (250.0, 100.0),
+            diet="herbivore",
+            species_type="gazelle",
+        )
+        near_prey = Animal(
+            "NearGazelle",
+            (150.0, 100.0),
+            diet="herbivore",
+            species_type="gazelle",
+        )
+
+        prey = _nearest_prey(
+            hunter, [far_prey], {"gazelle"}, world, max_distance=100.0
+        )
         self.assertIsNone(prey)
-        
-        prey = _nearest_prey(hunter, [far_prey, near_prey], {"gazelle"}, world, max_distance=100.0)
+
+        prey = _nearest_prey(
+            hunter,
+            [far_prey, near_prey],
+            {"gazelle"},
+            world,
+            max_distance=100.0,
+        )
         self.assertIs(prey, near_prey)
 
     def test_water_line_blocked_aware_of_entity_depth(self) -> None:
         world = World(width=500, height=500)
         world._water_tiles.add((109, 100))
         world._water_tile_depth[(109, 100)] = 0.2
-        
-        hunter = _build_hunter("Lion", (100.0, 100.0), pack_id="pride", role="hunter", feed_priority=30)
+
+        hunter = _build_hunter(
+            "Lion",
+            (100.0, 100.0),
+            pack_id="pride",
+            role="hunter",
+            feed_priority=30,
+        )
         hunter.traits["water"] = {"max_depth": 0.5}
-        
-        blocked = world._line_blocked_by_water(100, 100, 120, 100, entity=hunter)
+
+        blocked = world._line_blocked_by_water(
+            100, 100, 120, 100, entity=hunter
+        )
         self.assertFalse(blocked)
-        
+
         blocked = world._line_blocked_by_water(100, 100, 120, 100)
         self.assertTrue(blocked)
-        
-        dry_animal = Animal("Gazelle", (100.0, 100.0), diet="herbivore", species_type="gazelle")
+
+        dry_animal = Animal(
+            "Gazelle", (100.0, 100.0), diet="herbivore", species_type="gazelle"
+        )
         dry_animal.traits["water"] = {"max_depth": 0.0}
-        blocked = world._line_blocked_by_water(100, 100, 120, 100, entity=dry_animal)
+        blocked = world._line_blocked_by_water(
+            100, 100, 120, 100, entity=dry_animal
+        )
         self.assertTrue(blocked)
 
     def test_guard_stand_and_waiting_guard_counts_as_resting(self) -> None:
         world = World(width=500, height=500)
-        leader = _build_hunter("Leader", (100.0, 100.0), pack_id="pride", role="leader", feed_priority=10)
-        hunter = _build_hunter("Hunter", (100.0, 100.0), pack_id="pride", role="hunter", feed_priority=30)
-        carcass = world.add_carcass(Animal("Gazelle", (100.0, 100.0), diet="herbivore", species_type="gazelle"))
-        
+        leader = _build_hunter(
+            "Leader",
+            (100.0, 100.0),
+            pack_id="pride",
+            role="leader",
+            feed_priority=10,
+        )
+        hunter = _build_hunter(
+            "Hunter",
+            (100.0, 100.0),
+            pack_id="pride",
+            role="hunter",
+            feed_priority=30,
+        )
+        carcass = world.add_carcass(
+            Animal(
+                "Gazelle",
+                (100.0, 100.0),
+                diet="herbivore",
+                species_type="gazelle",
+            )
+        )
+
         pack_kill = leader.pack_state.setdefault("shared_kill", {})
         pack_kill.update({
             "food_id": carcass["id"],
@@ -1069,25 +1140,52 @@ class PackAITestCase(unittest.TestCase):
             "stale_steps": 0,
             "feed_log": [],
         })
-        
+
         class SilentLogger:
             def log(self, msg):
                 pass
- 
+
         status = initialize_species_status(hunter)
-        process_species(hunter, status, {"hour": 12, "minute": 0, "is_day": True, "minutes_per_step": 5}, world, [leader, hunter], SilentLogger())
-        
+        w_time = {
+            "hour": 12,
+            "minute": 0,
+            "is_day": True,
+            "minutes_per_step": 5,
+        }
+        process_species(
+            hunter, status, w_time, world, [leader, hunter], SilentLogger()
+        )
+
         self.assertEqual(status["action"], "pack_guard_stand")
         self.assertTrue(hunter.resting)
 
     def test_no_guard_without_leader_or_successor(self) -> None:
         world = World(width=500, height=500)
-        hunter_a = _build_hunter("HunterA", (100.0, 100.0), pack_id="pride", role="hunter", feed_priority=30)
+        hunter_a = _build_hunter(
+            "HunterA",
+            (100.0, 100.0),
+            pack_id="pride",
+            role="hunter",
+            feed_priority=30,
+        )
         hunter_a.sex = "female"
-        hunter_b = _build_hunter("HunterB", (100.0, 100.0), pack_id="pride", role="hunter", feed_priority=30)
+        hunter_b = _build_hunter(
+            "HunterB",
+            (100.0, 100.0),
+            pack_id="pride",
+            role="hunter",
+            feed_priority=30,
+        )
         hunter_b.sex = "female"
-        
-        carcass = world.add_carcass(Animal("Gazelle", (100.0, 100.0), diet="herbivore", species_type="gazelle"))
+
+        carcass = world.add_carcass(
+            Animal(
+                "Gazelle",
+                (100.0, 100.0),
+                diet="herbivore",
+                species_type="gazelle",
+            )
+        )
         pack_kill = hunter_a.pack_state.setdefault("shared_kill", {})
         pack_kill.update({
             "food_id": carcass["id"],
@@ -1101,19 +1199,46 @@ class PackAITestCase(unittest.TestCase):
             "stale_steps": 0,
             "feed_log": [],
         })
-        
+
         acted, action, resolve = _handle_shared_kill(
-            hunter_a, [hunter_a, hunter_b], pack_kill, 30.0, set(), 60.0, 90.0, world, lambda _msg: None
+            hunter_a,
+            [hunter_a, hunter_b],
+            pack_kill,
+            30.0,
+            set(),
+            60.0,
+            90.0,
+            world,
+            lambda _msg: None,
         )
         self.assertFalse(acted)
         self.assertEqual(pack_kill, {})
 
     def test_guard_stops_for_fed_animals_when_leader_has_eaten(self) -> None:
         world = World(width=500, height=500)
-        leader = _build_hunter("Leader", (100.0, 100.0), pack_id="pride", role="leader", feed_priority=10)
-        hunter = _build_hunter("Hunter", (100.0, 100.0), pack_id="pride", role="hunter", feed_priority=30)
-        
-        carcass = world.add_carcass(Animal("Gazelle", (100.0, 100.0), diet="herbivore", species_type="gazelle"))
+        leader = _build_hunter(
+            "Leader",
+            (100.0, 100.0),
+            pack_id="pride",
+            role="leader",
+            feed_priority=10,
+        )
+        hunter = _build_hunter(
+            "Hunter",
+            (100.0, 100.0),
+            pack_id="pride",
+            role="hunter",
+            feed_priority=30,
+        )
+
+        carcass = world.add_carcass(
+            Animal(
+                "Gazelle",
+                (100.0, 100.0),
+                diet="herbivore",
+                species_type="gazelle",
+            )
+        )
         pack_kill = leader.pack_state.setdefault("shared_kill", {})
         pack_kill.update({
             "food_id": carcass["id"],
@@ -1127,9 +1252,17 @@ class PackAITestCase(unittest.TestCase):
             "stale_steps": 0,
             "feed_log": [],
         })
-        
+
         acted, action, resolve = _handle_shared_kill(
-            hunter, [leader, hunter], pack_kill, 30.0, set(), 60.0, 90.0, world, lambda _msg: None
+            hunter,
+            [leader, hunter],
+            pack_kill,
+            30.0,
+            set(),
+            60.0,
+            90.0,
+            world,
+            lambda _msg: None,
         )
         self.assertFalse(acted)
 

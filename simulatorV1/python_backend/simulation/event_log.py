@@ -1,4 +1,4 @@
-"""Outils de journalisation specialises pour les runs de simulation."""
+"""Logging facade and step formatting utilities for the simulation engine."""
 
 from __future__ import annotations
 
@@ -7,19 +7,40 @@ from typing import Any, Dict, Iterable
 
 
 class EventLogger:
-    """Facade minimale de logging pour isoler le moteur de la sortie console."""  # noqa: E501
+    """Minimal logging facade isolating simulation engine from output handlers.
+
+    Attributes:
+        verbose (bool): Controls whether diagnostic log messages are emitted.
+    """
 
     def __init__(
         self, verbose: bool = True, logger: logging.Logger | None = None
     ):
+        """Initializes EventLogger with verbosity level and optional logger.
+
+        Args:
+            verbose (bool): Enables log output if True. Defaults to True.
+            logger (Optional[logging.Logger]): Underlying Python logger
+                instance.
+        """
         self.verbose = verbose
         self._logger = logger or logging.getLogger(__name__)
 
     def log(self, message: str) -> None:
+        """Emits an informational log message if verbosity is enabled.
+
+        Args:
+            message (str): Log message string.
+        """
         if self.verbose:
             self._logger.info(message)
 
     def log_step_summary(self, step_data: Dict[str, Any]) -> None:
+        """Formats and logs a step summary payload.
+
+        Args:
+            step_data (Dict[str, Any]): Step frame dictionary.
+        """
         if not self.verbose or not step_data:
             return
 
@@ -40,9 +61,12 @@ class EventLogger:
                 if isinstance(calories, (int, float))
                 else ""
             )
-            fragments.append(
-                f"{status.get('name', 'Inconnu')} pos=({x:.2f}, {y:.2f}) vitalite={vitality:.0f} faim={hunger:.0f} soif={thirst:.0f} fatigue={fatigue:.0f}{calories_fragment}"  # noqa: E501
+            msg = (
+                f"{status.get('name', 'Inconnu')} pos=({x:.2f}, {y:.2f}) "
+                f"vitalite={vitality:.0f} faim={hunger:.0f} "
+                f"soif={thirst:.0f} fatigue={fatigue:.0f}{calories_fragment}"
             )
+            fragments.append(msg)
 
         details = " | ".join(fragments) if fragments else "aucune espece"
         self.log(f"\nStep {step_data.get('step', '?')} : {details}")

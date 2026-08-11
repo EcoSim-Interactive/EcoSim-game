@@ -1,4 +1,4 @@
-"""Moteur principal qui orchestre les tours de simulation et la journalisation."""  # noqa: E501
+"""Main simulation engine orchestrating timeline steps and event logging."""
 
 from __future__ import annotations
 
@@ -22,7 +22,18 @@ from .step_context import (
 
 
 class SimulationEngine:
-    """Orchestrateur haut niveau de l'ecosysteme simule."""
+    """High-level orchestrator of the simulated ecosystem timeline.
+
+    Attributes:
+        world (Any): World environment container instance.
+        species_list (List[Animal]): Population list of Animal entities.
+        steps (int): Total target step count.
+        write_logs (bool): Controls disk persistence of simulation logs.
+        logs_dir (str): Output logs directory path.
+        seed (Optional[int]): Random seed for reproducible generation.
+        current_step (int): Current 0-based step index.
+        logger (EventLogger): Event logger instance.
+    """
 
     def __init__(
         self,
@@ -35,6 +46,17 @@ class SimulationEngine:
         logs_dir: str = "logs",
         seed: Optional[int] = None,
     ) -> None:
+        """Initializes SimulationEngine with environment and population.
+
+        Args:
+            world (Any): World domain instance.
+            species_list (List[Any]): List of species/animal objects.
+            steps (int): Total steps count. Defaults to 100.
+            verbose (bool): Controls console log output verbosity.
+            write_logs (bool): Controls disk log file writing.
+            logs_dir (str): Target output log directory path.
+            seed (Optional[int]): Random seed value.
+        """
         self.world = world
         Animal.reset_shared_states()
         converted_species: List[Animal] = []
@@ -68,15 +90,27 @@ class SimulationEngine:
             log_writer.ensure_logs_dir(self.logs_dir)
 
     def log(self, message: str) -> None:
+        """Logs event message using internal logger instance.
+
+        Args:
+            message (str): Log message text string.
+        """
         self.logger.log(message)
 
     def is_finished(self) -> bool:
+        """Checks if simulation has reached or exceeded maximum step count.
+
+        Returns:
+            bool: True if finished, False otherwise.
+        """
         return self.current_step >= self.steps
 
-    # ------------------------------------------------------------------
-    # Execution pas a pas de la simulation
-
     def step_once(self) -> Optional[Dict[str, Any]]:
+        """Executes a single simulation step across all active entities.
+
+        Returns:
+            Optional[Dict[str, Any]]: Step frame dictionary or None.
+        """
         if self.is_finished():
             return None
 
@@ -93,9 +127,11 @@ class SimulationEngine:
                     else None
                 )
                 if predator_id is not None:
-                    self.logger.log(
-                        f"{animal.name} a ete tue avant son tour par le predateur {predator_id}."  # noqa: E501
+                    msg = (
+                        f"{animal.name} a ete tue avant son tour par le "
+                        f"predateur {predator_id}."
                     )
+                    self.logger.log(msg)
                     status["action"] = "killed_by_predation"
                     status["motivation"] = (
                         f"attaque du predateur {predator_id}"
@@ -140,6 +176,11 @@ class SimulationEngine:
         return step_data
 
     def run(self) -> List[Dict[str, Any]]:
+        """Runs simulation until completion and returns all step frames.
+
+        Returns:
+            List[Dict[str, Any]]: Complete array of generated step frames.
+        """
         if self._precomputed_steps is not None and self.is_finished():
             return list(self._precomputed_steps)
 
@@ -165,7 +206,14 @@ class SimulationEngine:
     def generate_all_steps(
         self, *, persist: bool = True
     ) -> List[Dict[str, Any]]:
-        """Compute every step once, cache them, and optionally persist to disk."""  # noqa: E501
+        """Computes every step once, caches them, and optionally persists.
+
+        Args:
+            persist (bool): Persist step data to disk if True.
+
+        Returns:
+            List[Dict[str, Any]]: List of generated step frames.
+        """
         if (
             self._precomputed_steps is None
             or len(self._precomputed_steps) != self.steps
@@ -205,10 +253,12 @@ class SimulationEngine:
 
         return steps_data
 
-    # ------------------------------------------------------------------
-    # Production des sorties et des resumes
-
     def save_summary(self) -> Dict[str, Any]:
+        """Saves aggregate summary to disk if log writing is enabled.
+
+        Returns:
+            Dict[str, Any]: Aggregate simulation summary payload.
+        """
         if self._summary_cache is None:
             self._summary_cache = self._build_summary()
         if self.write_logs:
@@ -231,16 +281,19 @@ class SimulationEngine:
         return self._summary_cache
 
     def to_json(self) -> str:
+        """Formats aggregate summary payload as formatted JSON string.
+
+        Returns:
+            str: JSON string.
+        """
         if self._summary_cache is None:
             self._summary_cache = self._build_summary()
         return json.dumps(self._summary_cache, indent=2)
 
-    # ------------------------------------------------------------------
-    # Helpers internes utilises pendant un run
-
     def _handle_exhaustion(
         self, animal: Animal, status: Dict[str, Any]
     ) -> None:
+        """Handles vital exhaustion state logging and status mutation."""
         self.logger.log(f"{animal.name} est epuise.")
         status["action"] = "exhausted"
         status["motivation"] = "vitalite nulle"
@@ -251,6 +304,7 @@ class SimulationEngine:
         status: Dict[str, Any],
         world_time: Dict[str, Any],
     ) -> None:
+        """Delegates species AI decision processing to decision engine."""
         return ai_decision.process_species(
             animal,
             status,
@@ -263,6 +317,7 @@ class SimulationEngine:
     def _apply_food_result(
         self, food_event: Optional[Dict[str, Any]], step_data: Dict[str, Any]
     ) -> None:
+        """Updates step frame dictionary with food consumption changes."""
         if not food_event:
             return
         snapshot = dict(food_event)
@@ -276,18 +331,19 @@ class SimulationEngine:
         step_data["updated_food_sources"].append(snapshot)
 
     def _build_world_snapshot(self) -> Dict[str, Any]:
-        """Retourne l'etat initial du monde pour les fichiers de simulation."""
+        """Captures initial world state payload with random seed."""
         snapshot = copy.deepcopy(self._initial_world_snapshot)
         snapshot["seed"] = self.seed
         return snapshot
 
     def _build_summary(self) -> Dict[str, Any]:
+        """Constructs aggregate summary payload."""
         summary = build_summary_payload(self.species_list, self.world)
         summary["seed"] = self.seed
         return summary
 
     def _snapshot_world(self, world: Any) -> Dict[str, Any]:
-        """Capture le monde avant le run (evite les carcasses/post-mutations)."""  # noqa: E501
+        """Captures initial world state snapshot prior to execution."""
         terrain = getattr(world, "terrain", None)
         if terrain in (None, []):
             if hasattr(world, "generate_terrain"):
