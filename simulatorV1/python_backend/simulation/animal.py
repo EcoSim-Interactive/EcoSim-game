@@ -136,8 +136,14 @@ class Animal(Species):
         explicit_age_stage = (
             self._normalize_stage(self.traits.get("age_stage"))
             if self.traits.get("age_stage") is not None
-            else None
+            else "adult"
         )
+        if self.age_years == 0.0 and self.age_profile:
+            for st in self.age_profile:
+                if st.get("name") == explicit_age_stage:
+                    self.age_years = float(st.get("min", 2.0))
+                    self.traits["age_years"] = self.age_years
+                    break
         self.age_stage = explicit_age_stage or self._compute_age_stage()
         self.traits["age_stage"] = self.age_stage
         self.sex = self._normalize_sex(self.traits.get("sex"))

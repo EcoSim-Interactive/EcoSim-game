@@ -7,6 +7,15 @@ import errno
 import json
 import logging
 from math import ceil
+import sys
+
+if sys.platform == "win32":
+    try:
+        import ctypes
+        ctypes.windll.winmm.timeBeginPeriod(1)
+    except Exception:
+        pass
+
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -302,10 +311,18 @@ async def get_world(websocket: websockets.WebSocketServerProtocol) -> None:
     )
     world.generate_terrain()  # TODO: to move
 
+    target_steps = (
+        _coerce_positive_int(
+            config_with_species.get("simulation", {}).get("steps")
+        )
+        or _coerce_positive_int(config_with_species.get("steps"))
+        or DEFAULT_SETTINGS.steps
+    )
+
     sim = Simulation(
         world,
         species_list,
-        steps=DEFAULT_SETTINGS.steps,
+        steps=target_steps,
         verbose=False,  # Désactivé en mode serveur
         write_logs=True,
         logs_dir=DEFAULT_SETTINGS.logs_dir,
@@ -846,9 +863,10 @@ async def handle_command(
     if cmd == "speed":
         value = obj.get("value")
         if isinstance(value, (int, float)) and value >= 0:
-            tick_ms = int(value)
+            tick_ms = float(value)
+            formatted = int(tick_ms) if tick_ms.is_integer() else tick_ms
             await websocket.send(
-                json.dumps({"type": "status", "data": f"speed={tick_ms}ms"})
+                json.dumps({"type": "status", "data": f"speed={formatted}ms"})
             )
             logger.info("Vitesse modifiee : %sms/step", tick_ms)
         else:

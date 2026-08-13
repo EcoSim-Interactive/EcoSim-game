@@ -338,22 +338,40 @@ def build_species_from_config(
             or name_base
         )
 
-        group_id = _coerce_str(
-            entry.get("group_id")
-        ) or _resolve_str_from_chain("group_id", default_chain)
-        pack_id = _coerce_str(entry.get("pack_id")) or _resolve_str_from_chain(
-            "pack_id", default_chain
+        auto_id = f"{species_type}_{index}"
+        group_id = (
+            _coerce_str(entry.get("group_id"))
+            or _resolve_str_from_chain("group_id", default_chain)
+            or f"group_{auto_id}"
         )
         traits = _resolve_traits(entry, default_chain)
+
+        pack_id = (
+            _coerce_str(entry.get("pack_id"))
+            or _resolve_str_from_chain("pack_id", default_chain)
+        )
+        if not pack_id and (
+            _resolve_str_from_chain("diet", default_chain) == "carnivore"
+            or entry.get("diet") == "carnivore"
+            or traits.get("predator")
+            or "hunt" in traits
+        ):
+            pack_id = f"pack_{auto_id}"
+
         sex_value = _coerce_str(entry.get("sex")) or _resolve_str_from_chain(
             "sex", default_chain
         )
-        age_stage_value = _coerce_str(
-            entry.get("age_stage")
-        ) or _resolve_str_from_chain("age_stage", default_chain)
+        age_stage_value = (
+            _coerce_str(entry.get("age_stage"))
+            or _resolve_str_from_chain("age_stage", default_chain)
+            or "adult"
+        )
         sprite_name_value = _coerce_str(
             entry.get("sprite_name")
         ) or _resolve_str_from_chain("sprite_name", default_chain)
+
+        males_count = _positive_int(entry.get("males"))
+        females_count = _positive_int(entry.get("females"))
 
         for offset in range(count):
             final_name = (
@@ -368,8 +386,16 @@ def build_species_from_config(
                 nutrition_value = random.uniform(
                     body_nutrition_range[0], body_nutrition_range[1]
                 )
-            if sex_value and "sex" not in traits_payload:
-                traits_payload["sex"] = sex_value
+
+            current_sex = sex_value
+            if not current_sex:
+                if males_count is not None and females_count is not None:
+                    current_sex = "male" if offset < males_count else "female"
+                else:
+                    current_sex = "male" if offset % 2 == 0 else "female"
+
+            if current_sex and "sex" not in traits_payload:
+                traits_payload["sex"] = current_sex
             if age_stage_value and "age_stage" not in traits_payload:
                 traits_payload["age_stage"] = age_stage_value
             if sprite_name_value and "sprite_name" not in traits_payload:

@@ -633,6 +633,7 @@ def execute_predation_cycle(
 
     prey.vitality = 0.0
     prey.alive = False
+    prey.death_cause = f"Chassé par {animal.name}"
     prey.remember_social("killed_by", animal.animal_id)
     carcass = world.add_carcass(prey)
 

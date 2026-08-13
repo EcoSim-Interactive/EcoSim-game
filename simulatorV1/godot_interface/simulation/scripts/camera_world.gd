@@ -4,9 +4,9 @@ extends Camera2D
 var dragging: bool = false
 var velocity: Vector2 = Vector2.ZERO  # Vélocité pour l'inertie
 
-var max_zoom: float = 2.0
-var min_zoom: float = 0.2
-var zoom_speed: float = 0.1
+var max_zoom: float = 15.0
+var min_zoom: float = 0.1
+var zoom_speed: float = 0.15
 
 ## Vitesse de lissage du déplacement (plus élevé = plus réactif)
 @export var smooth_speed: float = 12.0
@@ -67,10 +67,10 @@ func _clamp_position() -> void:
 
 # Used for buttons zoom
 func zoom_in() -> void:
-	_set_zoom(-zoom_speed)
+	_set_zoom(zoom_speed * 3.0)
 
 func zoom_out() -> void:
-	_set_zoom(zoom_speed)
+	_set_zoom(-zoom_speed * 3.0)
 
 
 func _set_zoom(delta: float, mouse_pos: Vector2 = Vector2.ZERO) -> void:
@@ -140,7 +140,7 @@ func fit_camera_to_viewport(viewport_size: Vector2) -> void:
 	var map_origin: Vector2 = tile_origin + Vector2(rect.position) * tile_size
 	var map_size: Vector2 = Vector2(rect.size) * tile_size
 
-	var zoom_factor: float = min(viewport_size.x / map_size.x, viewport_size.y / map_size.y)
+	var zoom_factor: float = min(viewport_size.x / map_size.x, viewport_size.y / map_size.y) * 1.5
 	zoom_factor = clamp(zoom_factor, min_zoom, max_zoom)
 	zoom = Vector2(zoom_factor, zoom_factor)
 

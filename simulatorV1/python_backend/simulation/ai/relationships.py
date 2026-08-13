@@ -55,11 +55,13 @@ def handle_species_relationships(
     if not traits:
         return False, "", "", False
 
-    if animal.pack_id or traits.get("role") in {
-        "hunter",
-        "leader",
-        "patriarch",
-    }:
+    if (
+        animal.diet == "carnivore"
+        or animal.pack_id
+        or traits.get("predator")
+        or isinstance(traits.get("hunt"), dict)
+        or traits.get("role") in {"hunter", "leader", "patriarch"}
+    ):
         acted, action, resolve_food = execute_predation_cycle(
             animal, animals, world, log
         )
@@ -84,7 +86,8 @@ def handle_species_relationships(
             return True, action, "maintien du territoire", False
 
     herd_cfg = traits.get("herd_behavior")
-    if isinstance(herd_cfg, dict):
+    if isinstance(herd_cfg, dict) or animal.group_id or animal.diet == "herbivore":
+        cfg = herd_cfg if isinstance(herd_cfg, dict) else {}
         group_members = [
             member
             for member in animals
@@ -98,10 +101,10 @@ def handle_species_relationships(
                 animal,
                 [animal] + group_members,
                 world,
-                radius=float(herd_cfg.get("radius", 400.0)),
-                spacing=float(herd_cfg.get("spacing", 120.0)),
-                alignment=float(herd_cfg.get("alignment", 0.4)),
-                cohesion=float(herd_cfg.get("cohesion", 0.5)),
+                radius=float(cfg.get("radius", 400.0)),
+                spacing=float(cfg.get("spacing", 120.0)),
+                alignment=float(cfg.get("alignment", 0.4)),
+                cohesion=float(cfg.get("cohesion", 0.5)),
             )
             if acted:
                 return True, action, "dynamique de groupe", False

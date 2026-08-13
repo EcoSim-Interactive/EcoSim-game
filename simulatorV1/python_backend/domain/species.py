@@ -514,10 +514,16 @@ class Species(ABC):
         # Les besoins critiques entament directement la vitalite.
         if self.hunger > VITALITY_HUNGER_THRESHOLD:
             self.vitality -= VITALITY_HUNGER_PENALTY_PER_UNIT * rate_scale
+            if self.vitality <= 0 and not getattr(self, "death_cause", None):
+                self.death_cause = "Mort de faim"
         if self.thirst > VITALITY_THIRST_THRESHOLD:
             self.vitality -= VITALITY_THIRST_PENALTY_PER_UNIT * rate_scale
+            if self.vitality <= 0 and not getattr(self, "death_cause", None):
+                self.death_cause = "Mort de soif"
         if self.fatigue > VITALITY_FATIGUE_THRESHOLD:
             self.vitality -= VITALITY_FATIGUE_PENALTY_PER_UNIT * rate_scale
+            if self.vitality <= 0 and not getattr(self, "death_cause", None):
+                self.death_cause = "Épuisement"
 
         # Un individu en bon etat recupere progressivement de la vitalite.
         if (

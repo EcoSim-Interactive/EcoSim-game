@@ -1037,6 +1037,7 @@ class World:
         y: float,
         *,
         diet: Optional[str] = None,
+        entity: Any | None = None,
     ) -> Optional[Dict[str, Any]]:
         return self._food_spatial_index.search_nearest(
             x,
@@ -1044,9 +1045,21 @@ class World:
             predicate=lambda food: (
                 self.food_has_supply(food)
                 and self._food_matches_diet(food, diet)
+                and (
+                    entity is None
+                    or not hasattr(self, "_line_blocked_by_water")
+                    or not self._line_blocked_by_water(
+                        int(round(x)),
+                        int(round(y)),
+                        int(round(float(food.get("x", 0.0)))),
+                        int(round(float(food.get("y", 0.0)))),
+                        entity=entity,
+                    )
+                )
             ),
             distance_fn=lambda food: (
-                (float(food["x"]) - x) ** 2 + (float(food["y"]) - y) ** 2
+                (float(food.get("x", 0.0)) - x) ** 2
+                + (float(food.get("y", 0.0)) - y) ** 2
             ),
         )
 

@@ -253,11 +253,18 @@ def handle_cycle_rest(animal: "Animal", log: LogFn) -> Tuple[bool, str, str]:
 def handle_hunger(
     animal: "Animal", world: Any, log: LogFn
 ) -> Tuple[bool, str, str]:
-    food = world.get_nearest_food(animal.x, animal.y, diet=animal.diet)
+    food = (
+        world.get_nearest_food(
+            animal.x, animal.y, diet=animal.diet, entity=animal
+        )
+        if hasattr(world, "get_nearest_food")
+        else None
+    )
     if food and animal.distance_to(food) <= animal.vision:
         log(f"{animal.name} voit de la nourriture a {food}")
         animal.memory = food
         if not animal.move_towards(food, world):
+            animal.memory = None
             return _reposition_after_failed_move(
                 animal,
                 world,
@@ -273,6 +280,7 @@ def handle_hunger(
         log(f"{animal.name} sent de la nourriture a {scented}")
         animal.memory = scented
         if not animal.move_towards(scented, world):
+            animal.memory = None
             return _reposition_after_failed_move(
                 animal,
                 world,
@@ -286,6 +294,7 @@ def handle_hunger(
     if animal.memory:
         log(f"{animal.name} se souvient d'une nourriture a {animal.memory}")
         if not animal.move_towards(animal.memory, world):
+            animal.memory = None
             return _reposition_after_failed_move(
                 animal,
                 world,

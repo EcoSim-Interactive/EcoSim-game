@@ -3,11 +3,11 @@ extends Node2D
 
 @export var default_color: Color = Color(0.2, 0.8, 0.2, 1.0)
 @export var default_texture: Texture2D
-@export var texture_scale: float = 1.0 
-@export var bar_size: Vector2 = Vector2(28, 4)
-@export var bar_offset: Vector2 = Vector2(0, -18)
-@export var fallback_radius: float = 10.0
-@export var target_size: Vector2 = Vector2(32, 32)
+@export var texture_scale: float = 0.75
+@export var bar_size: Vector2 = Vector2(24, 4)
+@export var bar_offset: Vector2 = Vector2(0, -14)
+@export var fallback_radius: float = 7.5
+@export var target_size: Vector2 = Vector2(24, 24)
 
 @export var use_sprite_sheet: bool = true 
 @export var frame_size: Vector2 = Vector2(16, 16) 
@@ -19,6 +19,7 @@ var _maximum := 1.0
 var _texture_override: Texture2D
 var _color_override: Color
 var _random_frame: Vector2i = Vector2i(-1, -1)  ## -1 = pas encore choisi
+var is_hovered: bool = false
 
 func _pick_random_frame() -> void:
 	var tex := _texture_override if _texture_override else default_texture
@@ -65,7 +66,10 @@ func _draw() -> void:
 			draw_texture_rect(tex, dest_rect, false)
 	else:
 		draw_circle(Vector2.ZERO, fallback_radius, draw_color)
-	_draw_bar(draw_color)
+		
+	# Affiche la barre de nutrition SEULEMENT lors du survol de la souris
+	if is_hovered:
+		_draw_bar(draw_color)
 
 func _draw_bar(color: Color) -> void:
 	var width = bar_size.x
@@ -78,3 +82,15 @@ func _draw_bar(color: Color) -> void:
 		Rect2(top_left + Vector2(1, 1), Vector2(fill_width, height - 2)),
 		Color(color.r, max(color.g, 0.2), color.b, 0.9)
 	)
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		var local_mouse_pos = to_local(get_global_mouse_position())
+		var distance = local_mouse_pos.length()
+
+		var hit_limit = target_size.x / 2.0 if target_size.x > 0 else fallback_radius
+
+		var currently_hovered = (distance <= hit_limit)
+		if currently_hovered != is_hovered:
+			is_hovered = currently_hovered
+			queue_redraw()

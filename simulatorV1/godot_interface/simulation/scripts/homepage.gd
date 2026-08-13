@@ -10,18 +10,22 @@ extends Control
 @onready var loading_overlay = $MainVBox/MainHBox/MainArea/LoadingOverlay
 @onready var world = $MainVBox/MainHBox/MainArea/SubViewportContainer/SubViewport/World
 @onready var camera = $MainVBox/MainHBox/MainArea/SubViewportContainer/SubViewport/World/Camera2D
+const BASE_SPEED_MS: float = 50.0
+
 @onready var zoom_in_btn = $MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox/ZoomInBtn
 @onready var zoom_out_btn = $MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox/ZoomOutBtn
-@onready var speed_1x_btn = $MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox/Speed1x
-@onready var speed_2x_btn = $MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox/Speed2x
-@onready var speed_3x_btn = $MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox/Speed3x
+@onready var speed_05x_btn = get_node_or_null("MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox/Speed05x")
+@onready var speed_1x_btn = get_node_or_null("MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox/Speed1x")
+@onready var speed_2x_btn = get_node_or_null("MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox/Speed2x")
+@onready var speed_3x_btn = get_node_or_null("MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox/Speed3x")
+@onready var speed_custom_spin = get_node_or_null("MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox/SpeedCustomSpin")
 @onready var world_config_btn = $MainVBox/TopBar/Margin/HBox/WorldConfigBtn
 @onready var world_configurator = $WorldConfigurator
 
 @onready var graph_population = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/GraphPopulation
 @onready var graph_food = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/GraphFood
-@onready var graph_death = $MainVBox/MainHBox/RightSidebar/Margin/VBox/GraphDeath
-@onready var graph_energy = $MainVBox/MainHBox/RightSidebar/Margin/VBox/GraphEnergy
+@onready var graph_death = get_node_or_null("MainVBox/MainHBox/RightSidebar/Margin/VBox/GraphDeath")
+@onready var graph_energy = get_node_or_null("MainVBox/MainHBox/RightSidebar/Margin/VBox/GraphEnergy")
 
 @onready var sim_status_label = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox/SimStatusLabel
 @onready var sim_cycle_label = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox/SimCycleLabel
@@ -30,6 +34,7 @@ extends Control
 @onready var sim_daynight_label = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox/SimDayNightLabel
 @onready var sim_speed_label = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox/SimSpeedLabel
 @onready var sim_zoom_label = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/SimulationInfoBox/SimZoomLabel
+@onready var action_log_label = get_node_or_null("MainVBox/MainHBox/RightSidebar/Margin/VBox/ActionLogPanel/ActionLogMargin/ActionLogLabel")
 @onready var death_log_label = $MainVBox/MainHBox/RightSidebar/Margin/VBox/DeathLogPanel/DeathLogMargin/DeathLogLabel
 
 # --- Variables principales ---
@@ -39,6 +44,8 @@ var simulation_data = {}          # Données du fichier simulation.json (actions
 var current_speed_text = "1x"
 var previous_alive_states = {}
 var death_logs: Array = []
+var action_logs: Array = []
+var last_animal_actions: Dictionary = {}
 
 
 # --- Configuration ---
@@ -60,21 +67,45 @@ func _ready():
 		zoom_in_btn.pressed.connect(_on_zoom_in_pressed)
 	if zoom_out_btn:
 		zoom_out_btn.pressed.connect(_on_zoom_out_pressed)
+	var floating_hbox = get_node_or_null("MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox")
+	if floating_hbox:
+		if not speed_05x_btn and speed_1x_btn:
+			speed_05x_btn = Button.new()
+			speed_05x_btn.name = "Speed05x"
+			speed_05x_btn.text = "0.5x"
+			if speed_1x_btn.has_theme_stylebox_override("normal"):
+				speed_05x_btn.add_theme_stylebox_override("normal", speed_1x_btn.get_theme_stylebox("normal"))
+			floating_hbox.add_child(speed_05x_btn)
+			floating_hbox.move_child(speed_05x_btn, 0)
+			
+		if not speed_custom_spin:
+			speed_custom_spin = SpinBox.new()
+			speed_custom_spin.name = "SpeedCustomSpin"
+			speed_custom_spin.min_value = 0.1
+			speed_custom_spin.max_value = 5.0
+			speed_custom_spin.step = 0.1
+			speed_custom_spin.value = 1.0
+			speed_custom_spin.suffix = "x"
+			speed_custom_spin.custom_arrow_step = 0.1
+			floating_hbox.add_child(speed_custom_spin)
+
+	if speed_05x_btn:
+		speed_05x_btn.pressed.connect(func(): set_speed_multiplier(0.5))
 	if speed_1x_btn:
-		speed_1x_btn.pressed.connect(func(): 
-			if world and world.has_method("set_speed"): world.set_speed(300)
-			current_speed_text = "1x"
-		)
+		speed_1x_btn.pressed.connect(func(): set_speed_multiplier(1.0))
 	if speed_2x_btn:
-		speed_2x_btn.pressed.connect(func(): 
-			if world and world.has_method("set_speed"): world.set_speed(150)
-			current_speed_text = "2x"
-		)
+		speed_2x_btn.pressed.connect(func(): set_speed_multiplier(2.0))
 	if speed_3x_btn:
-		speed_3x_btn.pressed.connect(func(): 
-			if world and world.has_method("set_speed"): world.set_speed(50)
-			current_speed_text = "3x"
-		)
+		speed_3x_btn.pressed.connect(func(): set_speed_multiplier(3.0))
+	if speed_custom_spin:
+		speed_custom_spin.value_changed.connect(func(val: float): set_speed_multiplier(val, false))
+		var line_edit = speed_custom_spin.get_line_edit()
+		if line_edit:
+			line_edit.text_submitted.connect(func(new_text: String):
+				var sanitized = new_text.replace(",", ".").replace("x", "").strip_edges()
+				if sanitized.is_valid_float():
+					set_speed_multiplier(float(sanitized), true)
+			)
 	if mode_option:
 		var popup = mode_option.get_popup()
 		popup.add_theme_font_size_override("font_size", 35)
@@ -284,6 +315,8 @@ func _update_graphs(step_data: Dictionary):
 	for dead_name in newly_dead:
 		_add_death_log(dead_name, step_data)
 
+	_update_action_log(step_data)
+
 	if step_data.has("world_state") and step_data["world_state"].has("food_available"):
 		food = step_data["world_state"]["food_available"]
 	
@@ -338,18 +371,187 @@ func _update_graphs(step_data: Dictionary):
 
 
 
+func _get_action_log_label() -> RichTextLabel:
+	if action_log_label and is_instance_valid(action_log_label):
+		return action_log_label
+	action_log_label = get_node_or_null("MainVBox/MainHBox/RightSidebar/Margin/VBox/ActionLogPanel/ActionLogMargin/ActionLogLabel")
+	return action_log_label
+
+func _get_death_log_label() -> RichTextLabel:
+	if death_log_label and is_instance_valid(death_log_label):
+		return death_log_label
+	death_log_label = get_node_or_null("MainVBox/MainHBox/RightSidebar/Margin/VBox/DeathLogPanel/DeathLogMargin/DeathLogLabel")
+	return death_log_label
+
 func _add_death_log(animal_name: String, step_data: Dictionary):
 	var cycle = step_data.get("step", step_data.get("cycle", 0))
 	var time_str = "--:--"
-	if step_data.has("hour") and step_data.has("minute"):
-		time_str = "%02d:%02d" % [int(step_data["hour"]), int(step_data["minute"])]
-	var log_str = "[color=#e06c75][%s] C%s - [b]%s[/b][/color]" % [time_str, str(cycle), animal_name]
+	if step_data.has("hour"):
+		var h = int(step_data["hour"])
+		var m = int(step_data.get("minute", 0))
+		time_str = "%02dh%02d" % [h, m]
+
+	var cause: String = ""
+	if step_data.has("species") and typeof(step_data["species"]) == TYPE_ARRAY:
+		for entry in step_data["species"]:
+			if typeof(entry) == TYPE_DICTIONARY:
+				var name_val = String(entry.get("name", entry.get("display_name", "")))
+				if name_val == animal_name or String(entry.get("animal_id", "")) == animal_name:
+					cause = String(entry.get("death_cause", ""))
+					if cause.is_empty() or cause == "null":
+						var after_dict = entry.get("after", {})
+						if typeof(after_dict) == TYPE_DICTIONARY:
+							cause = String(after_dict.get("death_cause", ""))
+						if cause.is_empty() or cause == "null":
+							var before_dict = entry.get("before", {})
+							if typeof(before_dict) == TYPE_DICTIONARY:
+								var thirst = float(before_dict.get("thirst", 0.0))
+								var hunger = float(before_dict.get("hunger", 0.0))
+								var fatigue = float(before_dict.get("fatigue", 0.0))
+								if thirst >= 80.0:
+									cause = "Mort de soif"
+								elif hunger >= 80.0:
+									cause = "Mort de faim"
+								elif fatigue >= 90.0:
+									cause = "Épuisement"
+								else:
+									cause = "Chassé par un prédateur"
+					break
+
+	if cause.is_empty() or cause == "null":
+		cause = "Mort de cause inconnue"
+
+	var log_str = "[color=#e06c75][%s] 💀 [b]%s[/b]\n   ➜ %s[/color]" % [time_str, animal_name, cause]
 	death_logs.push_front(log_str)
 	if death_logs.size() > 50:
 		death_logs.pop_back()
 		
-	if death_log_label:
-		death_log_label.text = "\n".join(death_logs)
+	var target_label = _get_death_log_label()
+	if target_label:
+		target_label.text = "\n\n".join(death_logs)
+
+func _update_action_log(step_data: Dictionary):
+	var target_label = _get_action_log_label()
+	if not target_label:
+		return
+	if not step_data.has("species") or typeof(step_data["species"]) != TYPE_ARRAY:
+		return
+
+	var h = int(step_data.get("hour", 0))
+	var m = int(step_data.get("minute", 0))
+	var time_str = "%02dh%02d" % [h, m]
+
+	var new_entries_added = false
+
+	for entry in step_data["species"]:
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+
+		var is_alive := true
+		if entry.has("after") and typeof(entry["after"]) == TYPE_DICTIONARY:
+			is_alive = bool(entry["after"].get("alive", true))
+			if entry["after"].has("vitality"):
+				is_alive = is_alive and (float(entry["after"].get("vitality", 0.0)) > 0.0)
+		elif entry.has("vitality"):
+			is_alive = float(entry.get("vitality", 0.0)) > 0.0
+
+		if not is_alive:
+			continue
+
+		var animal_name = String(entry.get("name", entry.get("display_name", "")))
+		if animal_name.is_empty():
+			continue
+
+		var action = String(entry.get("action", "")).strip_edges()
+		var motivation = String(entry.get("motivation", "")).strip_edges()
+		var food_evt = entry.get("food_event")
+
+		var action_text = _format_action_text(action, motivation, entry, food_evt)
+		if action_text.is_empty():
+			continue
+
+		var last_action = last_animal_actions.get(animal_name, "")
+		if last_action != action_text:
+			last_animal_actions[animal_name] = action_text
+			var log_str = "[color=#61afef][%s][/color] [b]%s[/b]\n   ➜ %s" % [time_str, animal_name, action_text]
+			action_logs.push_front(log_str)
+			if action_logs.size() > 80:
+				action_logs.pop_back()
+			new_entries_added = true
+
+	if new_entries_added and target_label:
+		target_label.text = "\n\n".join(action_logs)
+
+func _format_action_text(action: String, motivation: String, entry: Dictionary = {}, food_evt: Variant = null) -> String:
+	if food_evt is Dictionary:
+		var evt_type = String(food_evt.get("type", "")).to_lower()
+		if evt_type.contains("drink"):
+			return "💧 Boit de l'eau à la rivière"
+		elif evt_type.contains("carcass") or evt_type.contains("meat"):
+			return "🍖 Dévore une carcasse"
+		elif evt_type.contains("plant") or evt_type.contains("eat"):
+			return "🌿 Mange de la nourriture"
+		elif evt_type.contains("kill"):
+			return "⚔️ A abattu une proie !"
+
+	var act_lower = action.to_lower()
+	var mot_lower = motivation.to_lower()
+
+	# 1. Prédation / Attaque
+	if act_lower.contains("kill") or mot_lower.contains("tue"):
+		return "⚔️ A abattu une proie !"
+	elif act_lower.contains("hunt") or act_lower.contains("predat") or act_lower.contains("pack_attack") or mot_lower.contains("chasse"):
+		return "🐾 Traque et chasse une proie"
+
+	# 2. Fuite
+	elif act_lower.contains("flee") or mot_lower.contains("fuite") or mot_lower.contains("attaque"):
+		return "🏃 Fuit un prédateur !"
+
+	# 3. Boire / Soif
+	elif act_lower.contains("drink"):
+		return "💧 Boit de l'eau à la rivière"
+	elif act_lower.contains("seek_water") or (act_lower.contains("water") and not act_lower.contains("explore")):
+		return "💧 Cherche un point d'eau"
+
+	# 4. Manger / Faim
+	elif act_lower.contains("eat") or act_lower.contains("gorge") or act_lower.contains("consume"):
+		return "🌿 Mange de la nourriture"
+	elif act_lower.contains("seen_food") or act_lower.contains("move_to_food"):
+		return "🌿 Se dirige vers de la nourriture (vue)"
+	elif act_lower.contains("seek_food"):
+		return "🌿 Cherche de la nourriture"
+
+	# 5. Repos / Sommeil
+	elif act_lower.contains("rest") or act_lower.contains("sleep") or act_lower.contains("guard") or mot_lower.contains("repos") or mot_lower.contains("fatigue"):
+		return "😴 Se repose"
+
+	# 6. Groupe / Cohésion
+	elif act_lower.contains("cohesion") or act_lower.contains("herd") or mot_lower.contains("groupe"):
+		return "🐄 Se déplace en groupe"
+
+	# 7. Exploration / Vadrouille
+	elif act_lower.contains("explore_for_food") or mot_lower.contains("faim"):
+		return "🌿 Cherche de la nourriture"
+	elif act_lower.contains("explore") or act_lower.contains("wander") or act_lower.contains("idle") or mot_lower.contains("exploration") or mot_lower.contains("errance"):
+		return "🌍 Vadrouille dans la savane"
+
+	elif not action.is_empty():
+		return action
+	elif not motivation.is_empty():
+		return motivation
+
+	var after_dict = entry.get("after", {})
+	if typeof(after_dict) == TYPE_DICTIONARY:
+		if bool(after_dict.get("resting", false)):
+			return "😴 Se repose"
+		var hunger = float(after_dict.get("hunger", 0.0))
+		var thirst = float(after_dict.get("thirst", 0.0))
+		if thirst > 70.0:
+			return "💧 Cherche un point d'eau"
+		elif hunger > 70.0:
+			return "🌿 Cherche de la nourriture"
+
+	return "🌍 Vadrouille dans la savane"
 
 # --- Générer un résumé global pour le fichier TXT ---
 func generate_summary_text() -> String:
@@ -447,8 +649,12 @@ func clear_logs():
 	simulation_logs.clear()
 	previous_alive_states.clear()
 	death_logs.clear()
+	action_logs.clear()
+	last_animal_actions.clear()
 	if death_log_label:
 		death_log_label.text = "Aucun décès pour le moment."
+	if action_log_label:
+		action_log_label.text = "Aucune action récente."
 	if graph_population and graph_population.has_method("clear_data"):
 		graph_population.clear_data()
 	if graph_food and graph_food.has_method("clear_data"):
@@ -492,6 +698,7 @@ func _on_mode_selected(index: int):
 
 func _on_world_loading():
 	clear_logs()
+	set_speed_multiplier(1.0)
 	if loading_overlay:
 		if loading_overlay.has_node("Label"):
 			loading_overlay.get_node("Label").text = "Génération du monde en cours..."
@@ -505,6 +712,7 @@ func _on_world_loaded():
 		loading_overlay.visible = false
 
 func _on_simulation_computing():
+	set_speed_multiplier(1.0)
 	if loading_overlay:
 		if loading_overlay.has_node("Label"):
 			loading_overlay.get_node("Label").text = "Génération de la simulation en cours..."
@@ -522,3 +730,30 @@ func _on_zoom_in_pressed():
 func _on_zoom_out_pressed():
 	if camera and camera.has_method("zoom_out"):
 		camera.zoom_out()
+
+func set_speed_multiplier(multiplier: float, update_spinbox: bool = true) -> void:
+	var clamped_mult: float = clamp(multiplier, 0.1, 5.0)
+	var delay_ms: float = max(1.0, BASE_SPEED_MS / clamped_mult)
+	
+	if world and world.has_method("set_speed"):
+		world.set_speed(delay_ms)
+		
+	if abs(clamped_mult - 0.5) < 0.01:
+		current_speed_text = "0.5x"
+	elif abs(clamped_mult - 1.0) < 0.01:
+		current_speed_text = "1x"
+	elif abs(clamped_mult - 2.0) < 0.01:
+		current_speed_text = "2x"
+	elif abs(clamped_mult - 3.0) < 0.01:
+		current_speed_text = "3x"
+	else:
+		var formatted = "%.1fx" % clamped_mult
+		if formatted.ends_with(".0x"):
+			formatted = formatted.replace(".0x", "x")
+		current_speed_text = formatted
+		
+	if update_spinbox and speed_custom_spin:
+		if speed_custom_spin.has_method("set_value_no_signal"):
+			speed_custom_spin.set_value_no_signal(clamped_mult)
+		else:
+			speed_custom_spin.value = clamped_mult

@@ -365,6 +365,8 @@ class SpeciesCatalogStore:
                 ),
                 "species_type": species_type,
                 "count": count_int,
+                "males": entry.get("males"),
+                "females": entry.get("females"),
                 "vision": _resolve_val("vision", defaults["vision"]),
                 "smell_range": _resolve_val(
                     "smell_range", defaults["smell_range"]

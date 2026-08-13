@@ -1,9 +1,9 @@
 {
   "food": {
     "distribution": {
-      "berries": 60,
-      "fruit_tree": 35,
-      "herbs": 140
+      "berries": 300,
+      "fruit_tree": 100,
+      "herbs": 500
     },
     "placements": [
       {
@@ -68,6 +68,9 @@
       "fruit_tree": "food/fruit_tree.json",
       "herbs": "food/herbs.json"
     }
+  },
+  "simulation": {
+    "steps": 10000
   },
   "species": {
     "defaults": {
@@ -576,14 +579,15 @@
       }
     ]
   },
+  "steps": 10000,
   "water": {
     "fill_step": 1.0,
-    "lake_count": 1,
-    "oasis_count": 2,
+    "lake_count": 2,
+    "oasis_count": 5,
     "placements": [],
-    "quantity": 15,
-    "river_segments": 35,
-    "stagnant_count": 3
+    "quantity": 30,
+    "river_segments": 50,
+    "stagnant_count": 10
   },
   "world": {
     "height": 1000.0,

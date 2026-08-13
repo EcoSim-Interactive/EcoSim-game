@@ -334,6 +334,11 @@ theme_override_constants/margin_bottom = 8
 layout_mode = 2
 theme_override_constants/separation = 12
 
+[node name="Speed05x" type="Button" parent="MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox" unique_id=1043489597]
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
+text = "0.5x"
+
 [node name="Speed1x" type="Button" parent="MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox" unique_id=1043489598]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
@@ -348,6 +353,15 @@ text = "2x"
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 text = "3x"
+
+[node name="SpeedCustomSpin" type="SpinBox" parent="MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox" unique_id=1610833239]
+layout_mode = 2
+min_value = 0.1
+max_value = 5.0
+step = 0.1
+value = 1.0
+suffix = "x"
+custom_arrow_step = 0.1
 
 [node name="VSeparator3" type="VSeparator" parent="MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox" unique_id=906286725]
 layout_mode = 2
@@ -407,20 +421,26 @@ theme_override_constants/separation = 16
 [node name="InfoTitle" type="Label" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox" unique_id=1337477941]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
-text = "Informations (Droite)"
+text = "Journal des actions"
 
-[node name="HSeparator" type="HSeparator" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox" unique_id=308721911]
+[node name="ActionLogPanel" type="PanelContainer" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox"]
 layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="GraphDeath" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox" unique_id=1486739661 instance=ExtResource("8_graph")]
+[node name="ActionLogMargin" type="MarginContainer" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox/ActionLogPanel"]
 layout_mode = 2
-title = "Morts par cycle"
-line_color = Color(0.9, 0.2, 0.2, 1)
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
 
-[node name="GraphEnergy" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox" unique_id=1327910493 instance=ExtResource("8_graph")]
+[node name="ActionLogLabel" type="RichTextLabel" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox/ActionLogPanel/ActionLogMargin"]
 layout_mode = 2
-title = "Énergie Moyenne"
-line_color = Color(0.2, 0.6, 0.9, 1)
+size_flags_vertical = 3
+bbcode_enabled = true
+text = "Aucune action récente."
+scroll_following = true
 
 [node name="HSeparator2" type="HSeparator" parent="MainVBox/MainHBox/RightSidebar/Margin/VBox"]
 layout_mode = 2

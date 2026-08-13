@@ -453,6 +453,12 @@ func _update_species_markers(step_data: Dictionary) -> void:
 
 			marker.vision = float(entry.get("vision", 100.0))
 			marker.smell_range = float(entry.get("smell_range", 50.0))
+			if "vitality" in marker:
+				marker.vitality = float(pos_data.get("vitality", entry.get("vitality", 100.0)))
+			if "thirst" in marker:
+				marker.thirst = float(pos_data.get("thirst", entry.get("thirst", 0.0)))
+			if "hunger" in marker:
+				marker.hunger = float(pos_data.get("hunger", entry.get("hunger", 0.0)))
 
 			marker.queue_redraw()
 			marker.position = marker.position.lerp(target_pos, 0.3)

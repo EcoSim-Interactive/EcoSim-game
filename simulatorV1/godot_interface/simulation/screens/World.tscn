@@ -869,7 +869,7 @@ tile_set = SubResource("TileSet_h3a0h")
 [node name="Animal" type="Sprite2D" parent="."]
 texture_filter = 1
 position = Vector2(-1197, 563)
-scale = Vector2(4.46967, 4.7809)
+scale = Vector2(3.35225, 3.585675)
 texture = ExtResource("3_gn8y3")
 hframes = 14
 vframes = 7
@@ -889,7 +889,7 @@ script = ExtResource("5_md7w5")
 [node name="Water" type="Sprite2D" parent="."]
 texture_filter = 1
 position = Vector2(-1193, 696)
-scale = Vector2(1.54, 1.72727)
+scale = Vector2(1.155, 1.29545)
 texture = ExtResource("1_7mova")
 hframes = 10
 vframes = 20
@@ -912,10 +912,10 @@ position = Vector2(-790, 836)
 script = ExtResource("7_f1ujy")
 
 [node name="Label" type="Label" parent="SpeciesMarker"]
-offset_left = -24.0
-offset_top = -32.0
-offset_right = 30.0
-offset_bottom = -9.0
+offset_left = -40.0
+offset_top = -52.0
+offset_right = 40.0
+offset_bottom = -30.0
 scale = Vector2(1, 0.996318)
 label_settings = SubResource("LabelSettings_md7w5")
 horizontal_alignment = 1

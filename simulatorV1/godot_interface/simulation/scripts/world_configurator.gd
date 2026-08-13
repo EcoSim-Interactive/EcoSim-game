@@ -10,6 +10,8 @@ var species_list: ItemList
 var template_picker: OptionButton
 
 var count_input: SpinBox
+var males_input: SpinBox
+var females_input: SpinBox
 var vision_input: SpinBox
 var smell_input: SpinBox
 var speed_input: SpinBox
@@ -35,6 +37,7 @@ var lake_count_input: SpinBox
 var herbs_input: SpinBox
 var berries_input: SpinBox
 var tree_input: SpinBox
+var steps_input: SpinBox
 
 var templates_by_id: Dictionary = {}
 var base_selection: Array = []
@@ -164,7 +167,58 @@ func _build_dialog() -> void:
 	form.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	species_tab.add_child(form)
 
-	count_input = _add_spin_field(form, "Nombre", 0, 200, 1)
+	count_input = _add_spin_field(form, "Nombre Total", 0, 200, 1)
+	males_input = _add_spin_field(form, "Mâles", 0, 200, 1)
+	females_input = _add_spin_field(form, "Femelles", 0, 200, 1)
+	
+	count_input.value_changed.connect(func(v: float):
+		if not is_populating_form:
+			is_populating_form = true
+			var total = int(v)
+			var m = int(ceil(total / 2.0))
+			var f = total - m
+			if males_input.has_method("set_value_no_signal"):
+				males_input.set_value_no_signal(m)
+				females_input.set_value_no_signal(f)
+			else:
+				males_input.value = float(m)
+				females_input.value = float(f)
+			is_populating_form = false
+			_on_fields_changed(v)
+	)
+	males_input.value_changed.connect(func(v: float):
+		if not is_populating_form:
+			is_populating_form = true
+			var m = int(v)
+			var total = int(count_input.value)
+			if m > total:
+				total = m
+				count_input.value = float(total)
+			var f = max(0, total - m)
+			if females_input.has_method("set_value_no_signal"):
+				females_input.set_value_no_signal(f)
+			else:
+				females_input.value = float(f)
+			is_populating_form = false
+			_on_fields_changed(v)
+	)
+	females_input.value_changed.connect(func(v: float):
+		if not is_populating_form:
+			is_populating_form = true
+			var f = int(v)
+			var total = int(count_input.value)
+			if f > total:
+				total = f
+				count_input.value = float(total)
+			var m = max(0, total - f)
+			if males_input.has_method("set_value_no_signal"):
+				males_input.set_value_no_signal(m)
+			else:
+				males_input.value = float(m)
+			is_populating_form = false
+			_on_fields_changed(v)
+	)
+	
 	vision_input = _add_spin_field(form, "Vision", 1, 500, 1)
 	smell_input = _add_spin_field(form, "Odorat", 1, 700, 1)
 	speed_input = _add_spin_field(form, "Vitesse", 1, 80, 0.1)
@@ -216,6 +270,14 @@ func _build_dialog() -> void:
 	herbs_input = _add_spin_field(food_tab, "Herbes", 0, 1000, 1)
 	berries_input = _add_spin_field(food_tab, "Buissons (baies)", 0, 1000, 1)
 	tree_input = _add_spin_field(food_tab, "Arbres fruitiers", 0, 1000, 1)
+
+	# --- ONGLET 4: SIMULATION ---
+	var sim_tab = GridContainer.new()
+	sim_tab.name = "Simulation"
+	sim_tab.columns = 2
+	tab_container.add_child(sim_tab)
+	
+	steps_input = _add_spin_field(sim_tab, "Nombre d'etapes (Steps)", 10, 100000, 10)
 
 	var actions = HBoxContainer.new()
 	root.add_child(actions)
@@ -339,6 +401,11 @@ func _on_world_config_ready(payload) -> void:
 	berries_input.value = float(dist.get("berries", 60))
 	tree_input.value = float(dist.get("fruit_tree", 35))
 
+	var sim_cfg = current_world_config.get("simulation", {})
+	var steps_val = float(sim_cfg.get("steps", current_world_config.get("steps", 1000)))
+	if steps_input:
+		steps_input.value = steps_val
+
 func _refresh_species_list() -> void:
 	species_list.clear()
 	for idx in range(selection.size()):
@@ -374,7 +441,13 @@ func _clear_editor() -> void:
 
 func _load_entry_into_editor(entry: Dictionary) -> void:
 	is_populating_form = true
-	count_input.value = float(entry.get("count", 0))
+	var total_count = int(entry.get("count", 0))
+	count_input.value = float(total_count)
+	
+	var default_males = int(ceil(total_count / 2.0))
+	var default_females = total_count - default_males
+	males_input.value = float(entry.get("males", default_males))
+	females_input.value = float(entry.get("females", default_females))
 
 	var tpl_id = String(entry.get("template_id", entry.get("id", entry.get("species_type", ""))))
 	var tpl = templates_by_id.get(tpl_id, {})
@@ -416,6 +489,8 @@ func _sync_editor_to_entry() -> void:
 		return
 	var entry: Dictionary = selection[selected_index]
 	entry["count"] = int(count_input.value)
+	entry["males"] = int(males_input.value)
+	entry["females"] = int(females_input.value)
 	entry["vision"] = float(vision_input.value)
 	entry["smell_range"] = float(smell_input.value)
 	entry["speed"] = float(speed_input.value)
@@ -513,6 +588,11 @@ func _save(start_after: bool) -> void:
 		current_world_config["food"]["distribution"]["herbs"] = int(herbs_input.value)
 		current_world_config["food"]["distribution"]["berries"] = int(berries_input.value)
 		current_world_config["food"]["distribution"]["fruit_tree"] = int(tree_input.value)
+
+		if not current_world_config.has("simulation"):
+			current_world_config["simulation"] = {}
+		current_world_config["simulation"]["steps"] = int(steps_input.value)
+		current_world_config["steps"] = int(steps_input.value)
 		
 		if world and world.has_method("apply_world_configuration"):
 			world.apply_world_configuration(current_world_config, false)

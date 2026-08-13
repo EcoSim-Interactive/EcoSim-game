@@ -124,7 +124,13 @@ def finalize_species_status(
     Returns:
         Dict[str, Any]: Complete step status payload.
     """
+    death_cause = getattr(species, "death_cause", None) or (
+        species.traits.get("death_cause")
+        if isinstance(getattr(species, "traits", None), dict)
+        else None
+    )
     status.setdefault("food_event", None)
+    status["death_cause"] = death_cause
     status["after"] = {
         "x": species.x,
         "y": species.y,
@@ -143,6 +149,7 @@ def finalize_species_status(
         "display_name": species.get_display_name()
         if hasattr(species, "get_display_name")
         else species.name,
+        "death_cause": death_cause,
     }
     status["age_years"] = status["after"].get("age_years")
     status["age_stage"] = status["after"].get("age_stage")
