@@ -72,6 +72,11 @@ func zoom_in() -> void:
 func zoom_out() -> void:
 	_set_zoom(-zoom_speed * 3.0)
 
+func center_on_target(target_pos: Vector2) -> void:
+	global_position = target_pos
+	velocity = Vector2.ZERO
+	_clamp_position()
+
 
 func _set_zoom(delta: float, mouse_pos: Vector2 = Vector2.ZERO) -> void:
 	var old_z: float = zoom.x

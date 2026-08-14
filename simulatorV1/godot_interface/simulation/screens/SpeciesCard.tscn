@@ -1,25 +1,404 @@
-[gd_scene load_steps=2 format=3 uid="uid://qp0vg3epa104"]
+[gd_scene format=3 uid="uid://qp0vg3epa104"]
 
-[ext_resource type="Theme" uid="uid://c8h61p7bbxak2" path="res://background/card_theme.tres" id="1_7cddx"]
+[ext_resource type="Script" path="res://scripts/species_card.gd" id="1_scard"]
+[ext_resource type="Theme" path="res://background/theme_dark.tres" id="2_theme"]
 
-[node name="PanelContainer" type="PanelContainer"]
-custom_minimum_size = Vector2(300, 350)
-offset_right = 40.0
-offset_bottom = 40.0
-theme = ExtResource("1_7cddx")
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.0980392, 0.137255, 0.196078, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.2, 0.282353, 0.4, 0.9)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 8
 
-[node name="VBoxContainer" type="VBoxContainer" parent="."]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_icon_bg"]
+bg_color = Color(0.14902, 0.2, 0.282353, 0.8)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_close"]
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 2.0
+bg_color = Color(0.18, 0.23, 0.32, 0.6)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_close_hover"]
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 2.0
+bg_color = Color(0.85, 0.25, 0.25, 0.8)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_chip"]
+content_margin_left = 6.0
+content_margin_top = 2.0
+content_margin_right = 6.0
+content_margin_bottom = 2.0
+bg_color = Color(0.16, 0.22, 0.3, 0.9)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_bg"]
+bg_color = Color(0.06, 0.09, 0.14, 0.9)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_vita"]
+bg_color = Color(0.0627451, 0.72549, 0.505882, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_thirst"]
+bg_color = Color(0.22, 0.74, 0.97, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_hunger"]
+bg_color = Color(0.98, 0.75, 0.14, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar_fatigue"]
+bg_color = Color(0.65, 0.55, 0.98, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_action"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.14902, 0.203922, 0.286275, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.25, 0.35, 0.48, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_btn_action_hover"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.22, 0.3, 0.42, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.35, 0.48, 0.65, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="SpeciesCard" type="PanelContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme = ExtResource("2_theme")
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+script = ExtResource("1_scard")
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="IconContainer" type="PanelContainer" parent="Margin/VBox/Header"]
+custom_minimum_size = Vector2(38, 38)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_icon_bg")
+
+[node name="IconRect" type="TextureRect" parent="Margin/VBox/Header/IconContainer"]
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="InfoVBox" type="VBoxContainer" parent="Margin/VBox/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 1
+
+[node name="NameLabel" type="Label" parent="Margin/VBox/Header/InfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.827451, 0.596078, 1)
+theme_override_font_sizes/font_size = 15
+text = "Gazelle #1"
+
+[node name="SubtitleLabel" type="Label" parent="Margin/VBox/Header/InfoVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.68, 0.78, 1)
+theme_override_font_sizes/font_size = 11
+text = "♂ Mâle • Adulte (2.4 ans)"
+
+[node name="CloseBtn" type="Button" parent="Margin/VBox/Header"]
+layout_mode = 2
+size_flags_vertical = 0
+theme_override_font_sizes/font_size = 13
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_close")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_close_hover")
+text = "✕"
+
+[node name="HSeparator1" type="HSeparator" parent="Margin/VBox"]
 layout_mode = 2
 
-[node name="Name" type="Label" parent="VBoxContainer"]
+[node name="Badges" type="HBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
-clip_text = true
+theme_override_constants/separation = 6
 
-[node name="Diet" type="Label" parent="VBoxContainer"]
+[node name="DietChip" type="PanelContainer" parent="Margin/VBox/Badges"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_chip")
+
+[node name="DietLabel" type="Label" parent="Margin/VBox/Badges/DietChip"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "🌿 Herbivore"
+
+[node name="TempChip" type="PanelContainer" parent="Margin/VBox/Badges"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_chip")
+
+[node name="TempLabel" type="Label" parent="Margin/VBox/Badges/TempChip"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "🛡️ Prudent"
+
+[node name="StatusChip" type="PanelContainer" parent="Margin/VBox/Badges"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_chip")
+
+[node name="StatusLabel" type="Label" parent="Margin/VBox/Badges/StatusChip"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "💚 Vivant"
+
+[node name="Vitals" type="VBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="VitalityRow" type="HBoxContainer" parent="Margin/VBox/Vitals"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Label" type="Label" parent="Margin/VBox/Vitals/VitalityRow"]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.85, 0.55, 1)
+theme_override_font_sizes/font_size = 11
+text = "❤️ Santé"
+
+[node name="VitalityBar" type="ProgressBar" parent="Margin/VBox/Vitals/VitalityRow"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_styles/background = SubResource("StyleBoxFlat_bar_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_bar_vita")
+value = 100.0
+show_percentage = false
+
+[node name="VitalityVal" type="Label" parent="Margin/VBox/Vitals/VitalityRow"]
+custom_minimum_size = Vector2(34, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "100%"
+horizontal_alignment = 2
+
+[node name="ThirstRow" type="HBoxContainer" parent="Margin/VBox/Vitals"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Label" type="Label" parent="Margin/VBox/Vitals/ThirstRow"]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.3, 0.75, 0.98, 1)
+theme_override_font_sizes/font_size = 11
+text = "💧 Hydrat."
+
+[node name="ThirstBar" type="ProgressBar" parent="Margin/VBox/Vitals/ThirstRow"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_styles/background = SubResource("StyleBoxFlat_bar_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_bar_thirst")
+value = 100.0
+show_percentage = false
+
+[node name="ThirstVal" type="Label" parent="Margin/VBox/Vitals/ThirstRow"]
+custom_minimum_size = Vector2(34, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "100%"
+horizontal_alignment = 2
+
+[node name="HungerRow" type="HBoxContainer" parent="Margin/VBox/Vitals"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Label" type="Label" parent="Margin/VBox/Vitals/HungerRow"]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.75, 0.14, 1)
+theme_override_font_sizes/font_size = 11
+text = "🍖 Satiété"
+
+[node name="HungerBar" type="ProgressBar" parent="Margin/VBox/Vitals/HungerRow"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_styles/background = SubResource("StyleBoxFlat_bar_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_bar_hunger")
+value = 100.0
+show_percentage = false
+
+[node name="HungerVal" type="Label" parent="Margin/VBox/Vitals/HungerRow"]
+custom_minimum_size = Vector2(34, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "100%"
+horizontal_alignment = 2
+
+[node name="FatigueRow" type="HBoxContainer" parent="Margin/VBox/Vitals"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="Label" type="Label" parent="Margin/VBox/Vitals/FatigueRow"]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.6, 0.98, 1)
+theme_override_font_sizes/font_size = 11
+text = "⚡ Énergie"
+
+[node name="FatigueBar" type="ProgressBar" parent="Margin/VBox/Vitals/FatigueRow"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+theme_override_styles/background = SubResource("StyleBoxFlat_bar_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_bar_fatigue")
+value = 100.0
+show_percentage = false
+
+[node name="FatigueVal" type="Label" parent="Margin/VBox/Vitals/FatigueRow"]
+custom_minimum_size = Vector2(34, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "100%"
+horizontal_alignment = 2
+
+[node name="HSeparator2" type="HSeparator" parent="Margin/VBox"]
 layout_mode = 2
 
-[node name="Stats" type="Label" parent="VBoxContainer"]
+[node name="BehaviorBox" type="VBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="ActionLabel" type="Label" parent="Margin/VBox/BehaviorBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.7, 1, 1)
+theme_override_font_sizes/font_size = 11
+text = "🎯 Action : Vadrouille dans la savane"
+autowrap_mode = 2
+
+[node name="MotivationLabel" type="Label" parent="Margin/VBox/BehaviorBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.68, 0.78, 1)
+theme_override_font_sizes/font_size = 11
+text = "💭 Motivation : Recherche d'opportunités"
+autowrap_mode = 2
+
+[node name="HSeparator3" type="HSeparator" parent="Margin/VBox"]
 layout_mode = 2
 
-[node name="Meta" type="Label" parent="VBoxContainer"]
+[node name="Grid" type="GridContainer" parent="Margin/VBox"]
 layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 2
+columns = 2
+
+[node name="SpeedLabel" type="Label" parent="Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.78, 0.88, 1)
+theme_override_font_sizes/font_size = 11
+text = "🏃 Vitesse : 20 px/s"
+
+[node name="VisionLabel" type="Label" parent="Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.78, 0.88, 1)
+theme_override_font_sizes/font_size = 11
+text = "👁️ Vision : 100 px"
+
+[node name="SmellLabel" type="Label" parent="Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.78, 0.88, 1)
+theme_override_font_sizes/font_size = 11
+text = "👃 Odorat : 50 px"
+
+[node name="MassLabel" type="Label" parent="Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.78, 0.88, 1)
+theme_override_font_sizes/font_size = 11
+text = "⚖️ Masse : 24.0 kg"
+
+[node name="PosLabel" type="Label" parent="Margin/VBox/Grid"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.7, 0.78, 0.88, 1)
+theme_override_font_sizes/font_size = 11
+text = "📍 Pos : (0, 0)"
+
+[node name="Footer" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_constants/margin_top = 2
+
+[node name="CenterBtn" type="Button" parent="Margin/VBox/Footer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+theme_override_styles/normal = SubResource("StyleBoxFlat_btn_action")
+theme_override_styles/hover = SubResource("StyleBoxFlat_btn_action_hover")
+text = "📍 Centrer la caméra"

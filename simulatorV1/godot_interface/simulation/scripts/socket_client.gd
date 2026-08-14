@@ -12,6 +12,8 @@ signal simulation_computed
 signal world_config_ready(payload)
 signal world_configuration_saved(ok, payload)
 signal step_received(step_data)
+signal species_selected(species_data)
+signal species_deselected()
 
 var socket := WebSocketPeer.new()
 var connected := false
@@ -20,6 +22,7 @@ var precompute_ready := false
 var precompute_pending := false
 var species_configured := false
 var pending_start_after_species_save := false
+var selected_species_id := ""
 
 @export var animal_path: NodePath
 @export var water_path: NodePath
@@ -459,11 +462,77 @@ func _update_species_markers(step_data: Dictionary) -> void:
 				marker.thirst = float(pos_data.get("thirst", entry.get("thirst", 0.0)))
 			if "hunger" in marker:
 				marker.hunger = float(pos_data.get("hunger", entry.get("hunger", 0.0)))
+			if "fatigue" in marker:
+				marker.fatigue = float(pos_data.get("fatigue", entry.get("fatigue", 0.0)))
+
+			if marker.has_method("update_data"):
+				marker.update_data(entry, pos_data, id, base_name)
+			if marker.has_method("set_selected"):
+				marker.set_selected(id == selected_species_id)
 
 			marker.queue_redraw()
 			marker.position = marker.position.lerp(target_pos, 0.3)
 
 	_remove_inactive_species_markers(active_names)
+
+	if selected_species_id != "":
+		if species_markers.has(selected_species_id):
+			var sel_marker = species_markers[selected_species_id]
+			if is_instance_valid(sel_marker) and sel_marker.has_method("get_full_data"):
+				emit_signal("species_selected", sel_marker.get_full_data())
+		else:
+			_handle_selected_species_death(step_data)
+
+func _handle_selected_species_death(step_data: Dictionary) -> void:
+	if not step_data.has("species") or typeof(step_data["species"]) != TYPE_ARRAY:
+		return
+	for entry in step_data["species"]:
+		if typeof(entry) != TYPE_DICTIONARY:
+			continue
+		var base_name := String(entry.get("name", entry.get("display_name", "")))
+		var animal_id = entry.get("animal_id")
+		var id = base_name + "_" + str(animal_id) if animal_id != null and str(animal_id) != "" else base_name
+		if id == selected_species_id or base_name == selected_species_id:
+			var dead_data = entry.duplicate(true)
+			dead_data["id"] = selected_species_id
+			dead_data["vitality"] = 0.0
+			dead_data["alive"] = false
+			emit_signal("species_selected", dead_data)
+			break
+
+func select_species_marker(marker: Node2D) -> void:
+	if marker == null or not is_instance_valid(marker):
+		return
+	var id = marker.species_id if "species_id" in marker else ""
+	selected_species_id = id
+	for m in species_markers.values():
+		if is_instance_valid(m) and m.has_method("set_selected"):
+			m.set_selected(m == marker)
+	if marker.has_method("get_full_data"):
+		emit_signal("species_selected", marker.get_full_data())
+
+func select_species_by_id(p_id: String) -> void:
+	selected_species_id = p_id
+	for key in species_markers.keys():
+		var m = species_markers[key]
+		if is_instance_valid(m) and m.has_method("set_selected"):
+			m.set_selected(key == p_id)
+			if key == p_id and m.has_method("get_full_data"):
+				emit_signal("species_selected", m.get_full_data())
+
+func deselect_species() -> void:
+	selected_species_id = ""
+	for m in species_markers.values():
+		if is_instance_valid(m) and m.has_method("set_selected"):
+			m.set_selected(false)
+	emit_signal("species_deselected")
+
+func get_selected_species_marker() -> Node2D:
+	if selected_species_id != "" and species_markers.has(selected_species_id):
+		var m = species_markers[selected_species_id]
+		if is_instance_valid(m):
+			return m
+	return null
 
 func _apply_food_updates(step_data: Dictionary) -> void:
 	for food in step_data.get("new_food_sources", []):

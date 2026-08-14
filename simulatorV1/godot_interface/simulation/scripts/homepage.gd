@@ -21,6 +21,7 @@ const BASE_SPEED_MS: float = 50.0
 @onready var speed_custom_spin = get_node_or_null("MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox/SpeedCustomSpin")
 @onready var world_config_btn = $MainVBox/TopBar/Margin/HBox/WorldConfigBtn
 @onready var world_configurator = $WorldConfigurator
+@onready var species_card = get_node_or_null("MainVBox/MainHBox/LeftSidebar/Margin/VBox/SpeciesCard")
 
 @onready var graph_population = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/GraphPopulation
 @onready var graph_food = $MainVBox/MainHBox/LeftSidebar/Margin/VBox/GraphFood
@@ -131,10 +132,20 @@ func _ready():
 			world.simulation_computed.connect(_on_simulation_computed)
 		if world.has_signal("step_received"):
 			world.step_received.connect(log_simulation_step)
+		if world.has_signal("species_selected"):
+			world.species_selected.connect(_on_species_selected)
+		if world.has_signal("species_deselected"):
+			world.species_deselected.connect(_on_species_deselected)
 		if not world.world_ready:
 			if loading_overlay.has_node("Label"):
 				loading_overlay.get_node("Label").text = "En attente du serveur..."
 			loading_overlay.visible = true
+
+	if species_card:
+		if species_card.has_signal("close_requested"):
+			species_card.close_requested.connect(_on_species_card_closed)
+		if species_card.has_signal("center_requested"):
+			species_card.center_requested.connect(_on_species_card_center)
 
 	if logs_folder == "":
 		if OS.has_feature("editor"):
@@ -663,6 +674,8 @@ func clear_logs():
 		graph_death.clear_data()
 	if graph_energy and graph_energy.has_method("clear_data"):
 		graph_energy.clear_data()
+	if species_card:
+		species_card.visible = false
 
 # --- Gestion du Header ---
 func _on_settings_pressed():
@@ -757,3 +770,20 @@ func set_speed_multiplier(multiplier: float, update_spinbox: bool = true) -> voi
 			speed_custom_spin.set_value_no_signal(clamped_mult)
 		else:
 			speed_custom_spin.value = clamped_mult
+
+# --- Gestion de la sélection d'espèce ---
+func _on_species_selected(data: Dictionary) -> void:
+	if species_card and species_card.has_method("display_species"):
+		species_card.display_species(data)
+
+func _on_species_deselected() -> void:
+	if species_card:
+		species_card.visible = false
+
+func _on_species_card_closed() -> void:
+	if world and world.has_method("deselect_species"):
+		world.deselect_species()
+
+func _on_species_card_center(target_pos: Vector2) -> void:
+	if camera and camera.has_method("center_on_target"):
+		camera.center_on_target(target_pos)

@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://qtm62clrr35r" path="res://scripts/toggle_day_night.gd" id="6_daynight"]
 [ext_resource type="Script" uid="uid://qd8i6wandxfl" path="res://scripts/world_configurator.gd" id="7_speciescfg"]
 [ext_resource type="PackedScene" uid="uid://c1p2x3b4n5e6" path="res://screens/GraphCard.tscn" id="8_graph"]
+[ext_resource type="PackedScene" uid="uid://qp0vg3epa104" path="res://screens/SpeciesCard.tscn" id="9_species_card"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
 bg_color = Color(0.059, 0.09, 0.165, 1)
@@ -292,6 +293,10 @@ visible = false
 layout_mode = 2
 title = "Nourriture Disponible"
 line_color = Color(0.9, 0.6, 0.2, 1)
+
+[node name="SpeciesCard" parent="MainVBox/MainHBox/LeftSidebar/Margin/VBox" unique_id=1849204857 instance=ExtResource("9_species_card")]
+visible = false
+layout_mode = 2
 
 [node name="MainArea" type="MarginContainer" parent="MainVBox/MainHBox" unique_id=1628336570]
 layout_mode = 2
