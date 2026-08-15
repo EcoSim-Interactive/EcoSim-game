@@ -289,7 +289,7 @@ def build_species_from_config(
             or "omnivore"
         )
         body_nutrition = _resolve_float_attr(
-            "body_nutrition", entry, default_chain, fallback=80.0
+            "body_nutrition", entry, default_chain, fallback=None
         )
         body_nutrition_range = _resolve_float_range_attr(
             "body_nutrition", entry, default_chain

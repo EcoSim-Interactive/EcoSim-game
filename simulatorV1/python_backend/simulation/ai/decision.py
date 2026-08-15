@@ -199,7 +199,22 @@ def process_species(
             )
         return food_result
 
-    # Priorite 2: une opportunite alimentaire sociale ne doit pas etre perdue.
+    # Priorite 2: fatigue critique impose un repos, meme en cas de faim.
+    # Sans ce garde-fou, un individu dont la faim reste au-dessus du seuil
+    # critique (HUNGER_CRITICAL_FEED_OVERRIDE) ne redescend jamais en-dessous
+    # et la priorite 4 (faim critique, chasse/recherche en boucle) capture
+    # systematiquement la decision avant que le repos ne soit jamais atteint
+    # : la fatigue reste plafonnee a 100 jusqu'a la mort par epuisement.
+    if (
+        fatigue > FATIGUE_CRITICAL_THRESHOLD
+        and thirst < THIRST_BLOCKS_REST_THRESHOLD
+    ):
+        acted, action, motivation = animal.handle_fatigue(logger.log)
+        if acted:
+            record(action, motivation)
+            return food_result
+
+    # Priorite 3: une opportunite alimentaire sociale ne doit pas etre perdue.
     if (
         _has_active_feeding_opportunity(animal)
         and thirst < THIRST_CRITICAL_THRESHOLD
@@ -214,7 +229,7 @@ def process_species(
             record(action, motivation, resolve_food=resolve)
             return food_result
 
-    # Priorite 3: faim critique avant repos et soif moderee.
+    # Priorite 4: faim critique avant repos et soif moderee.
     if thirst < THIRST_CRITICAL_THRESHOLD and _resolve_critical_hunger(
         animal,
         world,
@@ -223,16 +238,6 @@ def process_species(
         record,
     ):
         return food_result
-
-    # Priorite 4: fatigue critique impose un repos.
-    if (
-        fatigue > FATIGUE_CRITICAL_THRESHOLD
-        and thirst < THIRST_BLOCKS_REST_THRESHOLD
-    ):
-        acted, action, motivation = animal.handle_fatigue(logger.log)
-        if acted:
-            record(action, motivation)
-            return food_result
 
     # Priorite 5: respect du cycle jour/nuit.
     is_day = world_time["is_day"]

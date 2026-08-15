@@ -4,12 +4,19 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple
 
-from domain.constants import WATER_MEMORY_SEARCH_RADIUS
+from domain.constants import (
+    DRINK_TARGET_SEARCH_RADIUS,
+    WATER_MEMORY_SEARCH_RADIUS,
+)
 
 if TYPE_CHECKING:
     from ..animal import Animal
 
 LogFn = Callable[[str], None]
+
+# Nombre d'echecs consecutifs de move_towards vers l'eau avant de forcer une
+# recherche de rive garantie en visibilite directe (voir _move_to_water_target).
+WATER_SEEK_FAILURE_ESCAPE_LIMIT = 3
 
 
 def _reposition_after_failed_move(
@@ -75,6 +82,35 @@ def _move_to_water_target(
         return False, "", ""
     if not animal.move_towards({"x": target[0], "y": target[1]}, world):
         animal.clear_water_target()
+        streak = animal.note_water_seek_failure()
+        if streak >= WATER_SEEK_FAILURE_ESCAPE_LIMIT and hasattr(
+            world, "find_shore_tile"
+        ):
+            # move_towards() ne fait que de la ligne droite avec un leger
+            # eventail d'angles de repli sur une seule distance de pas : un
+            # animal coince dans une anse/presqu'ile entouree d'eau trop
+            # profonde peut echouer indefiniment sans jamais se rapprocher.
+            # find_shore_tile() cherche depuis la position REELLE actuelle
+            # et ne retient que des tuiles de rive dont la ligne de vue ne
+            # traverse aucune eau, donc forcement atteignables en ligne
+            # directe.
+            shore = world.find_shore_tile(
+                animal.x, animal.y, DRINK_TARGET_SEARCH_RADIUS
+            )
+            if shore is not None and animal.move_towards(
+                {"x": shore[0], "y": shore[1]}, world
+            ):
+                animal.remember_water_target(shore[0], shore[1])
+                animal.reset_water_seek_failures()
+                log(
+                    f"{animal.name} contourne un obstacle pour "
+                    "rejoindre une rive accessible."
+                )
+                if animal.try_drink(world):
+                    animal.clear_water_target()
+                    log(f"{animal.name} a bu !")
+                    return True, "drink", motivation
+                return True, action, motivation
         return _reposition_after_failed_move(
             animal,
             world,
@@ -82,6 +118,7 @@ def _move_to_water_target(
             action="reposition_for_water",
             motivation=f"{motivation} -> acces bloque",
         )
+    animal.reset_water_seek_failures()
     if animal.try_drink(world):
         animal.clear_water_target()
         log(f"{animal.name} a bu !")

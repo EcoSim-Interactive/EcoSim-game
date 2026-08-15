@@ -21,6 +21,8 @@ from .constants import (
     RELOCATE_OFF_WATER_FALLBACK_ATTEMPTS,
     RELOCATE_OFF_WATER_FALLBACK_RADIUS,
     RELOCATE_OFF_WATER_RADIUS,
+    WATER_CAPACITY_PER_TILE,
+    WATER_REGEN_FRACTION_PER_DAY,
 )
 from .food_generation import (
     DEFAULT_FOOD_PROFILES,
@@ -345,6 +347,7 @@ class World:
             body_id = self._create_water_body(
                 spec["capacity"], spec["max_capacity"]
             )
+            body_tiles: List[Dict[str, Any]] = []
             fill_step = max(1, int(fill_step))
 
             blob_count = random.randint(3, 6)
@@ -419,15 +422,18 @@ class World:
 
                     nx, ny = center_x + dx, center_y + dy
                     if 0 <= nx < self.width and 0 <= ny < self.height:
-                        self._register_water_source(
-                            nx,
-                            ny,
-                            water_type="stagnant",
-                            capacity=None,
-                            max_capacity=None,
-                            metadata=None,
-                            body_id=body_id,
+                        body_tiles.append(
+                            self._register_water_source(
+                                nx,
+                                ny,
+                                water_type="stagnant",
+                                capacity=None,
+                                max_capacity=None,
+                                metadata=None,
+                                body_id=body_id,
+                            )
                         )
+            self._finalize_water_body(body_id, center_x, center_y, body_tiles)
 
     def add_oasis(
         self,
@@ -450,6 +456,7 @@ class World:
             body_id = self._create_water_body(
                 spec["capacity"], spec["max_capacity"]
             )
+            body_tiles: List[Dict[str, Any]] = []
             fill_step = max(1, int(fill_step))
 
             blob_count = random.randint(4, 8)
@@ -526,15 +533,18 @@ class World:
 
                     nx, ny = center_x + dx, center_y + dy
                     if 0 <= nx < self.width and 0 <= ny < self.height:
-                        self._register_water_source(
-                            nx,
-                            ny,
-                            water_type="oasis",
-                            capacity=None,
-                            max_capacity=None,
-                            metadata=None,
-                            body_id=body_id,
+                        body_tiles.append(
+                            self._register_water_source(
+                                nx,
+                                ny,
+                                water_type="oasis",
+                                capacity=None,
+                                max_capacity=None,
+                                metadata=None,
+                                body_id=body_id,
+                            )
                         )
+            self._finalize_water_body(body_id, center_x, center_y, body_tiles)
 
     def add_lakes(
         self,
@@ -617,6 +627,7 @@ class World:
             body_id = self._create_water_body(
                 spec["capacity"], spec["max_capacity"]
             )
+            body_tiles: List[Dict[str, Any]] = []
             fill_step = max(1, int(fill_step))
             rx_sq = float(radius_x * radius_x)
             ry_sq = float(radius_y * radius_y)
@@ -693,15 +704,18 @@ class World:
 
                     nx, ny = center_x + dx, center_y + dy
                     if 0 <= nx < self.width and 0 <= ny < self.height:
-                        self._register_water_source(
-                            nx,
-                            ny,
-                            water_type="lake",
-                            capacity=None,
-                            max_capacity=None,
-                            metadata=None,
-                            body_id=body_id,
+                        body_tiles.append(
+                            self._register_water_source(
+                                nx,
+                                ny,
+                                water_type="lake",
+                                capacity=None,
+                                max_capacity=None,
+                                metadata=None,
+                                body_id=body_id,
+                            )
                         )
+            self._finalize_water_body(body_id, center_x, center_y, body_tiles)
 
     def _create_water_body(
         self, capacity: Optional[float], max_capacity: Optional[float]
@@ -717,6 +731,144 @@ class World:
             else capacity,
         }
         return body_id
+
+    def _finalize_water_body(
+        self,
+        body_id: Optional[str],
+        center_x: float,
+        center_y: float,
+        tiles: List[Dict[str, Any]],
+    ) -> None:
+        """Ranks a water body's tiles by distance from its center and sizes
+        its capacity from its actual tile count.
+
+        Ranking center-first lets _sync_water_body_extent() dry out the
+        shoreline first and retreat towards the center as capacity drops
+        (and regrow the same way in reverse), instead of the capacity being
+        a number disconnected from how large the water body actually looks.
+        """
+        if not body_id or not tiles:
+            return
+        body = self._water_bodies.get(body_id)
+        if body is None:
+            return
+        ranked = sorted(
+            tiles,
+            key=lambda t: (float(t["x"]) - center_x) ** 2
+            + (float(t["y"]) - center_y) ** 2,
+        )
+        tile_keys = [
+            (int(round(t["x"])), int(round(t["y"]))) for t in ranked
+        ]
+        tile_capacity = len(tile_keys) * WATER_CAPACITY_PER_TILE
+        body["tiles_by_rank"] = tile_keys
+        body["active_count"] = len(tile_keys)
+        body["dormant_tiles"] = {}
+        body["max_capacity"] = tile_capacity
+        body["capacity"] = tile_capacity
+
+    def _sync_water_body_extent(self, body_id: Optional[str]) -> None:
+        """Activates/deactivates a water body's edge tiles to match its
+        current capacity fraction, so a shrinking/regrowing lake is visible
+        and reflected in every water lookup (not just the numeric gauge).
+        """
+        if not body_id:
+            return
+        body = self._water_bodies.get(body_id)
+        if not body:
+            return
+        tile_keys = body.get("tiles_by_rank")
+        if not tile_keys:
+            return
+        max_capacity = body.get("max_capacity") or 0.0
+        if max_capacity <= 0:
+            return
+        capacity = max(0.0, min(max_capacity, body.get("capacity") or 0.0))
+        fraction = capacity / max_capacity
+        target_active = max(
+            0, min(len(tile_keys), round(len(tile_keys) * fraction))
+        )
+        current_active = body.get("active_count", len(tile_keys))
+        if target_active < current_active:
+            for key in tile_keys[target_active:current_active]:
+                self._deactivate_water_tile(body_id, key)
+        elif target_active > current_active:
+            for key in tile_keys[current_active:target_active]:
+                self._reactivate_water_tile(body_id, key)
+        body["active_count"] = target_active
+
+    def _deactivate_water_tile(
+        self, body_id: str, key: Tuple[int, int]
+    ) -> None:
+        """Dries a single tile out: removed from every water lookup/index
+        so it behaves like ordinary land, but kept in the body's dormant
+        pool so it can be restored later without minting a new tile id.
+        """
+        tile = self._water_tile_lookup.get(key)
+        if tile is None:
+            return
+        self._water_tiles.discard(key)
+        del self._water_tile_lookup[key]
+        self._water_tile_depth.pop(key, None)
+        try:
+            self.water_sources.remove(tile)
+        except ValueError:
+            pass
+        self._water_lookup.pop(str(tile.get("id")), None)
+        self._water_spatial_index.remove(tile)
+        self._shore_water_dirty = True
+        self._shore_tiles_dirty = True
+        body = self._water_bodies.get(body_id)
+        if body is not None:
+            body.setdefault("dormant_tiles", {})[key] = tile
+
+    def _reactivate_water_tile(
+        self, body_id: str, key: Tuple[int, int]
+    ) -> None:
+        """Restores a previously dried tile as the body's capacity recovers."""
+        body = self._water_bodies.get(body_id)
+        if not body:
+            return
+        dormant = body.get("dormant_tiles")
+        if not dormant or key not in dormant:
+            return
+        tile = dormant.pop(key)
+        self._water_tiles.add(key)
+        self._water_tile_lookup[key] = tile
+        depth = self._water_depth_by_type.get(
+            tile.get("type"), DEFAULT_WATER_DEPTH
+        )
+        previous = self._water_tile_depth.get(key)
+        if previous is None or depth > previous:
+            self._water_tile_depth[key] = depth
+        self.water_sources.append(tile)
+        self._water_lookup[str(tile["id"])] = tile
+        self._water_spatial_index.insert(tile)
+        self._shore_water_dirty = True
+        self._shore_tiles_dirty = True
+
+    def regenerate_water(self, minutes_per_step: float) -> None:
+        """Gradually refills capacity-limited water bodies (lake/mare/oasis)
+        each step, like a spring or rainfall feeding them back up, so a
+        drained body eventually recovers instead of staying dry forever.
+        """
+        try:
+            minutes = float(minutes_per_step)
+        except (TypeError, ValueError):
+            return
+        if minutes <= 0:
+            return
+        day_fraction = minutes / (24.0 * 60.0)
+        for body_id, body in self._water_bodies.items():
+            max_capacity = body.get("max_capacity")
+            capacity = body.get("capacity")
+            if max_capacity is None or capacity is None:
+                continue
+            if capacity >= max_capacity:
+                continue
+            regen = max_capacity * WATER_REGEN_FRACTION_PER_DAY * day_fraction
+            body["capacity"] = min(max_capacity, capacity + regen)
+            self._sync_water_body_extent(body_id)
 
     def _register_circle_points(
         self,
@@ -927,6 +1079,7 @@ class World:
                 return False
             remaining = max(0.0, capacity - amount)
             self._water_bodies[body_id]["capacity"] = remaining
+            self._sync_water_body_extent(body_id)
             return True
 
         capacity = water.get("capacity")
@@ -956,6 +1109,7 @@ class World:
                 self._water_bodies[source_id]["capacity"] = min(
                     max_capacity, capacity + amount
                 )
+                self._sync_water_body_extent(source_id)
             return None
 
         body_id = water.get("body_id")
@@ -969,6 +1123,7 @@ class World:
             self._water_bodies[body_id]["capacity"] = min(
                 max_capacity, capacity + amount
             )
+            self._sync_water_body_extent(body_id)
             return water
 
         capacity = water.get("capacity")
@@ -992,6 +1147,7 @@ class World:
                 self._water_bodies[source_id]["capacity"] = max(
                     0.0, capacity - amount
                 )
+                self._sync_water_body_extent(source_id)
             return None
 
         body_id = water.get("body_id")
@@ -1002,6 +1158,7 @@ class World:
             self._water_bodies[body_id]["capacity"] = max(
                 0.0, capacity - amount
             )
+            self._sync_water_body_extent(body_id)
             return water
 
         capacity = water.get("capacity")
@@ -1566,13 +1723,13 @@ class World:
 
     def add_carcass(self, species: Any) -> Dict[str, Any]:
         """Create a carnivore food source at the species position."""
-        nutrition_value = 0.0
-        if hasattr(species, "estimate_carcass_calories"):
+        nutrition_value = float(getattr(species, "body_nutrition", 0.0) or 0.0)
+        if nutrition_value <= 0.0 and hasattr(
+            species, "estimate_carcass_calories"
+        ):
             nutrition_value = float(species.estimate_carcass_calories())
         if nutrition_value <= 0.0:
-            nutrition_value = float(
-                getattr(species, "body_nutrition", DEFAULT_CARCASS_NUTRITION)
-            )
+            nutrition_value = float(DEFAULT_CARCASS_NUTRITION)
         animal_id = getattr(species, "animal_id", None)
         source_name = getattr(species, "name", None)
         source_original_name = getattr(species, "original_name", source_name)

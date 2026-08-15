@@ -10,9 +10,18 @@
 [ext_resource type="Script" uid="uid://qd8i6wandxfl" path="res://scripts/world_configurator.gd" id="7_speciescfg"]
 [ext_resource type="PackedScene" uid="uid://c1p2x3b4n5e6" path="res://screens/GraphCard.tscn" id="8_graph"]
 [ext_resource type="PackedScene" uid="uid://qp0vg3epa104" path="res://screens/SpeciesCard.tscn" id="9_species_card"]
+[ext_resource type="Shader" path="res://shaders/rounded_corners.gdshader" id="10_roundedmap"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_roundedmap"]
+shader = ExtResource("10_roundedmap")
+shader_parameter/radius = 20.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
 bg_color = Color(0.059, 0.09, 0.165, 1)
+corner_radius_top_left = 20
+corner_radius_top_right = 20
+corner_radius_bottom_right = 20
+corner_radius_bottom_left = 20
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.118, 0.161, 0.231, 0.95)
@@ -312,6 +321,7 @@ layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
 
 [node name="SubViewportContainer" type="SubViewportContainer" parent="MainVBox/MainHBox/MainArea" unique_id=404304916]
+material = SubResource("ShaderMaterial_roundedmap")
 layout_mode = 2
 stretch = true
 
@@ -377,7 +387,7 @@ layout_mode = 2
 button_pressed = true
 text = "Jour/Nuit"
 script = ExtResource("6_daynight")
-world_path = NodePath("../../../../../SubViewportContainer/SubViewport/World")
+world_path = NodePath("../../../../SubViewportContainer/SubViewport/World")
 
 [node name="ZoomInBtn" type="Button" parent="MainVBox/MainHBox/MainArea/FloatingControls/Margin/HBox" unique_id=1132157483]
 layout_mode = 2

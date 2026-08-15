@@ -758,6 +758,9 @@ func _reset_visuals() -> void:
 	_clear_water_markers()
 	_clear_tilemap()
 	pending_steps.clear()
+	if selected_species_id != "":
+		selected_species_id = ""
+		emit_signal("species_deselected")
 
 func import_simulation(sim_data: Dictionary) -> void:
 	print("[CLIENT] Import simulation...")

@@ -78,40 +78,56 @@ func _build_dialog() -> void:
 	dialog.dialog_text = ""
 	dialog.exclusive = true
 	dialog.unresizable = false
-	dialog.size = Vector2i(780, 620)
+	dialog.size = Vector2i(1000, 700)
+	# Un AcceptDialog est une Window : il n'herite pas automatiquement du
+	# theme de ses ancetres dans l'arbre de scene comme le ferait un Control
+	# classique. Sans ca il s'affichait avec le theme Godot par defaut,
+	# incoherent avec le reste de l'appli.
+	dialog.theme = load("res://background/theme_dark.tres")
 	add_child(dialog)
 
 	var scroll = ScrollContainer.new()
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll.custom_minimum_size = Vector2(800, 600)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	dialog.add_child(scroll)
 
 	var root = VBoxContainer.new()
 	root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	root.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	# Hauteur minimale forcee explicitement (au lieu de compter sur le calcul
+	# automatique en cascade GridContainer -> VBoxContainer -> TabContainer,
+	# qui ne remontait pas correctement jusqu'au ScrollContainer). Le
+	# dialogue fait 700px de haut : avec 1000px ici, le depassement est
+	# garanti et le scroll (molette ET barre laterale) a toujours une plage
+	# non nulle sur laquelle travailler.
+	root.custom_minimum_size = Vector2(0, 1000)
 	scroll.add_child(root)
 
 	var header_label = Label.new()
 	header_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	header_label.text = "Choisissez les especes et personnalisez leurs caracteristiques avant de lancer la simulation."
+	header_label.add_theme_color_override("font_color", Color(0.6, 0.65, 0.75, 1))
 	root.add_child(header_label)
 
 	status_label = Label.new()
 	status_label.text = "Chargement du catalogue..."
+	status_label.add_theme_color_override("font_color", Color(0.2, 0.8, 0.5, 1))
 	root.add_child(status_label)
 
 	var tab_container = TabContainer.new()
 	tab_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	tab_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	tab_container.custom_minimum_size = Vector2(0, 850)
 	root.add_child(tab_container)
 
 	# --- ONGLET 1: ESPÈCES ---
 	var species_tab = VBoxContainer.new()
 	species_tab.name = "Especes"
+	species_tab.add_theme_constant_override("separation", 12)
 	tab_container.add_child(species_tab)
 
 	var top_row = HBoxContainer.new()
+	top_row.add_theme_constant_override("separation", 8)
 	species_tab.add_child(top_row)
 
 	template_picker = OptionButton.new()
@@ -139,11 +155,14 @@ func _build_dialog() -> void:
 
 	var map_label = Label.new()
 	map_label.text = "Carte miniature"
+	map_label.add_theme_font_size_override("font_size", 18)
 	map_section.add_child(map_label)
 
 	var map_hint = Label.new()
 	map_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	map_hint.text = "Mini-apercu: cliquez pour definir la position du groupe."
+	map_hint.add_theme_color_override("font_color", Color(0.580392, 0.639216, 0.721569, 1))
+	map_hint.add_theme_font_size_override("font_size", 14)
 	map_section.add_child(map_hint)
 
 	var map_center = CenterContainer.new()
@@ -163,7 +182,9 @@ func _build_dialog() -> void:
 	map_frame.add_child(map_preview)
 
 	var form = GridContainer.new()
-	form.columns = 2
+	form.columns = 4
+	form.add_theme_constant_override("h_separation", 16)
+	form.add_theme_constant_override("v_separation", 10)
 	form.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	species_tab.add_child(form)
 
@@ -252,7 +273,9 @@ func _build_dialog() -> void:
 	# --- ONGLET 2: EAU ---
 	var water_tab = GridContainer.new()
 	water_tab.name = "Points d'eau"
-	water_tab.columns = 2
+	water_tab.columns = 4
+	water_tab.add_theme_constant_override("h_separation", 16)
+	water_tab.add_theme_constant_override("v_separation", 10)
 	tab_container.add_child(water_tab)
 	
 	water_qty_input = _add_spin_field(water_tab, "Quantite Globale", 0, 100, 1)
@@ -264,7 +287,9 @@ func _build_dialog() -> void:
 	# --- ONGLET 3: NOURRITURE ---
 	var food_tab = GridContainer.new()
 	food_tab.name = "Nourriture (Distribution)"
-	food_tab.columns = 2
+	food_tab.columns = 4
+	food_tab.add_theme_constant_override("h_separation", 16)
+	food_tab.add_theme_constant_override("v_separation", 10)
 	tab_container.add_child(food_tab)
 	
 	herbs_input = _add_spin_field(food_tab, "Herbes", 0, 1000, 1)
@@ -280,6 +305,7 @@ func _build_dialog() -> void:
 	steps_input = _add_spin_field(sim_tab, "Nombre d'etapes (Steps)", 10, 100000, 10)
 
 	var actions = HBoxContainer.new()
+	actions.add_theme_constant_override("separation", 12)
 	root.add_child(actions)
 
 	var refresh_button = Button.new()
@@ -300,6 +326,23 @@ func _build_dialog() -> void:
 	save_start_button = Button.new()
 	save_start_button.text = "Enregistrer et lancer"
 	save_start_button.pressed.connect(_on_save_and_start_pressed)
+	var accent_normal = StyleBoxFlat.new()
+	accent_normal.bg_color = Color(0.2, 0.8, 0.5, 0.9)
+	accent_normal.content_margin_left = 16.0
+	accent_normal.content_margin_top = 8.0
+	accent_normal.content_margin_right = 16.0
+	accent_normal.content_margin_bottom = 8.0
+	accent_normal.set_corner_radius_all(8)
+	var accent_hover = StyleBoxFlat.new()
+	accent_hover.bg_color = Color(0.25, 0.95, 0.6, 1.0)
+	accent_hover.content_margin_left = 16.0
+	accent_hover.content_margin_top = 8.0
+	accent_hover.content_margin_right = 16.0
+	accent_hover.content_margin_bottom = 8.0
+	accent_hover.set_corner_radius_all(8)
+	save_start_button.add_theme_stylebox_override("normal", accent_normal)
+	save_start_button.add_theme_stylebox_override("hover", accent_hover)
+	save_start_button.add_theme_color_override("font_color", Color(0.059, 0.09, 0.165, 1))
 	actions.add_child(save_start_button)
 
 	for input in [count_input, vision_input, smell_input, speed_input, nutrition_min_input, nutrition_max_input, position_x_input, position_y_input]:
@@ -338,8 +381,8 @@ func open_modal() -> void:
 			if world.has_method("request_world_config"):
 				world.request_world_config()
 	dialog.reset_size()
-	dialog.min_size = Vector2i(850, 650)
-	dialog.popup_centered(Vector2i(850, 650))
+	dialog.min_size = Vector2i(1000, 700)
+	dialog.popup_centered(Vector2i(1000, 700))
 
 func _on_species_catalog_ready(payload) -> void:
 	if typeof(payload) != TYPE_DICTIONARY:

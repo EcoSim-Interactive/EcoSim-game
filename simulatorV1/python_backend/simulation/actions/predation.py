@@ -379,8 +379,11 @@ def _handle_shared_kill(
     fed_animals = _state_set(pack_kill, "fed_animals")
     wait_counters = _state_dict(pack_kill, "wait_counters")
 
-    # Arrete la garde si pas de leader/successeur ou membre unique.
-    if len(pack_members) <= 1 or not _pack_has_active_leader_or_successor(
+    # Arrete la garde si le pack a perdu tout leader/successeur. Un animal
+    # seul (pas de pack, ou dernier membre en vie) n'a personne a attendre
+    # ni a faire garder : il doit continuer a pouvoir revenir sur sa propre
+    # carcasse au lieu de l'abandonner des le pas suivant sa premiere prise.
+    if len(pack_members) > 1 and not _pack_has_active_leader_or_successor(
         pack_members
     ):
         pack_kill.clear()

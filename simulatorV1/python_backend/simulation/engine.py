@@ -118,6 +118,11 @@ class SimulationEngine:
         world_time = compute_world_time(self.world, step_index)
         step_data = build_step_frame(step_index, world_time)
 
+        if hasattr(self.world, "regenerate_water"):
+            self.world.regenerate_water(
+                getattr(self.world, "minutes_per_step", 0)
+            )
+
         for animal in list(self._active_species):
             if not getattr(animal, "alive", True):
                 status = initialize_species_status(animal)

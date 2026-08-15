@@ -52,7 +52,7 @@ class Animal(Species):
         diurnal: bool = True,
         temperament: str = "neutre",
         diet: str = "omnivore",
-        body_nutrition: float = 80.0,
+        body_nutrition: Optional[float] = None,
         *,
         species_type: str | None = None,
         animal_id: int | None = None,
@@ -143,6 +143,14 @@ class Animal(Species):
                 if st.get("name") == explicit_age_stage:
                     self.age_years = float(st.get("min", 2.0))
                     self.traits["age_years"] = self.age_years
+                    # _age_comp was built from the pre-promotion age_years
+                    # (0.0) in _normalize_age_profile above; keep its
+                    # internal state in sync or the first advance_age()
+                    # call will snap age_years/age_stage back to newborn.
+                    self._age_comp.age_years = self.age_years
+                    self._age_comp.age_stage = (
+                        self._age_comp._compute_age_stage()
+                    )
                     break
         self.age_stage = explicit_age_stage or self._compute_age_stage()
         self.traits["age_stage"] = self.age_stage
@@ -172,6 +180,7 @@ class Animal(Species):
             self.traits.pop("pack_id", None)
         self.water_memory: Optional[Dict[str, float]] = None
         self.water_memory_ttl = 0
+        self.water_seek_fail_streak = 0
         self.social_state: Dict[str, Any] = {}
         self.territory_anchor: Optional[Tuple[float, float]] = None
         territory_cfg = self.traits.get("territory")
@@ -275,8 +284,13 @@ class Animal(Species):
         instance.age_profile_spec = copy.deepcopy(
             getattr(species, "age_profile_spec", instance.age_profile_spec)
         )
-        instance.age_profile = copy.deepcopy(
-            getattr(species, "age_profile", instance.age_profile)
+        # Rebuilds _age_comp against the final age_years/profile so its
+        # internal state doesn't stay pinned to whatever the constructor
+        # saw before this method overwrote age_years above (see the same
+        # fix in __init__ for why a stale _age_comp corrupts age on the
+        # first advance_age() tick).
+        instance.age_profile = instance._normalize_age_profile(
+            instance.age_profile_spec
         )
         instance.age_units = getattr(
             species, "age_units", getattr(instance, "age_units", "years")
@@ -284,6 +298,7 @@ class Animal(Species):
         instance.age_stage = getattr(
             species, "age_stage", instance._compute_age_stage()
         )
+        instance._age_comp.age_stage = instance.age_stage
         instance.traits["sex"] = instance.sex
         instance.traits["age_years"] = instance.age_years
         instance.traits["age_stage"] = instance.age_stage
@@ -525,6 +540,26 @@ class Animal(Species):
             self.water_memory_ttl -= 1
             if self.water_memory_ttl <= 0:
                 self.water_memory = None
+
+    def note_water_seek_failure(self) -> int:
+        """Records a failed straight-line approach towards a water target.
+
+        move_towards() only steers around obstacles within a single step's
+        distance, so an animal stuck in a cove/peninsula surrounded by water
+        too deep to enter can fail every step and never get close enough to
+        drink. Tracking a streak lets the caller escalate to a guaranteed
+        line-of-sight shore search instead of retrying the same blocked
+        path (or random-repositioning) indefinitely.
+
+        Returns:
+            int: Updated consecutive-failure count.
+        """
+        self.water_seek_fail_streak += 1
+        return self.water_seek_fail_streak
+
+    def reset_water_seek_failures(self) -> None:
+        """Clears the consecutive water-approach failure streak."""
+        self.water_seek_fail_streak = 0
 
     @classmethod
     def pack_state_for(cls, pack_id: str) -> Dict[str, Any]:

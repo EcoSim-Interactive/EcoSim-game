@@ -166,7 +166,7 @@ class MetabolismComponent:
         cfg: Dict[str, Any],
         initial_calories: float = 0.0,
         initial_max: float = 0.0,
-        initial_body_nutrition: float = 0.0,
+        initial_body_nutrition: Optional[float] = None,
     ) -> None:
         """Initializes MetabolismComponent with configuration dictionary.
 
@@ -174,7 +174,10 @@ class MetabolismComponent:
             cfg (Dict[str, Any]): Metabolism configuration mapping.
             initial_calories (float): Initial calories. Defaults to 0.0.
             initial_max (float): Initial max capacity. Defaults to 0.0.
-            initial_body_nutrition (float): Explicit body nutrition override.
+            initial_body_nutrition (Optional[float]): Explicit body
+                nutrition override from species config, if any. ``None``
+                means no override was configured and the mass-based
+                estimate should be used instead.
         """
         self.daily_calorie_need = self._resolve_daily_calorie_need(cfg)
         self.calorie_reserve_days = self._coerce_positive_float(
@@ -200,7 +203,17 @@ class MetabolismComponent:
         self.carcass_calories_per_kg = self._coerce_positive_float(
             cfg.get("carcass_calories_per_kg"), fallback=1800.0
         )
-        self.body_nutrition = initial_body_nutrition
+        self.base_body_nutrition = (
+            initial_body_nutrition
+            if initial_body_nutrition and initial_body_nutrition > 0.0
+            else None
+        )
+        # Meme filet de securite que Species._resolve_body_nutrition : si ni
+        # override explicite ni masse corporelle ne sont configures (donc
+        # refresh_body_profile() ne recalculera jamais rien), on garde une
+        # valeur non nulle plutot que de faire tomber le body_nutrition
+        # deja resolu par Species.__init__ a 0 des le premier refresh.
+        self.body_nutrition = self.base_body_nutrition or 80.0
 
     @staticmethod
     def _coerce_positive_float(value: Any, *, fallback: float) -> float:
@@ -317,11 +330,19 @@ class MetabolismComponent:
 
         self.body_mass_kg = self.base_body_mass_kg * stage_scale * sex_scale
 
-        estimated = max(
-            0.0,
-            self.body_mass_kg
-            * self.carcass_edible_ratio
-            * self.carcass_calories_per_kg,
-        )
-        if estimated > 0.0:
-            self.body_nutrition = estimated
+        if self.base_body_nutrition is not None:
+            # Une valeur explicite (config) fait autorite : on la fait
+            # seulement suivre l'echelle age/sexe au lieu de la remplacer
+            # par l'estimation masse x ratio x calories/kg.
+            self.body_nutrition = max(
+                0.0, self.base_body_nutrition * stage_scale * sex_scale
+            )
+        else:
+            estimated = max(
+                0.0,
+                self.body_mass_kg
+                * self.carcass_edible_ratio
+                * self.carcass_calories_per_kg,
+            )
+            if estimated > 0.0:
+                self.body_nutrition = estimated

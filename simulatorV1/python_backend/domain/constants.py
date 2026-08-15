@@ -26,6 +26,13 @@ RELOCATE_OFF_WATER_FALLBACK_RADIUS = 30
 WATER_MEMORY_TTL_STEPS = 480
 WATER_MEMORY_SEARCH_RADIUS = 120
 
+# Assechement/regeneration des plans d'eau a capacite limitee (lac, mare,
+# oasis -- les rivieres restent illimitees). La capacite totale d'un plan
+# d'eau est proportionnelle a son nombre de tuiles pour qu'une gorgee
+# n'assèche pas des pans entiers d'un grand lac d'un coup.
+WATER_CAPACITY_PER_TILE = 8.0
+WATER_REGEN_FRACTION_PER_DAY = 0.15
+
 # Parametres par defaut lies a la nourriture
 DEFAULT_FOOD_NUTRITION = 8000.0
 DEFAULT_CARCASS_NUTRITION = 100000.0

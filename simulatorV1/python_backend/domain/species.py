@@ -74,7 +74,7 @@ class Species(ABC):
         diurnal: bool = True,
         temperament: str = "neutre",
         diet: str = "omnivore",
-        body_nutrition: Optional[float] = 80.0,
+        body_nutrition: Optional[float] = None,
         age_years: float = 0.0,
         daily_calorie_need: float = DEFAULT_DAILY_CALORIE_NEED,
         calorie_reserve_days: float = DEFAULT_CALORIE_RESERVE_DAYS,
