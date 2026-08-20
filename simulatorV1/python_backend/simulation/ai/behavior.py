@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 LogFn = Callable[[str], None]
 
 # Nombre d'echecs consecutifs de move_towards vers l'eau avant de forcer une
-# recherche de rive garantie en visibilite directe (voir _move_to_water_target).
+# recherche de rive garantie en visibilite directe (voir _move_to_water_target)
 WATER_SEEK_FAILURE_ESCAPE_LIMIT = 3
 
 

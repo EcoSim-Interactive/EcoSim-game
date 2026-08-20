@@ -6,8 +6,8 @@ import asyncio
 import errno
 import json
 import logging
-from math import ceil
 import sys
+from math import ceil
 
 if sys.platform == "win32":
     try:
