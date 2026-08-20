@@ -41,6 +41,11 @@ var selected_species_id := ""
 
 var species_markers := {}
 var food_markers := {}
+# Le backend n'envoie les "traits" (metabolisme, noms, profil d'age...) qu'a
+# la premiere apparition de chaque animal_id pour alleger le flux (voir
+# log_writer._compact_steps). On les met en cache ici pour les reappliquer
+# sur les pas suivants ou ce champ arrive a null.
+var _traits_cache := {}
 var world_meta = {}
 var terrain_chunks := {}
 var chunks_received := 0
@@ -58,12 +63,15 @@ const COLOR_MEAT := Color(0.9, 0.35, 0.05, 1.0)
 
 ## Initializes the WebSocket connection and hides the spawn templates on startup.
 func _ready():
-	# Les simulations recentes (ecosysteme qui survit bien plus longtemps,
-	# donnees par pas enrichies) produisent des simulation.json de 1.5-2 Go+,
-	# au-dela de l'ancienne limite de 1 Go : les imports volumineux
-	# echouaient silencieusement au niveau du transport websocket.
-	socket.inbound_buffer_size = 4_000_000_000
-	socket.outbound_buffer_size = 4_000_000_000  # to allow sending large JSON payloads (rerun)
+	# Valeur historique (deja testee stable). ATTENTION : Godot utilise un
+	# entier 32 bits signe en interne pour ces buffers (WebSocketPeer ->
+	# cowdata.h resize()) ; au-dela de 2_147_483_647 la valeur deborde en
+	# negatif et fait planter socket.poll() a chaque frame (deconnexion
+	# immediate, timeout de ping) -- ne JAMAIS depasser ~2 milliards ici.
+	# La compaction du simulation.json (JSON minifie + arrondi + traits
+	# dedupliques) fait qu'1 Go suffit largement desormais.
+	socket.inbound_buffer_size = 1_000_000_000
+	socket.outbound_buffer_size = 1_000_000_000  # to allow sending large JSON payloads (rerun)
 	var err = socket.connect_to_url("ws://localhost:8765")
 	if err != OK:
 		print("[CLIENT] Erreur de connexion :", err)
@@ -456,6 +464,15 @@ func _update_species_markers(step_data: Dictionary) -> void:
 		else:
 			id = base_name + "_" + str(i)
 
+		# Reapplique les traits mis en cache si le backend ne les a pas
+		# renvoyes sur ce pas (deja envoyes a une apparition precedente).
+		if animal_id != null and str(animal_id) != "":
+			var incoming_traits = entry.get("traits")
+			if typeof(incoming_traits) == TYPE_DICTIONARY:
+				_traits_cache[animal_id] = incoming_traits
+			elif _traits_cache.has(animal_id):
+				entry["traits"] = _traits_cache[animal_id]
+
 		active_names.append(id)
 
 		var pos_data: Dictionary = {}
@@ -804,6 +821,7 @@ func _reset_visuals() -> void:
 	_clear_water_markers()
 	_clear_tilemap()
 	pending_steps.clear()
+	_traits_cache.clear()
 	if selected_species_id != "":
 		selected_species_id = ""
 		emit_signal("species_deselected")

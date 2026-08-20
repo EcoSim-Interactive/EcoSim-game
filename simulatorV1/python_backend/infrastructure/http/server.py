@@ -930,11 +930,13 @@ async def _bind_websocket_server() -> Tuple[Any, int]:
                 handler,
                 settings.host,
                 port,
-                # autorise l'import de simulations volumineuses (~4 Go) :
-                # un ecosysteme qui survit longtemps + donnees par pas
-                # enrichies produit des simulation.json de 1.5-2 Go+, au
-                # dela de l'ancienne limite de 1 Go.
-                max_size=4_000_000_000,
+                # autorise l'import de simulations volumineuses (~2 Go).
+                # Aligne sur la limite cote client (socket_client.gd) qui
+                # est plafonnee a 2 milliards d'octets a cause d'un entier
+                # 32 bits signe interne a Godot (WebSocketPeer) ; pas la
+                # peine d'autoriser plus ici que ce que le client peut
+                # jamais recevoir.
+                max_size=2_000_000_000,
             )
             if offset > 0:
                 logger.info(

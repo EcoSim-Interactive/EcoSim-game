@@ -129,6 +129,16 @@ def _compact_steps(
     steps: Sequence[Dict[str, Any]],
 ) -> Iterable[Dict[str, Any]]:
     """Reduce step payloads to the fields utiles au rerun/affichage Godot."""
+    # "traits" est un dictionnaire assez volumineux (metabolisme, noms par
+    # stade, profil d'age, eau...) qui ne change quasiment jamais pour un
+    # individu donne sur toute la duree d'une run. Le repeter a chaque pas
+    # pour chaque animal est de loin le plus gros contributeur a la taille
+    # du fichier : on ne l'ecrit qu'a la premiere apparition de chaque
+    # animal_id, puis on le laisse a null. Cote Godot, socket_client.gd met
+    # ces traits en cache par animal_id et les reutilise pour les pas
+    # suivants, donc aucun consommateur (species_card.gd, etc.) ne voit de
+    # difference.
+    seen_traits: set[Any] = set()
     for step in steps:
         if not isinstance(step, dict):
             continue
@@ -150,13 +160,19 @@ def _compact_steps(
             before = status.get("before") or {}
             x = after.get("x", before.get("x"))
             y = after.get("y", before.get("y"))
+            animal_id = status.get("animal_id")
+            traits_value = None
+            if animal_id is None or animal_id not in seen_traits:
+                traits_value = status.get("traits")
+                if animal_id is not None:
+                    seen_traits.add(animal_id)
             species_states.append(
                 {
                     "name": status.get("display_name") or status.get("name"),
                     "display_name": status.get("display_name")
                     or status.get("name"),
                     "original_name": status.get("original_name"),
-                    "animal_id": status.get("animal_id"),
+                    "animal_id": animal_id,
                     "species_type": status.get("species_type"),
                     "diet": status.get("diet"),
                     "sex": status.get("sex"),
@@ -165,7 +181,7 @@ def _compact_steps(
                     "temperament": status.get("temperament"),
                     "vision": _round_num(status.get("vision")),
                     "smell_range": _round_num(status.get("smell_range")),
-                    "traits": status.get("traits"),
+                    "traits": traits_value,
                     "action": status.get("action"),
                     "motivation": status.get("motivation"),
                     "food_event": status.get("food_event"),
