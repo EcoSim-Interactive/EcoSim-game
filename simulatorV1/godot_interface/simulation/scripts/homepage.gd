@@ -3,6 +3,7 @@ extends Control
 
 # --- Références aux nodes ---
 @onready var export_button = $MainVBox/TopBar/Margin/HBox/ExportLogBtn
+@onready var open_logs_btn = $MainVBox/TopBar/Margin/HBox/OpenLogsBtn
 @onready var settings_btn = $MainVBox/TopBar/Margin/HBox/SettingsBtn
 @onready var quit_btn = $MainVBox/TopBar/Margin/HBox/QuitBtn
 @onready var settings_panel = $SettingsPanel
@@ -41,7 +42,6 @@ const BASE_SPEED_MS: float = 50.0
 # --- Variables principales ---
 var simulation_logs = []          # Données chargées depuis summary.json
 var current_step_data = {}
-var simulation_data = {}          # Données du fichier simulation.json (actions, motivations)
 var current_speed_text = "1x"
 var previous_alive_states = {}
 var death_logs: Array = []
@@ -92,6 +92,8 @@ func _ready():
 	if export_button:
 
 		export_button.pressed.connect(_on_export_log_pressed)
+	if open_logs_btn:
+		open_logs_btn.pressed.connect(_on_open_logs_folder_pressed)
 	if settings_btn:
 		settings_btn.pressed.connect(_on_settings_pressed)
 	if quit_btn:
@@ -628,72 +630,117 @@ func _format_action_text(action: String, motivation: String, entry: Dictionary =
 
 	return "🌍 Vadrouille dans la savane"
 
-# --- Générer un résumé global pour le fichier TXT ---
-func generate_summary_text() -> String:
+# --- Trouve le sous-dossier logN le plus récent (N le plus élevé) ---
+func _get_latest_log_dir() -> String:
+	if logs_folder == "":
+		return ""
+	var dir = DirAccess.open(logs_folder)
+	if dir == null:
+		return ""
+
+	var run_regex = RegEx.new()
+	run_regex.compile("^log(\\d+)$")
+
+	var best_index := -1
+	var best_path := ""
+
+	dir.list_dir_begin()
+	var entry = dir.get_next()
+	while entry != "":
+		if dir.current_is_dir() and entry != "." and entry != "..":
+			var m = run_regex.search(entry)
+			if m:
+				var idx = int(m.get_string(1))
+				if idx > best_index:
+					best_index = idx
+					best_path = "%s/%s" % [logs_folder, entry]
+		entry = dir.get_next()
+	dir.list_dir_end()
+
+	return best_path
+
+# --- Lit, pour chaque animal du dossier animals/, sa dernière action connue ---
+func _load_last_actions(run_dir: String) -> Dictionary:
+	var result: Dictionary = {}
+	var animals_dir = "%s/animals" % run_dir
+	var dir = DirAccess.open(animals_dir)
+	if dir == null:
+		return result
+
+	dir.list_dir_begin()
+	var entry = dir.get_next()
+	while entry != "":
+		if not dir.current_is_dir() and entry.ends_with(".json"):
+			var file = FileAccess.open("%s/%s" % [animals_dir, entry], FileAccess.READ)
+			if file:
+				var data = JSON.parse_string(file.get_as_text())
+				file.close()
+				if typeof(data) == TYPE_DICTIONARY:
+					var meta = data.get("meta", {})
+					var animal_id = meta.get("animal_id")
+					var entries = data.get("entries", [])
+					if animal_id != null and entries.size() > 0:
+						var last = entries[entries.size() - 1]
+						result[str(animal_id)] = {
+							"action": String(last.get("action", "")),
+							"motivation": String(last.get("motivation", "")),
+						}
+		entry = dir.get_next()
+	dir.list_dir_end()
+
+	return result
+
+# --- Générer le résumé TXT d'un run précis (summary.json du dernier dossier logN) ---
+func _generate_run_summary_text(species_list: Array, run_dir: String, run_label: String) -> String:
 	var summary_text = "=== ECOSIM SUMMARY REPORT ===\n"
-	summary_text += "Export: %s\n" % Time.get_datetime_string_from_system()
+	summary_text += "Run exporté : %s\n" % run_label
+	summary_text += "Export : %s\n" % Time.get_datetime_string_from_system()
 	summary_text += "==================================================\n\n"
 
-	if simulation_logs.is_empty():
-		summary_text += "Aucune donnée de simulation disponible.\n"
+	if species_list.is_empty():
+		summary_text += "Aucune donnée de simulation disponible pour ce run.\n"
 		return summary_text
 
-	var species_seen = {}
+	var last_actions = _load_last_actions(run_dir)
 	var total_species = 0
 	var alive_count = 0
 	var dead_count = 0
 
-	# On parcourt tous les steps pour prendre le dernier état de chaque espèce
-	for step in simulation_logs:
-		var sp_list = _extract_species_list(step)
-		for s in sp_list:
-			if typeof(s) != TYPE_DICTIONARY:
-				continue
-			var sname = String(s.get("name", s.get("display_name", "Inconnu")))
-			species_seen[sname] = s  # Dernière version remplace l'ancienne
-
-	# Générer le résumé
-	for sname in species_seen.keys():
-		var s = species_seen[sname]
+	for s in species_list:
+		if typeof(s) != TYPE_DICTIONARY:
+			continue
 		total_species += 1
-		var vitality = _get_vitality(s)
-		var is_alive = _is_alive(s)
+
+		var vitality = float(s.get("vitality", 0.0))
+		var is_alive = vitality > 0.0
 		var status = "Vivant" if is_alive else "Mort"
 		if is_alive:
 			alive_count += 1
 		else:
 			dead_count += 1
 
-		# Lire la position depuis after ou before
-		var after_d = s.get("after", {})
-		var before_d = s.get("before", {})
+		var pos = s.get("position", [])
 		var pos_x = 0.0
 		var pos_y = 0.0
-		var hunger_v = 0.0
-		var thirst_v = 0.0
-		var fatigue_v = 0.0
-		if typeof(after_d) == TYPE_DICTIONARY:
-			pos_x = float(after_d.get("x", 0.0))
-			pos_y = float(after_d.get("y", 0.0))
-			hunger_v = float(after_d.get("hunger", 0.0))
-			thirst_v = float(after_d.get("thirst", 0.0))
-			fatigue_v = float(after_d.get("fatigue", 0.0))
-		elif typeof(before_d) == TYPE_DICTIONARY:
-			pos_x = float(before_d.get("x", 0.0))
-			pos_y = float(before_d.get("y", 0.0))
-			hunger_v = float(before_d.get("hunger", 0.0))
-			thirst_v = float(before_d.get("thirst", 0.0))
-			fatigue_v = float(before_d.get("fatigue", 0.0))
+		if typeof(pos) == TYPE_ARRAY and pos.size() >= 2:
+			pos_x = float(pos[0])
+			pos_y = float(pos[1])
 
-		var action = String(s.get("action", "N/A"))
-		var motivation = String(s.get("motivation", "N/A"))
+		var hunger_v = float(s.get("hunger", 0.0))
+		var thirst_v = float(s.get("thirst", 0.0))
+		var fatigue_v = float(s.get("fatigue", 0.0))
 
-		# Si action ou motivation manquante → chercher dans simulation.json
-		if (action == "N/A" or motivation == "N/A") and simulation_data.has(sname):
-			var sim_entry = simulation_data[sname]
-			action = sim_entry.get("action", action)
-			motivation = sim_entry.get("motivation", motivation)
+		var action = "N/A"
+		var motivation = "N/A"
+		var animal_id = s.get("animal_id")
+		if animal_id != null and last_actions.has(str(animal_id)):
+			var la = last_actions[str(animal_id)]
+			if not String(la.get("action", "")).is_empty():
+				action = la["action"]
+			if not String(la.get("motivation", "")).is_empty():
+				motivation = la["motivation"]
 
+		var sname = String(s.get("display_name", s.get("name", "Inconnu")))
 		summary_text += "%s\n" % sname
 		summary_text += "  Type : %s | Sexe : %s | Âge : %.2f ans (%s)\n" % [
 			s.get("species_type", "N/A"),
@@ -717,25 +764,53 @@ func generate_summary_text() -> String:
 	return summary_text
 
 
-# --- Exporter en TXT ---
+# --- Exporter en TXT le dernier run (dernier dossier logN) ---
 func _on_export_log_pressed():
-	if simulation_logs.is_empty():
-		push_warning("Aucun log à exporter")
+	var latest_dir = _get_latest_log_dir()
+	if latest_dir == "":
+		push_warning("Aucun dossier de logs trouvé à exporter")
 		return
 
-	var timestamp = Time.get_datetime_string_from_system().replace(":", "-")
-	var file_path = "%s/simulation_summary_%s.txt" % [logs_folder, timestamp]
-	print("Export path: ", file_path)
+	var summary_path = "%s/summary.json" % latest_dir
+	if not FileAccess.file_exists(summary_path):
+		push_warning("Aucun summary.json dans: %s" % latest_dir)
+		return
 
-	var file = FileAccess.open(file_path, FileAccess.WRITE)
-	if file == null:
+	var file = FileAccess.open(summary_path, FileAccess.READ)
+	var data = JSON.parse_string(file.get_as_text())
+	file.close()
+
+	if typeof(data) != TYPE_DICTIONARY or not data.has("species"):
+		push_warning("Format de summary.json inattendu: %s" % summary_path)
+		return
+
+	var run_label = latest_dir.get_file()
+	var summary_text = _generate_run_summary_text(data["species"], latest_dir, run_label)
+
+	var timestamp = Time.get_datetime_string_from_system().replace(":", "-")
+	var export_path = "%s/export_%s_%s.txt" % [latest_dir, run_label, timestamp]
+
+	var out_file = FileAccess.open(export_path, FileAccess.WRITE)
+	if out_file == null:
 		push_error("Impossible de créer le fichier d'export")
 		return
 
-	file.store_string(generate_summary_text())
-	file.close()
+	out_file.store_string(summary_text)
+	out_file.close()
 
-	print("✓ Résumé exporté dans: %s" % file_path)
+	print("✓ Résumé du run %s exporté dans: %s" % [run_label, export_path])
+
+# --- Ouvrir le dossier du dernier run dans l'explorateur de fichiers ---
+func _on_open_logs_folder_pressed():
+	var target_dir = _get_latest_log_dir()
+	if target_dir == "":
+		target_dir = logs_folder
+
+	if target_dir == "" or not DirAccess.dir_exists_absolute(target_dir):
+		push_warning("Dossier de logs introuvable: %s" % target_dir)
+		return
+
+	OS.shell_open(target_dir)
 
 # --- Fonctions utilitaires ---
 func log_simulation_step(step_data: Dictionary):

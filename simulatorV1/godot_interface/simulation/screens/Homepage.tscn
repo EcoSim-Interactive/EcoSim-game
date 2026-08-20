@@ -187,11 +187,11 @@ file_mode = 0
 script = ExtResource("4_8onl8")
 simulation_manager_path = NodePath("../../../../MainHBox/MainArea/SubViewportContainer/SubViewport/World")
 
-[node name="ExportBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=135988492]
+[node name="OpenLogsBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=135988492]
 layout_mode = 2
 theme_override_styles/normal = SubResource("StyleBoxFlat_btn_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_btn_hover")
-text = "Export"
+text = "📂 Dossier logs"
 
 [node name="ExportLogBtn" type="Button" parent="MainVBox/TopBar/Margin/HBox" unique_id=1661317233]
 layout_mode = 2
