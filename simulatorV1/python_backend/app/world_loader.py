@@ -346,9 +346,8 @@ def build_species_from_config(
         )
         traits = _resolve_traits(entry, default_chain)
 
-        pack_id = (
-            _coerce_str(entry.get("pack_id"))
-            or _resolve_str_from_chain("pack_id", default_chain)
+        pack_id = _coerce_str(entry.get("pack_id")) or _resolve_str_from_chain(
+            "pack_id", default_chain
         )
         if not pack_id and (
             _resolve_str_from_chain("diet", default_chain) == "carnivore"

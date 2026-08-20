@@ -113,7 +113,8 @@ def _compact_steps(
             species_states.append(
                 {
                     "name": status.get("display_name") or status.get("name"),
-                    "display_name": status.get("display_name") or status.get("name"),
+                    "display_name": status.get("display_name")
+                    or status.get("name"),
                     "original_name": status.get("original_name"),
                     "animal_id": status.get("animal_id"),
                     "species_type": status.get("species_type"),

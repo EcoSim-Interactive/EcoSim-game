@@ -12,6 +12,7 @@ import sys
 if sys.platform == "win32":
     try:
         import ctypes
+
         ctypes.windll.winmm.timeBeginPeriod(1)
     except Exception:
         pass
@@ -430,6 +431,7 @@ async def _compute_steps() -> None:
             sim.summary_file,
             getattr(sim, "last_generation_duration", None),
         )
+
     (
         steps,
         summary,

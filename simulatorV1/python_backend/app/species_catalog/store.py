@@ -325,9 +325,7 @@ class SpeciesCatalogStore:
                 or "species"
             )
             template_id = (
-                entry.get("template_id")
-                or entry.get("id")
-                or species_type
+                entry.get("template_id") or entry.get("id") or species_type
             )
             tpl = template_by_id.get(template_id, {})
 

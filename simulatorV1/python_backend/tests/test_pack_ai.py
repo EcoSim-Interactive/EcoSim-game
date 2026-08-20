@@ -1128,18 +1128,23 @@ class PackAITestCase(unittest.TestCase):
         )
 
         pack_kill = leader.pack_state.setdefault("shared_kill", {})
-        pack_kill.update({
-            "food_id": carcass["id"],
-            "position": (carcass["x"], carcass["y"]),
-            "originator": leader.animal_id,
-            "fed_animals": {hunter.animal_id},
-            "fed_priorities": {30.0},
-            "blocked": set(),
-            "participants": {leader.animal_id: 10.0, hunter.animal_id: 30.0},
-            "wait_counters": {},
-            "stale_steps": 0,
-            "feed_log": [],
-        })
+        pack_kill.update(
+            {
+                "food_id": carcass["id"],
+                "position": (carcass["x"], carcass["y"]),
+                "originator": leader.animal_id,
+                "fed_animals": {hunter.animal_id},
+                "fed_priorities": {30.0},
+                "blocked": set(),
+                "participants": {
+                    leader.animal_id: 10.0,
+                    hunter.animal_id: 30.0,
+                },
+                "wait_counters": {},
+                "stale_steps": 0,
+                "feed_log": [],
+            }
+        )
 
         class SilentLogger:
             def log(self, msg):
@@ -1187,18 +1192,20 @@ class PackAITestCase(unittest.TestCase):
             )
         )
         pack_kill = hunter_a.pack_state.setdefault("shared_kill", {})
-        pack_kill.update({
-            "food_id": carcass["id"],
-            "position": (carcass["x"], carcass["y"]),
-            "originator": hunter_a.animal_id,
-            "fed_animals": set(),
-            "fed_priorities": set(),
-            "blocked": set(),
-            "participants": {},
-            "wait_counters": {},
-            "stale_steps": 0,
-            "feed_log": [],
-        })
+        pack_kill.update(
+            {
+                "food_id": carcass["id"],
+                "position": (carcass["x"], carcass["y"]),
+                "originator": hunter_a.animal_id,
+                "fed_animals": set(),
+                "fed_priorities": set(),
+                "blocked": set(),
+                "participants": {},
+                "wait_counters": {},
+                "stale_steps": 0,
+                "feed_log": [],
+            }
+        )
 
         acted, action, resolve = _handle_shared_kill(
             hunter_a,
@@ -1240,18 +1247,20 @@ class PackAITestCase(unittest.TestCase):
             )
         )
         pack_kill = leader.pack_state.setdefault("shared_kill", {})
-        pack_kill.update({
-            "food_id": carcass["id"],
-            "position": (carcass["x"], carcass["y"]),
-            "originator": leader.animal_id,
-            "fed_animals": {leader.animal_id, hunter.animal_id},
-            "fed_priorities": {10.0, 30.0},
-            "blocked": set(),
-            "participants": {},
-            "wait_counters": {},
-            "stale_steps": 0,
-            "feed_log": [],
-        })
+        pack_kill.update(
+            {
+                "food_id": carcass["id"],
+                "position": (carcass["x"], carcass["y"]),
+                "originator": leader.animal_id,
+                "fed_animals": {leader.animal_id, hunter.animal_id},
+                "fed_priorities": {10.0, 30.0},
+                "blocked": set(),
+                "participants": {},
+                "wait_counters": {},
+                "stale_steps": 0,
+                "feed_log": [],
+            }
+        )
 
         acted, action, resolve = _handle_shared_kill(
             hunter,

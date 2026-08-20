@@ -754,12 +754,12 @@ class World:
             return
         ranked = sorted(
             tiles,
-            key=lambda t: (float(t["x"]) - center_x) ** 2
-            + (float(t["y"]) - center_y) ** 2,
+            key=lambda t: (
+                (float(t["x"]) - center_x) ** 2
+                + (float(t["y"]) - center_y) ** 2
+            ),
         )
-        tile_keys = [
-            (int(round(t["x"])), int(round(t["y"]))) for t in ranked
-        ]
+        tile_keys = [(int(round(t["x"])), int(round(t["y"]))) for t in ranked]
         tile_capacity = len(tile_keys) * WATER_CAPACITY_PER_TILE
         body["tiles_by_rank"] = tile_keys
         body["active_count"] = len(tile_keys)

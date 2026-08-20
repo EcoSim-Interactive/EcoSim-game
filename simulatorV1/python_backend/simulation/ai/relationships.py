@@ -86,7 +86,11 @@ def handle_species_relationships(
             return True, action, "maintien du territoire", False
 
     herd_cfg = traits.get("herd_behavior")
-    if isinstance(herd_cfg, dict) or animal.group_id or animal.diet == "herbivore":
+    if (
+        isinstance(herd_cfg, dict)
+        or animal.group_id
+        or animal.diet == "herbivore"
+    ):
         cfg = herd_cfg if isinstance(herd_cfg, dict) else {}
         group_members = [
             member
