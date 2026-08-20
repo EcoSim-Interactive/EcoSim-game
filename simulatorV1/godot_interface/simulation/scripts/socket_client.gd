@@ -58,8 +58,12 @@ const COLOR_MEAT := Color(0.9, 0.35, 0.05, 1.0)
 
 ## Initializes the WebSocket connection and hides the spawn templates on startup.
 func _ready():
-	socket.inbound_buffer_size = 1_000_000_000
-	socket.outbound_buffer_size = 1_000_000_000  # to allow sending large JSON payloads (rerun)
+	# Les simulations recentes (ecosysteme qui survit bien plus longtemps,
+	# donnees par pas enrichies) produisent des simulation.json de 1.5-2 Go+,
+	# au-dela de l'ancienne limite de 1 Go : les imports volumineux
+	# echouaient silencieusement au niveau du transport websocket.
+	socket.inbound_buffer_size = 4_000_000_000
+	socket.outbound_buffer_size = 4_000_000_000  # to allow sending large JSON payloads (rerun)
 	var err = socket.connect_to_url("ws://localhost:8765")
 	if err != OK:
 		print("[CLIENT] Erreur de connexion :", err)

@@ -70,7 +70,7 @@
     }
   },
   "simulation": {
-    "steps": 1000
+    "steps": 5000
   },
   "species": {
     "defaults": {
@@ -579,7 +579,7 @@
       }
     ]
   },
-  "steps": 1000,
+  "steps": 5000,
   "water": {
     "fill_step": 1.0,
     "lake_count": 2,

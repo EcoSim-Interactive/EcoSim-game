@@ -116,6 +116,15 @@ def write_summary(
     return path
 
 
+def _round_num(value: Any, ndigits: int = 3) -> Any:
+    """Rounds floats to shrink JSON output size without touching the
+    schema (ints/None/str/bool pass through untouched, parsers don't care
+    about the number of decimals)."""
+    if isinstance(value, float):
+        return round(value, ndigits)
+    return value
+
+
 def _compact_steps(
     steps: Sequence[Dict[str, Any]],
 ) -> Iterable[Dict[str, Any]]:
@@ -152,24 +161,24 @@ def _compact_steps(
                     "diet": status.get("diet"),
                     "sex": status.get("sex"),
                     "age_stage": status.get("age_stage"),
-                    "age_years": status.get("age_years"),
+                    "age_years": _round_num(status.get("age_years")),
                     "temperament": status.get("temperament"),
-                    "vision": status.get("vision"),
-                    "smell_range": status.get("smell_range"),
+                    "vision": _round_num(status.get("vision")),
+                    "smell_range": _round_num(status.get("smell_range")),
                     "traits": status.get("traits"),
                     "action": status.get("action"),
                     "motivation": status.get("motivation"),
                     "food_event": status.get("food_event"),
                     "death_cause": status.get("death_cause"),
                     "after": {
-                        "x": x if x is not None else 0.0,
-                        "y": y if y is not None else 0.0,
+                        "x": _round_num(x if x is not None else 0.0),
+                        "y": _round_num(y if y is not None else 0.0),
                         "alive": after.get("alive", True),
-                        "vitality": after.get("vitality"),
-                        "thirst": after.get("thirst"),
-                        "hunger": after.get("hunger"),
-                        "fatigue": after.get("fatigue"),
-                        "age_years": after.get("age_years"),
+                        "vitality": _round_num(after.get("vitality")),
+                        "thirst": _round_num(after.get("thirst")),
+                        "hunger": _round_num(after.get("hunger")),
+                        "fatigue": _round_num(after.get("fatigue")),
+                        "age_years": _round_num(after.get("age_years")),
                         "age_stage": after.get("age_stage"),
                         "display_name": after.get("display_name"),
                         "death_cause": after.get("death_cause"),
@@ -218,7 +227,11 @@ def write_steps_bundle(
         payload["generation_duration_sec"] = duration_sec
 
     with open(path, "w", encoding="utf-8") as handle:
-        json.dump(payload, handle, indent=2)
+        # Pas de indent=2 ici : ce fichier n'est jamais lu a la main (juste
+        # reimporte par Godot), et le format compact (sans espaces
+        # d'indentation repetes a chaque ligne, sur des dizaines de
+        # milliers de lignes) allege sensiblement la taille du fichier.
+        json.dump(payload, handle, separators=(",", ":"))
     return path
 
 

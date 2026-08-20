@@ -930,8 +930,11 @@ async def _bind_websocket_server() -> Tuple[Any, int]:
                 handler,
                 settings.host,
                 port,
-                # autorise l'import de simulations volumineuses (~1Go)
-                max_size=1_000_000_000,
+                # autorise l'import de simulations volumineuses (~4 Go) :
+                # un ecosysteme qui survit longtemps + donnees par pas
+                # enrichies produit des simulation.json de 1.5-2 Go+, au
+                # dela de l'ancienne limite de 1 Go.
+                max_size=4_000_000_000,
             )
             if offset > 0:
                 logger.info(
