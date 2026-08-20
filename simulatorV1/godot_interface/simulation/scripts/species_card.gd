@@ -1,10 +1,10 @@
-## Controle le cadre d'affichage des statistiques détaillées d'une espèce sélectionnée.
+## Controls the display panel showing detailed statistics for a selected species.
 extends PanelContainer
 
 signal close_requested
 signal center_requested(target_pos: Vector2)
 
-# --- References UI ---
+# --- UI references ---
 @onready var icon_rect = $Margin/VBox/Header/IconContainer/IconRect
 @onready var name_label = $Margin/VBox/Header/InfoVBox/NameLabel
 @onready var subtitle_label = $Margin/VBox/Header/InfoVBox/SubtitleLabel
@@ -41,16 +41,19 @@ var current_species_data: Dictionary = {}
 var current_target_pos: Vector2 = Vector2.ZERO
 var _texture_cache: Dictionary = {}
 
+## Connects the close and center buttons to their respective callbacks.
 func _ready() -> void:
 	if close_btn:
 		close_btn.pressed.connect(_on_close_pressed)
 	if center_btn:
 		center_btn.pressed.connect(_on_center_pressed)
 
+## Hides the card and signals the close to the parent.
 func _on_close_pressed() -> void:
 	visible = false
 	emit_signal("close_requested")
 
+## Emits a signal to recenter the view on the displayed animal's position.
 func _on_center_pressed() -> void:
 	if current_target_pos != Vector2.ZERO:
 		emit_signal("center_requested", current_target_pos)
@@ -59,6 +62,7 @@ func _on_center_pressed() -> void:
 	elif current_species_data.has("x") and current_species_data.has("y"):
 		emit_signal("center_requested", Vector2(float(current_species_data["x"]), float(current_species_data["y"])))
 
+## Fills the card with a species' data: position, header, badges, vital bars, action and characteristics.
 func display_species(data: Dictionary) -> void:
 	current_species_data = data
 	visible = true
@@ -73,14 +77,14 @@ func display_species(data: Dictionary) -> void:
 	elif data.has("before") and data["before"] is Dictionary:
 		current_target_pos = Vector2(float(data["before"].get("x", 0)), float(data["before"].get("y", 0)))
 
-	# --- 1. En-tête (Nom, ID, Sexe, Âge) ---
+	# --- 1. Header (Name, ID, Sex, Age) ---
 	var base_name: String = String(data.get("display_name", data.get("name", "Espèce"))).capitalize()
 	var animal_id = data.get("animal_id", "")
 	var id_str = (" #" + str(animal_id)) if animal_id != null and str(animal_id) != "" and str(animal_id) != "null" else ""
 	if name_label:
 		name_label.text = base_name + id_str
 
-	# Sexe et Âge
+	# Sex and Age
 	var sex_str = String(data.get("sex", "unknown")).to_lower()
 	var sex_symbol = "⚪"
 	if sex_str == "male" or sex_str == "mâle":
@@ -96,13 +100,13 @@ func display_species(data: Dictionary) -> void:
 	if subtitle_label:
 		subtitle_label.text = sub_text
 
-	# Icône
+	# Icon
 	var species_type = String(data.get("species_type", data.get("name", ""))).to_lower()
 	if icon_rect:
 		var tex = _get_dynamic_texture(species_type)
 		icon_rect.texture = tex
 
-	# --- 2. Badges (Régime, Tempérament, Statut) ---
+	# --- 2. Badges (Diet, Temperament, Status) ---
 	var diet = String(data.get("diet", "herbivore")).to_lower()
 	if diet_label:
 		if diet.contains("carn"):
@@ -139,13 +143,13 @@ func display_species(data: Dictionary) -> void:
 			if status_chip:
 				status_chip.self_modulate = Color(0.9, 0.25, 0.25, 1.0)
 
-	# --- 3. Barres de statut (Vitals) ---
+	# --- 3. Status bars (Vitals) ---
 	var vit = float(data.get("vitality", 100.0))
 	var th = float(data.get("thirst", 0.0))
 	var hu = float(data.get("hunger", 0.0))
 	var fat = float(data.get("fatigue", 0.0))
 
-	# Si dans after/before
+	# If within after/before
 	if data.has("after") and data["after"] is Dictionary:
 		var aft = data["after"]
 		vit = float(aft.get("vitality", vit))
@@ -153,34 +157,34 @@ func display_species(data: Dictionary) -> void:
 		hu = float(aft.get("hunger", hu))
 		fat = float(aft.get("fatigue", fat))
 
-	# Progression Vitalité
+	# Vitality progress
 	if vitality_bar:
 		vitality_bar.value = clamp(vit, 0.0, 100.0)
 	if vitality_val:
 		vitality_val.text = "%d%%" % int(clamp(vit, 0.0, 100.0))
 
-	# Progression Hydratation (100 - Soif)
+	# Hydration progress (100 - Thirst)
 	var hydro = clamp(100.0 - th, 0.0, 100.0)
 	if thirst_bar:
 		thirst_bar.value = hydro
 	if thirst_val:
 		thirst_val.text = "%d%%" % int(hydro)
 
-	# Progression Satiété (100 - Faim)
+	# Satiety progress (100 - Hunger)
 	var sat = clamp(100.0 - hu, 0.0, 100.0)
 	if hunger_bar:
 		hunger_bar.value = sat
 	if hunger_val:
 		hunger_val.text = "%d%%" % int(sat)
 
-	# Progression Énergie (100 - Fatigue)
+	# Energy progress (100 - Fatigue)
 	var ener = clamp(100.0 - fat, 0.0, 100.0)
 	if fatigue_bar:
 		fatigue_bar.value = ener
 	if fatigue_val:
 		fatigue_val.text = "%d%%" % int(ener)
 
-	# --- 4. Action et Motivation ---
+	# --- 4. Action and Motivation ---
 	var action_str = _format_action_text(data)
 	if action_label:
 		action_label.text = "🎯 Action : " + action_str
@@ -197,12 +201,12 @@ func display_species(data: Dictionary) -> void:
 	if motivation_label:
 		motivation_label.text = "💭 Motivation : " + mot_str
 
-	# --- 5. Caractéristiques physiques ---
+	# --- 5. Physical characteristics ---
 	var speed_val = float(data.get("speed", 20.0))
 	var vision_val = float(data.get("vision", 100.0))
 	var smell_val = float(data.get("smell_range", 50.0))
 
-	# Masse corporelle
+	# Body mass
 	var mass_val = 0.0
 	if data.has("traits") and data["traits"] is Dictionary:
 		var traits = data["traits"]
@@ -223,6 +227,7 @@ func display_species(data: Dictionary) -> void:
 	if pos_label:
 		pos_label.text = "📍 Pos : (%.0f, %.0f)" % [current_target_pos.x, current_target_pos.y]
 
+## Translates the animal's food event or raw action/motivation into readable text with an emoji.
 func _format_action_text(entry: Dictionary) -> String:
 	var food_evt = entry.get("food_event")
 	if food_evt is Dictionary:
@@ -269,6 +274,7 @@ func _format_action_text(entry: Dictionary) -> String:
 		return motivation
 	return "🌍 Actif"
 
+## Loads and caches a species' sprite texture from disk or the project's resources.
 func _get_dynamic_texture(sprite_name: String) -> Texture2D:
 	if _texture_cache.has(sprite_name):
 		return _texture_cache[sprite_name]

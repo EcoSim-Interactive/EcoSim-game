@@ -1,47 +1,47 @@
-# Guide des Commandes Utiles (Backend Python)
+# Useful Commands Guide (Python Backend)
 
-Toutes ces commandes doivent être exécutées depuis le dossier racine du projet backend (`python_backend`) à l'aide de **`uv`**.
+All these commands should be run from the root folder of the backend project (`python_backend`) using **`uv`**.
 
 ---
 
-## Exécution
+## Execution
 
-| Commande | Rôle | Description |
+| Command | Role | Description |
 | :--- | :--- | :--- |
-| **`uv run server.py`** | **Lancement du serveur** | Démarre le serveur WebSocket (`ws://localhost:8765`) requis pour communiquer en temps réel avec l'interface **Godot**. |
-| **`uv run main.py`** | **Simulation CLI** | Lance une simulation hors-ligne (en local console uniquement). |
-| **`uv run scripts/clear_logs.py`** | **Nettoyage des logs** | Supprime récursivement tous les dossiers de journaux `logs/` générés sous l'espace de travail pour libérer de l'espace. |
+| **`uv run server.py`** | **Start the server** | Starts the WebSocket server (`ws://localhost:8765`) required to communicate in real time with the **Godot** interface. |
+| **`uv run main.py`** | **CLI Simulation** | Runs an offline simulation (local console only). |
+| **`uv run scripts/clear_logs.py`** | **Clean up logs** | Recursively deletes all `logs/` folders generated under the workspace to free up space. |
 
-### Options utiles pour la simulation CLI (`uv run main.py`) :
-Vous pouvez ajouter des drapeaux (flags) à la commande de simulation locale :
-* **`--steps <N>`** : Modifie le nombre d'étapes à exécuter (ex: `--steps 5000`).
-* **`--write-logs`** : Écrit les fichiers JSON détaillés dans `logs/logX/` (très utile pour analyser les données de vie des espèces).
-* **`--verbose`** : Affiche les détails de chaque étape dans votre console.
-* **`--seed <N>`** : Fixe l'aléa pour rendre la simulation 100% reproductible (ex: `--seed 42`).
-* **`--world-config <chemin>`** : Utilise un fichier de configuration alternatif.
+### Useful options for the CLI simulation (`uv run main.py`):
+You can add flags to the local simulation command:
+* **`--steps <N>`**: Changes the number of steps to run (e.g. `--steps 5000`).
+* **`--write-logs`**: Writes detailed JSON files to `logs/logX/` (very useful for analyzing species life data).
+* **`--verbose`**: Displays details of each step in your console.
+* **`--seed <N>`**: Fixes the randomness to make the simulation 100% reproducible (e.g. `--seed 42`).
+* **`--world-config <path>`**: Uses an alternative configuration file.
 
-*Exemple de commande complète :*
+*Full command example:*
 ```bash
 uv run main.py --steps 5000 --write-logs --seed 42
 ```
 
 ---
 
-## Tests et Qualité
+## Tests and Quality
 
-| Commande | Rôle | Description |
+| Command | Role | Description |
 | :--- | :--- | :--- |
-| **`uv run python -m unittest discover tests`** | **Tests Unitaires** | Exécute l'ensemble de la suite de tests automatisés (vérifie les comportements IA, déplacement, etc.). |
-| **`uv run ruff check .`** | **Linter** | Analyse le code à la recherche de bugs potentiels ou de non-respect des règles Python. |
-| **`uv run ruff check --fix .`** | **Autocorrect** | Corrige automatiquement la plupart des petits défauts de code détectés par le Linter. |
-| **`uv run ruff format .`** | **Formatage** | Remet en page tout votre code proprement pour respecter les normes de style PEP 8. |
+| **`uv run python -m unittest discover tests`** | **Unit Tests** | Runs the entire automated test suite (checks AI behavior, movement, etc.). |
+| **`uv run ruff check .`** | **Linter** | Analyzes the code for potential bugs or Python rule violations. |
+| **`uv run ruff check --fix .`** | **Autocorrect** | Automatically fixes most small code issues detected by the linter. |
+| **`uv run ruff format .`** | **Formatting** | Neatly reformats all your code to comply with PEP 8 style standards. |
 
 ---
 
-## Gestion du projet
+## Project Management
 
-| Commande | Rôle | Description |
+| Command | Role | Description |
 | :--- | :--- | :--- |
-| **`uv lock`** | **Verrouillage** | Met à jour le fichier `uv.lock` pour verrouiller les versions exactes des dépendances. |
-| **`uv sync`** | **Synchronisation** | Installe ou synchronise l'environnement virtuel (`.venv`) pour que l'application soit prête. |
-| **`uv add <nom_du_package>`** | **Ajout dépendance** | Installe une nouvelle librairie tierce (ex: `uv add requests`). |
+| **`uv lock`** | **Locking** | Updates the `uv.lock` file to lock exact dependency versions. |
+| **`uv sync`** | **Sync** | Installs or syncs the virtual environment (`.venv`) so the application is ready. |
+| **`uv add <package_name>`** | **Add dependency** | Installs a new third-party library (e.g. `uv add requests`). |

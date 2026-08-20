@@ -20,6 +20,18 @@ def handle_species_relationships(
     world,
     log,
 ) -> Tuple[bool, str, str, bool]:
+    """Delegates to the AI relationships module (legacy compat wrapper).
+
+    Args:
+        animal (Animal): Target animal acting.
+        animals (Iterable[Animal]): All active animals in simulation.
+        world: World environment.
+        log: Logger function.
+
+    Returns:
+        Tuple[bool, str, str, bool]: (acted, action, motivation,
+            resolve_food).
+    """
     return ai_relationships.handle_species_relationships(
         animal, animals, world, log
     )

@@ -1,81 +1,84 @@
 # Python Backend Server
 
 ## Project Description
-Ce backend Python alimente la simulation ecologique commandee par le client Godot. Il expose un serveur WebSocket bidirectionnel qui recoit des commandes, calcule les evolutions d'etat puis renvoie les mises a jour en temps reel.
+This Python backend powers the ecological simulation driven by the Godot client. It exposes a bidirectional WebSocket server that receives commands, computes state changes, and then sends back real-time updates.
 
 ## Requirements
 - Python >= 3.12
-- [UV (Astral)](https://docs.astral.sh/uv/getting-started/installation/) pour la gestion des dependances et l'execution.
+- [UV (Astral)](https://docs.astral.sh/uv/getting-started/installation/) for dependency management and execution.
 
 ## Installation
-1. Installer UV (voir la documentation officielle ci-dessus).
-2. Verrouiller les dependances :
+1. Install UV (see the official documentation above).
+2. Lock the dependencies:
    ```bash
    uv lock
    ```
-3. Synchroniser l'environnement :
+3. Sync the environment:
    ```bash
    uv sync
    ```
 
-## Lancer les composants
-- Serveur WebSocket :
+## Running the components
+- WebSocket server:
   ```bash
   uv run server.py
   ```
-  (le fichier `server.py` redirige vers `infrastructure/http/server.py`).
-- Simulation CLI hors ligne :
+  (the `server.py` file redirects to `infrastructure/http/server.py`).
+- Offline CLI simulation:
   ```bash
   uv run app/main.py
   ```
 
-## Tests et Qualité de code
-Voici les commandes utiles pour maintenir la qualité et la fiabilité du projet :
+## Tests and Code Quality
+Here are the useful commands for maintaining the project's quality and reliability:
 
-- **Lancer les tests unitaires** :
+- **Run the unit tests**:
   ```bash
   uv run python -m unittest discover tests
   ```
-- **Vérifier le code avec le Linter (Ruff)** :
+- **Check the code with the linter (Ruff)**:
   ```bash
   uv run ruff check .
   ```
-- **Corriger automatiquement les petits défauts détectés par le linter** :
+- **Automatically fix small issues detected by the linter**:
   ```bash
   uv run ruff check --fix .
   ```
-- **Formater le code automatiquement (PEP 8, sauts de ligne, etc.)** :
+- **Automatically format the code (PEP 8, line breaks, etc.)**:
   ```bash
   uv run ruff format .
   ```
 
-## Architecture du package `python_backend`
+## `python_backend` package architecture
 ```
 python_backend/
-|- app/                      # Point d'entree CLI et configuration
-|- domain/                   # Modele metier (World, Species)
+|- app/                      # CLI entry point and configuration
+|- domain/                   # Business model (World, Species)
 |- infrastructure/
-|  |- http/                 # Serveur WebSocket
-|  |- persistence/          # Ecriture des journaux JSON
-|- scripts/                  # Utilitaires (ex. suppression des logs)
-|- simulation/               # Moteur de simulation modularise
-|- tests/                    # Emplacement pour les tests automatises
+|  |- http/                 # WebSocket server
+|  |- persistence/          # Writing JSON logs
+|- scripts/                  # Utilities (e.g. removing logs)
+|- simulation/               # Modularized simulation engine
+|- tests/                    # Location for automated tests
 ```
 
-Les modules principaux :
-- `simulation/engine.py` orchestre la boucle et s'appuie sur `simulation/animal.py`, `simulation/relationships.py`, `simulation/actions/*`, `simulation/action_executor.py` et `simulation/step_context.py`.
-- `domain/` porte les entites pures (aucune dependance sur l'infrastructure).
-- `infrastructure/persistence/log_writer.py` centralise l'ecriture des fichiers JSON lorsque l'option `write_logs` est activee.
+The main modules:
+- `simulation/engine.py` orchestrates the loop and relies on `simulation/animal.py`, `simulation/ai/` (decision.py, behavior.py, relationships.py), `simulation/actions/*` (grouping, predation, scavenging, territory), `simulation/action_executor.py` and `simulation/step_context.py`.
+- `domain/` holds the pure entities (no dependency on infrastructure): `world.py`, `species.py`, `animal_components.py`, `spatial_index.py`, `food_generation.py`, `water_generation.py`.
+- `app/species_catalog/store.py` centralizes loading/validation/persistence of the species catalog and user selections.
+- `infrastructure/persistence/log_writer.py` centralizes writing the JSON files when the `write_logs` option is enabled.
 
-Chaque execution journalisee genere un dossier logX/ contenant les fichiers principaux (`simulation.json`, `summary.json`) ainsi que quatre sous-dossiers (`animals/`, `groups/`, `species/`, `diets/`) offrant des historiques filtres par individu, groupe, espece ou regime alimentaire.
+Detailed reference for each module (classes, public functions, summary drawn from the docstrings): [REFERENCE.md](REFERENCE.md).
 
-## Dependances
-- **websockets >= 15.0.1** pour la communication temps reel.
+Each logged run generates a logX/ folder containing the main files (`simulation.json`, `summary.json`) as well as four subfolders (`animals/`, `groups/`, `species/`, `diets/`) providing histories filtered by individual, group, species, or diet.
 
-Ajouter un package :
+## Dependencies
+- **websockets >= 15.0.1** for real-time communication.
+
+Add a package:
 ```bash
 uv add <package_name>
 ```
 
-## Interface Godot
-Lancer le projet Godot contenu dans le dossier `godot_interface` pour consommer ce backend.
+## Godot Interface
+Run the Godot project located in the `godot_interface` folder to consume this backend.

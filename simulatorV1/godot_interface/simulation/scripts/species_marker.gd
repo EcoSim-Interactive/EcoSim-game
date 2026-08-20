@@ -1,4 +1,4 @@
-## Dessine un marqueur minimaliste pour representer une espece sur la carte et gere son interaction.
+## Draws a minimalist marker to represent a species on the map and handles its interaction.
 extends Node2D
 
 signal clicked(marker)
@@ -29,6 +29,7 @@ var clean_species_name: String = ""
 var _press_pos: Vector2 = Vector2.ZERO
 var _pressed_on_marker: bool = false
 
+## Initializes the tooltip (hidden by default) and extracts the species name from the node's name.
 func _ready() -> void:
 	tooltip_label.visible = false
 	if tooltip_label:
@@ -39,6 +40,7 @@ func _ready() -> void:
 	if tooltip_label:
 		tooltip_label.text = clean_species_name
 
+## Updates the represented animal's data (entry, position, id, name) and refreshes the tooltip.
 func update_data(p_entry: Dictionary, p_pos_data: Dictionary, p_id: String, p_clean_name: String) -> void:
 	species_data = p_entry.duplicate(true)
 	pos_data = p_pos_data.duplicate(true)
@@ -54,6 +56,7 @@ func update_data(p_entry: Dictionary, p_pos_data: Dictionary, p_id: String, p_cl
 	if tooltip_label:
 		tooltip_label.text = clean_species_name
 
+## Assembles and returns a complete dictionary of the animal's current data (identity, vitals, position).
 func get_full_data() -> Dictionary:
 	var result = species_data.duplicate(true)
 	result["id"] = species_id
@@ -69,21 +72,23 @@ func get_full_data() -> Dictionary:
 	result["position_world"] = global_position
 	return result
 
+## Changes the marker's selection state, adjusts its display order and forces a redraw.
 func set_selected(selected: bool) -> void:
 	if is_selected != selected:
 		is_selected = selected
 		z_index = 110 if is_selected else (100 if is_hovered else 5)
 		queue_redraw()
 
+## Draws the marker: selection reticle, sprite or base circle, vision/smell circles and status bars on hover.
 func _draw() -> void:
-	# Réticule de sélection lorsque l'animal est sélectionné
+	# Selection reticle when the animal is selected
 	if is_selected:
 		var sel_radius = max(radius, target_size.x / 2.0) + 7.0
-		# Halo extérieur
+		# Outer halo
 		draw_circle(Vector2.ZERO, sel_radius + 3.0, Color(0.06, 0.72, 0.51, 0.25))
-		# Anneau de sélection principal (Cyan / Émeraude éclatant)
+		# Main selection ring (bright cyan / emerald)
 		draw_arc(Vector2.ZERO, sel_radius, 0.0, TAU, 36, Color(0.1, 0.95, 0.65, 0.95), 2.5, true)
-		# 4 coins / réticules modernes
+		# 4 corners / modern reticles
 		var bracket_size = sel_radius + 4.0
 		var b_len = 5.0
 		draw_line(Vector2(-bracket_size, -bracket_size), Vector2(-bracket_size + b_len, -bracket_size), Color(1, 1, 1, 0.9), 2.0)
@@ -95,7 +100,7 @@ func _draw() -> void:
 		draw_line(Vector2(bracket_size, bracket_size), Vector2(bracket_size - b_len, bracket_size), Color(1, 1, 1, 0.9), 2.0)
 		draw_line(Vector2(bracket_size, bracket_size), Vector2(bracket_size, bracket_size - b_len), Color(1, 1, 1, 0.9), 2.0)
 
-	# Dessin du sprite ou cercle de base
+	# Draw the sprite or base circle
 	if icon:
 		var size = icon.get_size()
 		var scale_factor = min(target_size.x / size.x, target_size.y / size.y)
@@ -105,39 +110,42 @@ func _draw() -> void:
 	else:
 		draw_circle(Vector2.ZERO, radius, color)
 
-	# Affichage sur survol (Hover) ou sélection
+	# Display on hover or selection
 	if is_hovered or is_selected:
-		# Cercle de vision (Bleu vif)
+		# Vision circle (bright blue)
 		draw_arc(Vector2.ZERO, vision, 0.0, TAU, 64, Color(0.1, 0.55, 1.0, 0.7), 2.0, true)
-		# Cercle d'odeur (Vert vif)
+		# Smell circle (bright green)
 		draw_arc(Vector2.ZERO, smell_range, 0.0, TAU, 64, Color(0.2, 0.85, 0.3, 0.65), 2.0, true)
 
-		# Barres de statut au-dessus du marqueur
+		# Status bars above the marker
 		_draw_status_bars()
 
+## Draws the three status bars (vitality, thirst, hunger) above the marker.
 func _draw_status_bars() -> void:
 	var bar_w: float = 36.0
 	var bar_h: float = 4.0
 	var start_x: float = -bar_w / 2.0
 	var start_y: float = -16.0
 
-	# 1. Vitalité (Vert)
+	# 1. Vitality (green)
 	var vita_ratio: float = clamp(vitality / 100.0, 0.0, 1.0)
 	_draw_single_bar(Vector2(start_x, start_y - 12.0), bar_w, bar_h, vita_ratio, Color(0.2, 0.85, 0.3, 0.95))
 
-	# 2. Soif / Hydratation (Bleu)
+	# 2. Thirst / Hydration (blue)
 	var thirst_ratio: float = clamp((100.0 - thirst) / 100.0, 0.0, 1.0)
 	_draw_single_bar(Vector2(start_x, start_y - 6.0), bar_w, bar_h, thirst_ratio, Color(0.2, 0.6, 1.0, 0.95))
 
-	# 3. Faim / Satiété (Orange)
+	# 3. Hunger / Satiety (orange)
 	var hunger_ratio: float = clamp((100.0 - hunger) / 100.0, 0.0, 1.0)
 	_draw_single_bar(Vector2(start_x, start_y), bar_w, bar_h, hunger_ratio, Color(1.0, 0.6, 0.1, 0.95))
 
+## Draws a single status bar with a black background and a fill proportional to the ratio.
 func _draw_single_bar(pos: Vector2, width: float, height: float, ratio: float, fill_color: Color) -> void:
 	draw_rect(Rect2(pos, Vector2(width, height)), Color(0.0, 0.0, 0.0, 0.8))
 	var fill_w: float = max(0.0, (width - 2.0) * ratio)
 	draw_rect(Rect2(pos + Vector2(1.0, 1.0), Vector2(fill_w, height - 2.0)), fill_color)
 
+## Handles mouse hover (updating the tooltip and z-index) and click detection on the marker.
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		var local_mouse_pos = to_local(get_global_mouse_position())
@@ -177,6 +185,7 @@ func _input(event: InputEvent) -> void:
 				if dist_moved < 12.0 and distance <= hit_limit:
 					_on_marker_clicked()
 
+## Emits the click signal and notifies the parent to select this marker.
 func _on_marker_clicked() -> void:
 	emit_signal("clicked", self)
 	var parent = get_parent()

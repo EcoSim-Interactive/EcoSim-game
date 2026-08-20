@@ -1,7 +1,7 @@
-## Controle l'ecran d'accueil et l'affichage progressif des journaux de simulation.
+## Controls the home screen and the progressive display of simulation logs.
 extends Control
 
-# --- Références aux nodes ---
+# --- Node references ---
 @onready var export_button = $MainVBox/TopBar/Margin/HBox/ExportLogBtn
 @onready var open_logs_btn = $MainVBox/TopBar/Margin/HBox/OpenLogsBtn
 @onready var settings_btn = $MainVBox/TopBar/Margin/HBox/SettingsBtn
@@ -39,8 +39,8 @@ const BASE_SPEED_MS: float = 50.0
 @onready var action_log_label = get_node_or_null("MainVBox/MainHBox/RightSidebar/Margin/VBox/ActionLogPanel/ActionLogMargin/ActionLogLabel")
 @onready var death_log_label = $MainVBox/MainHBox/RightSidebar/Margin/VBox/DeathLogPanel/DeathLogMargin/DeathLogLabel
 
-# --- Variables principales ---
-var simulation_logs = []          # Données chargées depuis summary.json
+# --- Main variables ---
+var simulation_logs = []          # Data loaded from summary.json
 var current_step_data = {}
 var current_speed_text = "1x"
 var previous_alive_states = {}
@@ -49,7 +49,7 @@ var action_logs: Array = []
 var last_animal_actions: Dictionary = {}
 
 
-# --- Variables Audio & SFX ---
+# --- Audio & SFX variables ---
 const SETTINGS_FILE_PATH = "user://audio_settings.cfg"
 var sfx_volume: float = 0.25
 var is_sfx_muted: bool = false
@@ -61,6 +61,7 @@ var sfx_hover_stream: AudioStream = null
 var sfx_open_stream: AudioStream = null
 var sfx_close_stream: AudioStream = null
 
+## Loads the sound effects volume and mute state from the user's configuration file.
 func _load_audio_settings() -> void:
 	var config = ConfigFile.new()
 	var err = config.load(SETTINGS_FILE_PATH)
@@ -71,6 +72,7 @@ func _load_audio_settings() -> void:
 		sfx_volume = 0.25
 		is_sfx_muted = false
 
+## Saves the sound effects volume and mute state to the user's configuration file.
 func _save_audio_settings() -> void:
 	var config = ConfigFile.new()
 	config.load(SETTINGS_FILE_PATH)
@@ -86,6 +88,7 @@ func _save_audio_settings() -> void:
 var last_step_file_index := 0
 
 # --- Ready ---
+## Initializes the UI (buttons, speed options, display mode, world signal connections) and loads existing logs.
 func _ready():
 	_setup_settings_ui_and_audio()
 
@@ -185,11 +188,11 @@ func _ready():
 
 	if logs_folder == "":
 		if OS.has_feature("editor"):
-			# --- MODE DÉVELOPPEMENT (Éditeur Godot) ---
-			# On remonte de deux crans pour trouver le dossier python_backend
+			# --- DEVELOPMENT MODE (Godot Editor) ---
+			# Go up two levels to find the python_backend folder
 			logs_folder = ProjectSettings.globalize_path("res://../../python_backend/logs")
 		else:
-			# --- MODE BUILD (Jeu exporté .exe) ---
+			# --- BUILD MODE (exported .exe game) ---
 			var base_dir = OS.get_executable_path().get_base_dir()
 			logs_folder = base_dir.path_join("server/logs")
 
@@ -198,6 +201,7 @@ func _ready():
 
 var _was_connected := false
 
+## Updates the status, speed and zoom labels every frame, and handles the loading screen based on the server connection.
 func _process(_delta: float) -> void:
 	if world and "connected" in world:
 		if sim_status_label:
@@ -224,7 +228,7 @@ func _process(_delta: float) -> void:
 
 		if world.connected and not _was_connected:
 			_was_connected = true
-			# Le serveur vient de se connecter, on cache l'ecran d'attente s'il ne charge pas deja le monde
+			# The server just connected, hide the waiting screen unless it's already loading the world
 			if loading_overlay and loading_overlay.visible:
 				if loading_overlay.has_node("Label"):
 					var text = loading_overlay.get_node("Label").text
@@ -232,13 +236,14 @@ func _process(_delta: float) -> void:
 						loading_overlay.visible = false
 		elif not world.connected and _was_connected:
 			_was_connected = false
-			# Deconnexion detectee, on remet l'ecran d'attente
+			# Disconnection detected, show the waiting screen again
 			if loading_overlay:
 				if loading_overlay.has_node("Label"):
 					loading_overlay.get_node("Label").text = "En attente du serveur..."
 				loading_overlay.visible = true
 
-# --- Charger tous les logs existants ---
+# --- Load all existing logs ---
+## Iterates over the logs folder and loads the summary.json of each run subfolder.
 func load_all_logs():
 	if logs_folder == "":
 		push_warning("Le dossier de logs n'est pas défini")
@@ -267,12 +272,13 @@ func load_all_logs():
 		print("%d logs chargés depuis %s" % [simulation_logs.size(), logs_folder])
 
 
-# --- Charger le summary.json d'un sous-dossier ---
-# Le simulation.json complet n'est plus charge ici : ces fichiers peuvent
-# peser plusieurs Go (donnees par pas + animaux qui survivent longtemps),
-# et etaient parses en entier pour CHAQUE run passe au demarrage, bloquant
-# le lancement pendant plusieurs minutes. Le chargement complet d'un run se
-# fait desormais uniquement via l'import manuel explicite (FileDialog).
+# --- Load a subfolder's summary.json ---
+# The full simulation.json is no longer loaded here: these files can
+# weigh several GB (per-step data + long-living animals), and were being
+# fully parsed for EVERY past run at startup, blocking the app's launch
+# for several minutes. Fully loading a run is now only done via the
+# explicit manual import (FileDialog).
+## Loads the summary.json file present in a given run subfolder, if it exists.
 func load_summary_in_folder(folder_path: String):
 	var summary_path = "%s/summary.json" % folder_path
 	if FileAccess.file_exists(summary_path):
@@ -281,7 +287,8 @@ func load_summary_in_folder(folder_path: String):
 	else:
 		print("  Aucun summary.json trouvé dans:", folder_path)
 
-# --- Charger un fichier JSON individuel (summary.json) ---
+# --- Load an individual JSON file (summary.json) ---
+## Reads and parses a simulation JSON file, then appends each simulation step to the logs.
 func load_simulation_json(json_path: String):
 	var file = FileAccess.open(json_path, FileAccess.READ)
 	if file == null:
@@ -304,13 +311,15 @@ func load_simulation_json(json_path: String):
 	else:
 		push_warning("Format JSON inattendu dans: %s" % json_path)
 
-# --- Ajouter un step log ---
+# --- Add a step log ---
+## Appends a simulation step to the logs and updates the graphs.
 func add_step_log(step_data: Dictionary):
 	simulation_logs.append(step_data)
 	current_step_data = step_data
 	
 	_update_graphs(step_data)
 
+## Extracts a simulation step's species list, whether it is stored as an array or a dictionary.
 func _extract_species_list(step_data: Dictionary) -> Array:
 	if not step_data.has("species"):
 		return []
@@ -326,6 +335,7 @@ func _extract_species_list(step_data: Dictionary) -> Array:
 		return arr
 	return []
 
+## Retrieves an animal entry's vitality, looking into the "after"/"before" sub-dictionaries if needed.
 func _get_vitality(entry: Dictionary) -> float:
 	if entry.has("after") and typeof(entry["after"]) == TYPE_DICTIONARY:
 		return float(entry["after"].get("vitality", 0.0))
@@ -333,6 +343,7 @@ func _get_vitality(entry: Dictionary) -> float:
 		return float(entry["before"].get("vitality", 0.0))
 	return float(entry.get("vitality", 0.0))
 
+## Builds a unique identifier for an animal from its name and its animal_id (or its index otherwise).
 func _get_animal_unique_id(entry: Dictionary, index: int) -> String:
 	var base_name := String(entry.get("name", entry.get("display_name", "Inconnu")))
 	var animal_id = entry.get("animal_id")
@@ -340,6 +351,7 @@ func _get_animal_unique_id(entry: Dictionary, index: int) -> String:
 		return base_name + "_" + str(animal_id)
 	return base_name + "_" + str(index)
 
+## Determines whether an animal is alive by inspecting its "after"/"before" state or its vitality.
 func _is_alive(entry: Dictionary) -> bool:
 	if entry.has("after") and typeof(entry["after"]) == TYPE_DICTIONARY:
 		var after = entry["after"]
@@ -352,6 +364,7 @@ func _is_alive(entry: Dictionary) -> bool:
 		return float(entry["vitality"]) > 0.0
 	return true
 
+## Computes the current step's statistics (population, food, deaths, energy) and updates the graphs and info labels.
 func _update_graphs(step_data: Dictionary):
 	var pop = 0
 	var food = 0
@@ -441,6 +454,7 @@ func _update_graphs(step_data: Dictionary):
 
 
 
+## Formats a raw species name (replaces underscores, capitalizes each word).
 func _format_species_name(raw_name: String) -> String:
 	if raw_name.is_empty():
 		return raw_name
@@ -454,12 +468,14 @@ func _format_species_name(raw_name: String) -> String:
 			formatted_words.append(first_char + rest_chars)
 	return " ".join(formatted_words)
 
+## Returns the action log label, looking it up in the scene if the reference is no longer valid.
 func _get_action_log_label() -> RichTextLabel:
 	if action_log_label and is_instance_valid(action_log_label):
 		return action_log_label
 	action_log_label = get_node_or_null("MainVBox/MainHBox/RightSidebar/Margin/VBox/ActionLogPanel/ActionLogMargin/ActionLogLabel")
 	return action_log_label
 
+## Returns the death log label, looking it up in the scene if the reference is no longer valid.
 func _get_death_log_label() -> RichTextLabel:
 	if death_log_label and is_instance_valid(death_log_label):
 		return death_log_label
@@ -467,6 +483,7 @@ func _get_death_log_label() -> RichTextLabel:
 	return death_log_label
 
 
+## Determines an animal's cause of death and appends a formatted entry to the death log.
 func _add_death_log(entry: Dictionary, step_data: Dictionary):
 	var animal_name = String(entry.get("name", entry.get("display_name", "")))
 	var time_str = "--:--"
@@ -508,6 +525,7 @@ func _add_death_log(entry: Dictionary, step_data: Dictionary):
 	if target_label:
 		target_label.text = "\n\n".join(death_logs)
 
+## Iterates over the current step's living animals and appends to the action log those that changed since last time.
 func _update_action_log(step_data: Dictionary):
 	var target_label = _get_action_log_label()
 	if not target_label:
@@ -559,6 +577,7 @@ func _update_action_log(step_data: Dictionary):
 
 
 
+## Translates an animal's raw action/motivation (or its food event) into readable text with an emoji.
 func _format_action_text(action: String, motivation: String, entry: Dictionary = {}, food_evt: Variant = null) -> String:
 	if food_evt is Dictionary:
 		var evt_type = String(food_evt.get("type", "")).to_lower()
@@ -574,23 +593,23 @@ func _format_action_text(action: String, motivation: String, entry: Dictionary =
 	var act_lower = action.to_lower()
 	var mot_lower = motivation.to_lower()
 
-	# 1. Prédation / Attaque
+	# 1. Predation / Attack
 	if act_lower.contains("kill") or mot_lower.contains("tue"):
 		return "⚔️ A abattu une proie !"
 	elif act_lower.contains("hunt") or act_lower.contains("predat") or act_lower.contains("pack_attack") or mot_lower.contains("chasse"):
 		return "🐾 Traque et chasse une proie"
 
-	# 2. Fuite
+	# 2. Flee
 	elif act_lower.contains("flee") or mot_lower.contains("fuite") or mot_lower.contains("attaque"):
 		return "🏃 Fuit un prédateur !"
 
-	# 3. Boire / Soif
+	# 3. Drink / Thirst
 	elif act_lower.contains("drink"):
 		return "💧 Boit de l'eau à la rivière"
 	elif act_lower.contains("seek_water") or (act_lower.contains("water") and not act_lower.contains("explore")):
 		return "💧 Cherche un point d'eau"
 
-	# 4. Manger / Faim
+	# 4. Eat / Hunger
 	elif act_lower.contains("eat") or act_lower.contains("gorge") or act_lower.contains("consume"):
 		return "🌿 Mange de la nourriture"
 	elif act_lower.contains("seen_food") or act_lower.contains("move_to_food"):
@@ -598,15 +617,15 @@ func _format_action_text(action: String, motivation: String, entry: Dictionary =
 	elif act_lower.contains("seek_food"):
 		return "🌿 Cherche de la nourriture"
 
-	# 5. Repos / Sommeil
+	# 5. Rest / Sleep
 	elif act_lower.contains("rest") or act_lower.contains("sleep") or act_lower.contains("guard") or mot_lower.contains("repos") or mot_lower.contains("fatigue"):
 		return "😴 Se repose"
 
-	# 6. Groupe / Cohésion
+	# 6. Group / Cohesion
 	elif act_lower.contains("cohesion") or act_lower.contains("herd") or mot_lower.contains("groupe"):
 		return "🐄 Se déplace en groupe"
 
-	# 7. Exploration / Vadrouille
+	# 7. Exploration / Roaming
 	elif act_lower.contains("explore_for_food") or mot_lower.contains("faim"):
 		return "🌿 Cherche de la nourriture"
 	elif act_lower.contains("explore") or act_lower.contains("wander") or act_lower.contains("idle") or mot_lower.contains("exploration") or mot_lower.contains("errance"):
@@ -630,7 +649,8 @@ func _format_action_text(action: String, motivation: String, entry: Dictionary =
 
 	return "🌍 Vadrouille dans la savane"
 
-# --- Trouve le sous-dossier logN le plus récent (N le plus élevé) ---
+# --- Find the most recent logN subfolder (highest N) ---
+## Returns the path of the most recent logN subfolder (highest N).
 func _get_latest_log_dir() -> String:
 	if logs_folder == "":
 		return ""
@@ -659,7 +679,8 @@ func _get_latest_log_dir() -> String:
 
 	return best_path
 
-# --- Lit, pour chaque animal du dossier animals/, sa dernière action connue ---
+# --- Reads, for each animal in the animals/ folder, its last known action ---
+## Reads, for each animal in the animals/ folder, its last known action and motivation.
 func _load_last_actions(run_dir: String) -> Dictionary:
 	var result: Dictionary = {}
 	var animals_dir = "%s/animals" % run_dir
@@ -690,7 +711,8 @@ func _load_last_actions(run_dir: String) -> Dictionary:
 
 	return result
 
-# --- Générer le résumé TXT d'un run précis (summary.json du dernier dossier logN) ---
+# --- Generate the TXT summary of a specific run (summary.json of the latest logN folder) ---
+## Generates the text of a run's summary report (TXT) from the species list.
 func _generate_run_summary_text(species_list: Array, run_dir: String, run_label: String) -> String:
 	var summary_text = "=== ECOSIM SUMMARY REPORT ===\n"
 	summary_text += "Run exporté : %s\n" % run_label
@@ -764,7 +786,8 @@ func _generate_run_summary_text(species_list: Array, run_dir: String, run_label:
 	return summary_text
 
 
-# --- Exporter en TXT le dernier run (dernier dossier logN) ---
+# --- Export the latest run as TXT (latest logN folder) ---
+## Exports the latest simulation run's summary to a text file.
 func _on_export_log_pressed():
 	var latest_dir = _get_latest_log_dir()
 	if latest_dir == "":
@@ -800,7 +823,8 @@ func _on_export_log_pressed():
 
 	print("✓ Résumé du run %s exporté dans: %s" % [run_label, export_path])
 
-# --- Ouvrir le dossier du dernier run dans l'explorateur de fichiers ---
+# --- Open the latest run's folder in the file explorer ---
+## Opens the latest log run's folder in the file explorer.
 func _on_open_logs_folder_pressed():
 	var target_dir = _get_latest_log_dir()
 	if target_dir == "":
@@ -812,10 +836,12 @@ func _on_open_logs_folder_pressed():
 
 	OS.shell_open(target_dir)
 
-# --- Fonctions utilitaires ---
+# --- Utility functions ---
+## Records a new simulation step received from the server.
 func log_simulation_step(step_data: Dictionary):
 	add_step_log(step_data)
 
+## Resets all displayed logs, journals and graphs.
 func clear_logs():
 	simulation_logs.clear()
 	previous_alive_states.clear()
@@ -837,13 +863,15 @@ func clear_logs():
 	if species_card:
 		species_card.visible = false
 
+## Closes the settings panel when the cancel key is pressed.
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		if settings_panel and settings_panel.visible:
 			_close_settings_panel()
 			get_viewport().set_input_as_handled()
 
-# --- Gestion du Header & Paramètres ---
+# --- Header & Settings management ---
+## Opens or closes the settings panel based on its current state.
 func _on_settings_pressed():
 	if settings_panel:
 		if settings_panel.visible:
@@ -851,28 +879,33 @@ func _on_settings_pressed():
 		else:
 			_open_settings_panel()
 
+## Shows the settings panel and plays the opening sound.
 func _open_settings_panel():
 	if settings_panel:
 		settings_panel.visible = true
 		play_open_close_sfx(sfx_open_stream)
 
+## Hides the settings panel and plays the closing sound.
 func _close_settings_panel():
 	if settings_panel and settings_panel.visible:
 		settings_panel.visible = false
 		play_open_close_sfx(sfx_close_stream)
 
+## Plays a UI sound effect if sound is not muted.
 func play_ui_sfx(stream: AudioStream):
 	if is_sfx_muted or not stream or not sfx_player_ui:
 		return
 	sfx_player_ui.stream = stream
 	sfx_player_ui.play()
 
+## Plays an opening/closing sound effect if sound is not muted.
 func play_open_close_sfx(stream: AudioStream):
 	if is_sfx_muted or not stream or not sfx_player_open_close:
 		return
 	sfx_player_open_close.stream = stream
 	sfx_player_open_close.play()
 
+## Recursively connects click and hover sounds to all buttons in the node tree.
 func _bind_ui_sounds(node: Node):
 	if not node or not (node is Control):
 		return
@@ -886,12 +919,15 @@ func _bind_ui_sounds(node: Node):
 	for child in node.get_children():
 		_bind_ui_sounds(child)
 
+## Plays the buttons' generic click sound.
 func _on_generic_button_pressed():
 	play_ui_sfx(sfx_click_stream)
 
+## Plays the buttons' generic hover sound.
 func _on_generic_button_hover():
 	play_ui_sfx(sfx_hover_stream)
 
+## Applies a custom style (background, border, rounded corners) to a button's normal/hover/pressed states.
 func _apply_custom_style_to_button(btn: Button, border_col: Color = Color(0.16, 0.65, 0.58, 0.8)):
 	if not btn or not is_instance_valid(btn):
 		return
@@ -931,6 +967,7 @@ func _apply_custom_style_to_button(btn: Button, border_col: Color = Color(0.16, 
 	sb_press.content_margin_bottom = 6
 	btn.add_theme_stylebox_override("pressed", sb_press)
 
+## Recursively iterates over the node tree and applies a custom style to all buttons based on their role.
 func _style_all_ui_buttons(node: Node):
 	if not node or not (node is Control) or node is SubViewportContainer:
 		return
@@ -945,16 +982,17 @@ func _style_all_ui_buttons(node: Node):
 	for child in node.get_children():
 		_style_all_ui_buttons(child)
 
+## Configures the settings UI (button style, panel, audio controls) and initializes the sound players.
 func _setup_settings_ui_and_audio():
 	_load_audio_settings()
 
-	# 1. Styliser tous les boutons UI avec le thème sombre + bordures réactives
+	# 1. Style all UI buttons with the dark theme + reactive borders
 	_style_all_ui_buttons(self)
 	if settings_btn:
 		settings_btn.text = "⚙️ Paramètres"
 
 
-	# 2. Styliser le SettingsPanel & Ajuster sa taille/marges
+	# 2. Style the SettingsPanel & adjust its size/margins
 	if settings_panel:
 		settings_panel.z_index = 100
 		settings_panel.offset_left = -270.0
@@ -971,7 +1009,7 @@ func _setup_settings_ui_and_audio():
 		sb_panel.shadow_size = 20
 		settings_panel.add_theme_stylebox_override("panel", sb_panel)
 
-		# Bouton Croix '✕' de fermeture en haut à droite
+		# Close 'X' button in the top right corner
 		var close_btn = settings_panel.get_node_or_null("CloseBtn")
 		if not close_btn:
 			close_btn = Button.new()
@@ -1023,7 +1061,7 @@ func _setup_settings_ui_and_audio():
 		if not close_btn.is_connected("pressed", Callable(self, "_close_settings_panel")):
 			close_btn.pressed.connect(_close_settings_panel)
 
-		# Réorganisation et réduction des marges du VBoxContainer
+		# Reorganize and reduce the VBoxContainer's margins
 		var vbox = settings_panel.get_node_or_null("VBoxContainer")
 		if vbox:
 			vbox.offset_left = 28.0
@@ -1032,19 +1070,19 @@ func _setup_settings_ui_and_audio():
 			vbox.offset_bottom = -24.0
 			vbox.add_theme_constant_override("separation", 14)
 
-			# Redimensionner le Label existant "Mode d'affichage"
+			# Resize the existing "Display mode" Label
 			var display_label = vbox.get_node_or_null("Label")
 			if display_label:
 				display_label.text = "🖥️ Mode d'affichage"
 				display_label.add_theme_font_size_override("font_size", 20)
 				display_label.add_theme_color_override("font_color", Color(0.2, 0.8, 0.7, 1.0))
 
-			# Redimensionner l'OptionButton existant
+			# Resize the existing OptionButton
 			if mode_option:
 				mode_option.custom_minimum_size = Vector2(0, 44)
 				mode_option.add_theme_font_size_override("font_size", 16)
 
-			# Conteneur Audio
+			# Audio container
 			if not vbox.has_node("AudioContainer"):
 				var audio_box = VBoxContainer.new()
 				audio_box.name = "AudioContainer"
@@ -1117,7 +1155,7 @@ func _setup_settings_ui_and_audio():
 
 				test_btn.pressed.connect(func(): play_ui_sfx(sfx_click_stream))
 
-	# 3. Initialiser les joueurs AudioStreamPlayer
+	# 3. Initialize the AudioStreamPlayer players
 	var init_db = -80.0 if is_sfx_muted else (linear_to_db(sfx_volume) - 10.0 if sfx_volume > 0.001 else -80.0)
 
 	sfx_player_ui = AudioStreamPlayer.new()
@@ -1131,7 +1169,7 @@ func _setup_settings_ui_and_audio():
 	add_child(sfx_player_open_close)
 
 
-	# 4. Charger les sons si disponibles
+	# 4. Load the sounds if available
 	if ResourceLoader.exists("res://audio/sfx_click.wav"):
 		sfx_click_stream = load("res://audio/sfx_click.wav")
 	if ResourceLoader.exists("res://audio/sfx_hover.wav"):
@@ -1145,16 +1183,20 @@ func _setup_settings_ui_and_audio():
 
 
 
+## Opens the world configuration modal window.
 func _on_world_config_pressed():
 	if world_configurator and world_configurator.has_method("open_modal"):
 		world_configurator.open_modal()
 
+## Processes the world configuration once it's ready (not implemented).
 func _on_world_config_ready(config):
 	pass # Handle logic when world config is ready
 
+## Quits the application.
 func _on_quit_pressed():
 	get_tree().quit()
 
+## Changes the window's display mode (fullscreen, windowed, maximized) based on the selected option.
 func _on_mode_selected(index: int):
 	var id = mode_option.get_item_id(index)
 	match id:
@@ -1172,6 +1214,7 @@ func _on_mode_selected(index: int):
 		2:
 			DisplayServer.window_set_mode(DisplayServer.WINDOW_MODE_MAXIMIZED)
 
+## Resets the logs and shows the loading screen while the world is being generated.
 func _on_world_loading():
 	clear_logs()
 	set_speed_multiplier(1.0)
@@ -1180,13 +1223,15 @@ func _on_world_loading():
 			loading_overlay.get_node("Label").text = "Génération du monde en cours..."
 		loading_overlay.visible = true
 
+## Hides the loading screen once the world is loaded, unless a simulation computation is still in progress.
 func _on_world_loaded():
 	if world and "precompute_pending" in world and world.precompute_pending:
-		# La simulation est deja en train d'etre generee derriere, on ne cache pas l'overlay !
+		# The simulation is already being generated in the background, don't hide the overlay!
 		return
 	if loading_overlay:
 		loading_overlay.visible = false
 
+## Shows the loading screen while the simulation is being computed.
 func _on_simulation_computing():
 	set_speed_multiplier(1.0)
 	if loading_overlay:
@@ -1194,19 +1239,23 @@ func _on_simulation_computing():
 			loading_overlay.get_node("Label").text = "Génération de la simulation en cours..."
 		loading_overlay.visible = true
 
+## Hides the loading screen once the simulation computation is finished.
 func _on_simulation_computed():
 	if loading_overlay:
 		loading_overlay.visible = false
 
-# --- Gestion du Zoom ---
+# --- Zoom management ---
+## Performs a zoom in on the camera.
 func _on_zoom_in_pressed():
 	if camera and camera.has_method("zoom_in"):
 		camera.zoom_in()
 
+## Performs a zoom out on the camera.
 func _on_zoom_out_pressed():
 	if camera and camera.has_method("zoom_out"):
 		camera.zoom_out()
 
+## Applies a speed multiplier to the simulation and updates the speed text and the associated custom field.
 func set_speed_multiplier(multiplier: float, update_spinbox: bool = true) -> void:
 	var clamped_mult: float = clamp(multiplier, 0.1, 5.0)
 	var delay_ms: float = max(1.0, BASE_SPEED_MS / clamped_mult)
@@ -1234,19 +1283,23 @@ func set_speed_multiplier(multiplier: float, update_spinbox: bool = true) -> voi
 		else:
 			speed_custom_spin.value = clamped_mult
 
-# --- Gestion de la sélection d'espèce ---
+# --- Species selection management ---
+## Shows the selected species' information card.
 func _on_species_selected(data: Dictionary) -> void:
 	if species_card and species_card.has_method("display_species"):
 		species_card.display_species(data)
 
+## Hides the species' information card.
 func _on_species_deselected() -> void:
 	if species_card:
 		species_card.visible = false
 
+## Deselects the species in the world when the card is closed.
 func _on_species_card_closed() -> void:
 	if world and world.has_method("deselect_species"):
 		world.deselect_species()
 
+## Centers the camera on the selected species' target position.
 func _on_species_card_center(target_pos: Vector2) -> void:
 	if camera and camera.has_method("center_on_target"):
 		camera.center_on_target(target_pos)

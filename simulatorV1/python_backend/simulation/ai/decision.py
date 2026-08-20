@@ -140,6 +140,19 @@ def process_species(
     def record(
         action: str, motivation: str, *, resolve_food: bool = False
     ) -> None:
+        """Records the chosen action/motivation onto the status payload.
+
+        Marks the animal as resting for pack-guard actions, and when
+        resolve_food is set, resolves food consumption and merges
+        its action suffix / food event into the status and the
+        enclosing food_result.
+
+        Args:
+            action (str): Action identifier to store.
+            motivation (str): Human-readable motivation string.
+            resolve_food (bool): Whether to also resolve a food
+                consumption for this action.
+        """
         nonlocal food_result
         status["action"] = action
         status["motivation"] = motivation

@@ -1,3 +1,4 @@
+## Displays a thumbnail of the world's terrain and allows picking a position by clicking on it.
 extends Control
 
 signal position_selected(position: Vector2)
@@ -13,27 +14,32 @@ var sample_step_y: int = 1
 var sample_columns: int = 1
 var sample_rows: int = 1
 
+## Enables click reception and initializes the world reference on startup.
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_refresh_world_reference()
 	queue_redraw()
 
+## Sets the world node to preview and reloads the sampled terrain.
 func set_world_node(node: Node) -> void:
 	world_node = node
 	_refresh_world_reference()
 	refresh_from_world()
 	queue_redraw()
 
+## Sets the world node via a NodePath.
 func set_world_path(path: NodePath) -> void:
 	world_node = get_node_or_null(path)
 	_refresh_world_reference()
 	queue_redraw()
 
+## Sets the world dimensions represented by the thumbnail.
 func set_world_size(width: float, height: float) -> void:
 	world_width = max(1.0, width)
 	world_height = max(1.0, height)
 	queue_redraw()
 
+## Sets the marker position, clamped to the world's bounds.
 func set_marker_position(position_value: Vector2) -> void:
 	marker_position = Vector2(
 		clamp(position_value.x, 0.0, world_width),
@@ -41,6 +47,7 @@ func set_marker_position(position_value: Vector2) -> void:
 	)
 	queue_redraw()
 
+## Samples the world's terrain layer to rebuild the displayed cell grid.
 func refresh_from_world() -> void:
 	_refresh_world_reference()
 	terrain_cells.clear()
@@ -66,11 +73,13 @@ func refresh_from_world() -> void:
 					terrain_cells.append({"cell": Vector2i(cx, cy), "source_id": source_id})
 	queue_redraw()
 
+## Resets the world reference if the current node is no longer valid.
 func _refresh_world_reference() -> void:
 	if world_node != null and is_instance_valid(world_node):
 		return
 	world_node = null
 
+## Converts a left click into a world position, moves the marker and emits the selection signal.
 func _gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		var selected = _screen_to_world((event as InputEventMouseButton).position)
@@ -78,6 +87,7 @@ func _gui_input(event: InputEvent) -> void:
 		emit_signal("position_selected", marker_position)
 		queue_redraw()
 
+## Draws the background, grid, terrain, marker and border of the thumbnail.
 func _draw() -> void:
 	var preview_size = size
 	if preview_size.x <= 1.0 or preview_size.y <= 1.0:
@@ -91,6 +101,7 @@ func _draw() -> void:
 	_draw_marker(preview_size)
 	_draw_border(preview_size)
 
+## Draws a 10x10 reference grid over the thumbnail.
 func _draw_grid(preview_size: Vector2) -> void:
 	var columns := 10
 	var rows := 10
@@ -102,6 +113,7 @@ func _draw_grid(preview_size: Vector2) -> void:
 		var y = preview_size.y * float(row) / float(rows)
 		draw_line(Vector2(0, y), Vector2(preview_size.x, y), grid_color, 1.0)
 
+## Draws each sampled terrain cell with a color based on its type.
 func _draw_terrain(preview_size: Vector2) -> void:
 	if terrain_cells.is_empty():
 		return
@@ -121,6 +133,7 @@ func _draw_terrain(preview_size: Vector2) -> void:
 		var top_left = Vector2(float(cell.x) * cell_width, float(cell.y) * cell_height)
 		draw_rect(Rect2(top_left, Vector2(cell_width + 0.2, cell_height + 0.2)), cell_color, true)
 
+## Draws the selected position marker on the thumbnail.
 func _draw_marker(preview_size: Vector2) -> void:
 	var marker_size = Vector2(10, 10)
 	var point = _world_to_screen(marker_position, preview_size)
@@ -128,9 +141,11 @@ func _draw_marker(preview_size: Vector2) -> void:
 	draw_circle(point, 6.0, Color(1.0, 0.20, 0.20, 0.95))
 	draw_rect(Rect2(top_left, marker_size), Color(1.0, 1.0, 1.0, 0.30), false, 1.5)
 
+## Draws the thumbnail's outline.
 func _draw_border(preview_size: Vector2) -> void:
 	draw_rect(Rect2(Vector2.ZERO, preview_size), Color(1.0, 1.0, 1.0, 0.25), false, 2.0)
 
+## Converts a screen position within the thumbnail into real world coordinates.
 func _screen_to_world(screen_position: Vector2) -> Vector2:
 	var preview_size = size
 	if preview_size.x <= 1.0 or preview_size.y <= 1.0:
@@ -142,6 +157,7 @@ func _screen_to_world(screen_position: Vector2) -> Vector2:
 		clamp((screen_position.y / preview_size.y) * world_height, 0.0, world_height)
 	)
 
+## Converts a world position into screen coordinates within the thumbnail.
 func _world_to_screen(position_value: Vector2, preview_size: Vector2) -> Vector2:
 	return Vector2(
 		clamp(position_value.x, 0.0, world_width) / world_width * preview_size.x,

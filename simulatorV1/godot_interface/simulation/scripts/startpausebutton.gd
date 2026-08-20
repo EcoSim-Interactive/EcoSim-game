@@ -1,9 +1,10 @@
-## Synchronise l'etat du bouton avec le lancement ou la pause de la simulation.
+## Synchronizes the button state with the simulation's start or pause.
 extends Button
 
 @export var world_path: NodePath
 var world: Node = null
 
+## Retrieves the reference to the world and initializes the button's visual state on startup.
 func _ready() -> void:
 	toggle_mode = true
 	if world_path != NodePath():
@@ -16,6 +17,7 @@ func _ready() -> void:
 	else:
 		_update_visuals(false)
 
+## Resynchronizes the button's pressed/text/disabled state with the world's actual state every frame.
 func _process(_delta: float) -> void:
 	if world == null or not world.has_method("is_running"):
 		return
@@ -32,6 +34,7 @@ func _process(_delta: float) -> void:
 		set_pressed_no_signal(actually_running)
 		_update_visuals(actually_running)
 
+## Starts or pauses the simulation depending on the button state, then updates the display.
 func _on_toggled(pressed_state: bool) -> void:
 	if world == null:
 		return
@@ -45,6 +48,7 @@ func _on_toggled(pressed_state: bool) -> void:
 	set_pressed_no_signal(state)
 	_update_visuals(state)
 
+## Applies the button's style and text (Start/Pause/disabled) based on the simulation state.
 func _update_visuals(is_playing: bool):
 	var normal_style = StyleBoxFlat.new()
 	var hover_style = StyleBoxFlat.new()

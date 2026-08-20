@@ -143,6 +143,23 @@ def decide_idle_action(animal: "Animal") -> str:
 def handle_thirst(
     animal: "Animal", world: Any, log: LogFn
 ) -> Tuple[bool, str, str]:
+    """Drives an animal towards water and drinks when possible.
+
+    Tries, in order: drinking immediately if already at the shore;
+    continuing towards a remembered water target; moving towards
+    water seen or smelled nearby; and finally falling back to a
+    group/pack-shared water memory, personal memory, or the nearest
+    known source on the map.
+
+    Args:
+        animal (Animal): Thirsty animal deciding its action.
+        world (Any): World providing water sources and helpers.
+        log (LogFn): Callback used to record a human-readable
+            narration of the chosen action.
+
+    Returns:
+        Tuple[bool, str, str]: (acted, action, motivation).
+    """
     if animal.try_drink(world):
         animal.clear_water_target()
         log(f"{animal.name} a bu des qu'il a atteint la rive.")
@@ -274,6 +291,16 @@ def handle_thirst(
 
 
 def handle_fatigue(animal: "Animal", log: LogFn) -> Tuple[bool, str, str]:
+    """Forces an exhausted animal to rest for this step.
+
+    Args:
+        animal (Animal): Animal that must rest.
+        log (LogFn): Callback used to record the action.
+
+    Returns:
+        Tuple[bool, str, str]: (acted, action, motivation), always
+            (True, "resting", ...).
+    """
     animal.resting = True
     animal.rest_steps += 1
     log(f"{animal.name} se repose.")
@@ -281,6 +308,17 @@ def handle_fatigue(animal: "Animal", log: LogFn) -> Tuple[bool, str, str]:
 
 
 def handle_cycle_rest(animal: "Animal", log: LogFn) -> Tuple[bool, str, str]:
+    """Puts an animal to rest per its day/night activity cycle.
+
+    Args:
+        animal (Animal): Animal resting due to its diurnal/nocturnal
+            cycle.
+        log (LogFn): Callback used to record the action.
+
+    Returns:
+        Tuple[bool, str, str]: (acted, action, motivation), always
+            (True, "resting_cycle", ...).
+    """
     animal.resting = True
     animal.rest_steps += 1
     log(f"{animal.name} dort selon son rythme naturel.")
@@ -290,6 +328,22 @@ def handle_cycle_rest(animal: "Animal", log: LogFn) -> Tuple[bool, str, str]:
 def handle_hunger(
     animal: "Animal", world: Any, log: LogFn
 ) -> Tuple[bool, str, str]:
+    """Drives a hungry animal towards food it can perceive or recall.
+
+    Tries, in order: food currently in sight, food detected by
+    smell, and a remembered food location, moving towards whichever
+    is found first and resetting the memory/rest counters
+    accordingly.
+
+    Args:
+        animal (Animal): Hungry animal deciding its action.
+        world (Any): World providing food sources and helpers.
+        log (LogFn): Callback used to record the chosen action.
+
+    Returns:
+        Tuple[bool, str, str]: (acted, action, motivation), or
+            (False, "", "") if no food lead is available.
+    """
     food = (
         world.get_nearest_food(
             animal.x, animal.y, diet=animal.diet, entity=animal
@@ -346,6 +400,20 @@ def handle_hunger(
 
 
 def handle_idle(animal: "Animal", world: Any, log: LogFn) -> Tuple[str, str]:
+    """Chooses an idle-time action when no urgent need was detected.
+
+    Delegates to decide_idle_action() for a rest-vs-wander choice
+    influenced by temperament, falling back to reporting a blocked
+    wander when random_move() cannot find a free tile.
+
+    Args:
+        animal (Animal): Animal with no pending urgent need.
+        world (Any): World used for movement checks.
+        log (LogFn): Callback used to record the chosen action.
+
+    Returns:
+        Tuple[str, str]: (action, motivation).
+    """
     choice = decide_idle_action(animal)
     if choice == "rest":
         animal.resting = True

@@ -1,91 +1,93 @@
-# Documentation Technique
+# Technical Documentation
 
-## Objectif
-Ce dépôt contient un simulateur d'écosystème pré-calculé (backend Python) et une interface Godot pour la visualisation et le contrôle en temps réel.
+## Objective
+This repository contains a pre-calculated ecosystem simulator (Python backend) and a Godot interface for real-time visualization and control.
 
-## Arborescence essentielle
-- `simulatorV1/python_backend` : moteur de simulation, API WebSocket et utilitaires.
-- `simulatorV1/godot_interface/simulation` : projet Godot (scènes + scripts client WebSocket).
-- `simulatorV1/python_backend/logs` : sorties JSON (`simulationN.json`, `summaryN.json`).
+## Essential directory structure
+- `simulatorV1/python_backend`: simulation engine, WebSocket API and utilities.
+- `simulatorV1/godot_interface/simulation`: Godot project (scenes + WebSocket client scripts).
+- `simulatorV1/python_backend/logs`: JSON outputs (`simulationN.json`, `summaryN.json`).
 
-## Architecture générale
+## General architecture
 
-- Backend Python
-  - `app/` : points d'entrée CLI et configuration (`SimulationSettings`).
-  - `domain/` : modèles du domaine (monde, espèces, ressources).
-  - `simulation/` : moteur (`engine.py`), exécution d'actions, génération d'étapes et contexte de step.
-  - `infrastructure/http` : serveur WebSocket (gestion des commandes client, streaming des steps).
-  - `infrastructure/persistence` : écriture des logs et gestion des fichiers de run.
+- Python backend
+  - `app/`: CLI entry points, configuration (`SimulationSettings`), world loading (`world_loader.py`) and species catalog (`species_catalog/`).
+  - `domain/`: domain models (`World`, `Species`), procedural resource generation (`food_generation.py`, `water_generation.py`), spatial index (`spatial_index.py`).
+  - `simulation/`: engine (`engine.py`), AI (`ai/decision.py`, `ai/behavior.py`, `ai/relationships.py`), social/territorial behaviors (`actions/`), action execution and step context.
+  - `infrastructure/http`: WebSocket server (client command handling, step streaming).
+  - `infrastructure/persistence`: log writing and run file management.
 
-- Frontend Godot
-  - `socket_client.gd` envoie `get_world`, `compute`, `start`, `pause`, `resume`, `stop` et reçoit les payloads `step`, `status`, `summary`.
+  Detailed module-by-module reference (derived from the code's docstrings):
+  [simulatorV1/python_backend/REFERENCE.md](../simulatorV1/python_backend/REFERENCE.md).
 
-## Flux runtime (résumé)
-1. Client envoie `get_world` → backend renvoie géométrie + ressources.
-2. Client demande `compute` → backend exécute `SimulationEngine.generate_all_steps()` (pré-calcul en background) et produit les fichiers de log.
-3. Client envoie `start` → backend stream un step toutes les `tick_ms` en respectant `pause`/`stop`.
-4. À la fin, backend émet une trame `summary`.
+- Godot frontend
+  - `socket_client.gd` sends `get_world`, `compute`, `start`, `pause`, `resume`, `stop` and receives the `step`, `status`, `summary` payloads.
 
-## API WebSocket (commandes clés)
-- `get_world` : construction et renvoi du monde initial.
-- `compute` : démarre la pré-calcul des étapes (task en arrière-plan).
-- `start` / `pause` / `resume` / `stop` : contrôle du streaming des steps.
+## Runtime flow (summary)
+1. Client sends `get_world` -> backend returns geometry + resources.
+2. Client requests `compute` -> backend runs `SimulationEngine.generate_all_steps()` (background pre-calculation) and produces the log files.
+3. Client sends `start` -> backend streams one step every `tick_ms`, honoring `pause`/`stop`.
+4. At the end, the backend emits a `summary` frame.
 
-## Données générées
-- `logs/simulationN.json` : objet avec `steps` (liste d'étapes) et `summary` (agrégé).
-- `logs/summaryN.json` : résumé de course pour consultation rapide.
+## WebSocket API (key commands)
+- `get_world`: builds and returns the initial world.
+- `compute`: starts pre-calculating the steps (background task).
+- `start` / `pause` / `resume` / `stop`: controls step streaming.
 
-## Configuration et paramètres
-- `app/config.py` contient `SimulationSettings` (nombre d'étapes, tick, host/port, chemins logs, `verbose`).
-- `app/world_config.json` et les fichiers dans `app/species/` définissent les paramètres du monde et des espèces.
+## Generated data
+- `logs/simulationN.json`: object with `steps` (list of steps) and `summary` (aggregated).
+- `logs/summaryN.json`: run summary for quick review.
 
-## Prérequis
+## Configuration and settings
+- `app/config.py` contains `SimulationSettings` (number of steps, tick, host/port, log paths, `verbose`).
+- `app/world_config.json` and the files under `app/species/` define the world and species parameters.
+
+## Requirements
 - Python >= 3.12
-- UV (Astral) — outil de gestion d'env et d'exécution (usage documenté dans `simulatorV1/python_backend/README.md`).
-- `websockets >= 15.0.1` pour la communication WebSocket.
+- UV (Astral) — environment management and execution tool (usage documented in `simulatorV1/python_backend/README.md`).
+- `websockets >= 15.0.1` for WebSocket communication.
 
-## Exécution locale (avec `uv` — recommandé)
+## Running locally (with `uv` — recommended)
 
-1. Verrouiller puis synchroniser les dépendances via `uv` :
+1. Lock then sync the dependencies via `uv`:
 
 ```powershell
 uv lock
 uv sync
 ```
 
-2. Ajouter une dépendance (ex. websockets) :
+2. Add a dependency (e.g. websockets):
 
 ```powershell
 uv add websockets
 ```
 
-3. Lancer le serveur WebSocket :
+3. Start the WebSocket server:
 
 ```powershell
-# depuis simulatorV1/python_backend
+# from simulatorV1/python_backend
 uv run server.py
 ```
 
-4. Lancer la simulation CLI hors-ligne :
+4. Run the offline CLI simulation:
 
 ```powershell
 uv run app/main.py
 ```
 
-Remarque : les commandes `uv run` correspondent aux instructions présentes dans `simulatorV1/python_backend/README.md`.
+Note: the `uv run` commands match the instructions in `simulatorV1/python_backend/README.md`.
 
-## Débogage et logs
-- Le backend configure le logger global en DEBUG; l'émission de logs détaillés de simulation est contrôlée par `SimulationSettings.verbose`.
-- Pour nettoyer les logs :
+## Debugging and logs
+- The backend configures the global logger at DEBUG; detailed simulation log output is controlled by `SimulationSettings.verbose`.
+- To clean up the logs:
 
 ```powershell
 python -m simulatorV1.python_backend.scripts.clear_logs
 ```
 
-## Conseils de développement
-- Respectez la séparation `domain` / `simulation` / `infrastructure` pour faciliter les tests unitaires.
-- Ajouter des tests ciblés pour les règles dans `simulation/` (déplacements, consommation de ressources).
+## Development tips
+- Respect the `domain` / `simulation` / `infrastructure` separation to ease unit testing.
+- Add targeted tests for the rules in `simulation/` (movement, resource consumption).
 
-## Ressources utiles
-- Fichiers importants : [simulatorV1/python_backend/README.md](simulatorV1/python_backend/README.md), [simulatorV1/python_backend/main.py](simulatorV1/python_backend/main.py), [simulatorV1/python_backend/server.py](simulatorV1/python_backend/server.py), [simulatorV1/godot_interface/simulation/scripts/socket_client.gd](simulatorV1/godot_interface/simulation/scripts/socket_client.gd)
-
+## Useful resources
+- Important files: [simulatorV1/python_backend/README.md](simulatorV1/python_backend/README.md), [simulatorV1/python_backend/REFERENCE.md](simulatorV1/python_backend/REFERENCE.md), [simulatorV1/python_backend/main.py](simulatorV1/python_backend/main.py), [simulatorV1/python_backend/server.py](simulatorV1/python_backend/server.py), [simulatorV1/godot_interface/simulation/scripts/socket_client.gd](simulatorV1/godot_interface/simulation/scripts/socket_client.gd)

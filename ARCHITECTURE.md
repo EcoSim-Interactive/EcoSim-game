@@ -28,18 +28,29 @@ simulatorV1/python_backend
 ### `app`
 - `app/config.py` defines `SimulationSettings` (steps, tick, host/port, log paths, `verbose`).
 - `app/main.py` is a CLI that instantiates a default world, runs the simulation with `SimulationEngine` and logs the JSON summary.
+- `app/world_loader.py` builds a `World` and its initial `Animal` population from `app/world_config.json` and species presets, with sane fallbacks when a config file is missing or partial.
+- `app/species_catalog/store.py` (`SpeciesCatalogStore`) owns the species catalog and the user's population selection: loading/validating the catalog, sanitizing a selection against it, and persisting it to disk. `app/species_store.py` re-exports the same API for backward compatibility.
 
 ### `domain`
-- `domain/world.py` builds the map (size, minutes per step) and stores food/water sources.
-- `domain/species.py` models each creature (position, senses, vital needs, behaviour helpers like move, rest, eat, drink).
+- `domain/world.py` builds the map (size, minutes per step) and stores food/water sources, including proximity queries (`get_nearest_food`, `get_nearest_water`, `find_shore_tile`) and tile-walkability rules (`can_entity_enter`, `is_water_at`).
+- `domain/species.py` models each creature (position, senses, vital needs, behaviour helpers like move, rest, eat, drink) via the abstract `Species` base class.
+- `domain/animal_components.py` isolates aging (`AgeComponent`) and metabolism/carcass-value logic (`MetabolismComponent`) from the entity itself.
+- `domain/spatial_index.py` provides a bucketed 2D grid (`SpatialIndex`) for fast nearest-neighbour queries used by perception and predation.
+- `domain/food_generation.py` and `domain/water_generation.py` hold the procedural generators (rivers, lakes, oases, stagnant pools, food spawns) used when building a world from scratch.
+- `domain/constants.py` centralises the tunable rates/thresholds (hunger, thirst, fatigue, vitality) shared across domain and simulation.
 
 ### `simulation`
 - `simulation/engine.py` orchestrates each step and now caches the full run:
   - `generate_all_steps()` runs the timeline once, keeps it in memory and writes `simulationN.json` plus `summaryN.json` when logging is enabled.
   - `save_summary()` exposes an aggregate snapshot at the end of a run.
-- `behaviors.py` and `action_executor.py` contain the decision rules (thirst, hunger, fatigue, idle) and post-action resolution (check if food was eaten).
-- `step_context.py` builds per-step payloads (`before`/`after` state, time metadata) and the final summary payload.
-- `event_log.py` proxies verbosity through Python's `logging` module so global settings drive all diagnostics.
+- `simulation/animal.py` defines `Animal`, the concrete `Species` specialization carrying AI-facing state (group/pack ids, social and water memory, body profile) and delegates decision-making to `simulation/ai/`.
+- `simulation/ai/decision.py` runs the per-tick decision tree (`process_species`); `simulation/ai/behavior.py` implements the elementary behaviours (thirst, hunger, fatigue, cycle rest, idle); `simulation/ai/relationships.py` applies social/pack behaviours before generic survival routines (`simulation/relationships.py` at the package root is a thin backward-compatible wrapper around it).
+- `simulation/actions/` holds the higher-level social/territorial behaviours: `grouping.py` (group cohesion), `predation.py` (cooperative hunting and carcass sharing), `scavenging.py` (opportunistic scavenging), `territory.py` (territorial bounds enforcement).
+- `simulation/action_executor.py` resolves post-action outcomes (e.g. did this step's action result in the entity eating).
+- `simulation/step_context.py` builds per-step payloads (`before`/`after` state, time metadata) and the final summary payload.
+- `simulation/event_log.py` proxies verbosity through Python's `logging` module so global settings drive all diagnostics.
+
+A full per-module, per-function reference (generated from the code's own docstrings) lives in [simulatorV1/python_backend/REFERENCE.md](simulatorV1/python_backend/REFERENCE.md).
 
 ### `infrastructure`
 - `http/server.py` exposes the WebSocket API (powered by `websockets`). Responsibilities:

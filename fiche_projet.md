@@ -1,57 +1,57 @@
-# Fiche Projet : EcoSim Interactive (SimulatorV1)
+# Project Brief: EcoSim Interactive (SimulatorV1)
 
-EcoSim Interactive est un logiciel de simulation d'écosystèmes offrant une expérience à la fois ludique et rigoureuse. Il permet de créer, d'observer et de manipuler des environnements complexes peuplés d'espèces qui interagissent selon des modèles écologiques réels.
+EcoSim Interactive is ecosystem simulation software offering an experience that is both playful and rigorous. It lets you create, observe, and manipulate complex environments populated with species that interact according to real ecological models.
 
-## 1. Équipe du Projet
+## 1. Project Team
 
-L'équipe est organisée autour des principales dimensions du projet :
+The team is organized around the project's main dimensions:
 
-- Thomas Boulard : Back-End et Moteur de Simulation. Responsable de la modélisation des interactions écologiques et des règles de l'écosystème.
-- Nassim Bouziane : Back-End et Infrastructure & Systèmes. En charge du déploiement, de la sécurité de l'infrastructure et de la gestion des utilisateurs.
-- Abdelqoudousse Boustani : Back-End et Données & Visualisation. S'occupe de la visualisation scientifique, ainsi que de la gestion, du traitement et de l'export des données.
+- Thomas Boulard: Back-End and Simulation Engine. Responsible for modeling ecological interactions and ecosystem rules.
+- Nassim Bouziane: Back-End and Infrastructure & Systems. In charge of deployment, infrastructure security, and user management.
+- Abdelqoudousse Boustani: Back-End and Data & Visualization. Handles scientific visualization, as well as data management, processing, and export.
 
-## 2. Public Cible
+## 2. Target Audience
 
-- Éducation (cible principale) : Établissements scolaires, universités et centres de formation cherchant un outil d'apprentissage interactif.
-- Recherche : Laboratoires et centres d’études environnementales pour tester des modèles écologiques.
-- Grand Public : Passionnés de biodiversité et curieux du vivant.
+- Education (primary target): Schools, universities, and training centers looking for an interactive learning tool.
+- Research: Laboratories and environmental studies centers testing ecological models.
+- General Public: Biodiversity enthusiasts and people curious about wildlife.
 
-## 3. Contextualisation et Problématique
+## 3. Context and Problem Statement
 
-Face à l’effondrement accéléré des écosystèmes, il devient urgent de mieux les comprendre pour mieux les protéger. Pourtant, les outils actuels de modélisation écologique sont souvent réservés aux spécialistes et peu engageants.
+Faced with the accelerating collapse of ecosystems, it is becoming urgent to better understand them in order to better protect them. Yet current ecological modeling tools are often reserved for specialists and are not very engaging.
 
-Problématique :
-Comment transformer l’étude des interactions au sein d’un écosystème en une expérience plus intuitive, pédagogique et captivante, sans compromis sur la rigueur scientifique ?
+Problem statement:
+How can the study of interactions within an ecosystem be turned into a more intuitive, educational, and engaging experience, without compromising scientific rigor?
 
-Valeur Ajoutée :
-- Interface intuitive : Accessible sans prérequis techniques approfondis.
-- Simulation réaliste : Prise en compte d'interactions complexes telles que la prédation, le cycle des ressources et le métabolisme.
-- Analyse de données : Export structuré (JSON/CSV) permettant un véritable usage scientifique et pédagogique.
+Value Proposition:
+- Intuitive interface: Accessible without in-depth technical prerequisites.
+- Realistic simulation: Accounts for complex interactions such as predation, the resource cycle, and metabolism.
+- Data analysis: Structured export (JSON/CSV) enabling genuine scientific and educational use.
 
-## 4. Concurrence
+## 4. Competition
 
-- Concurrence directe : SimEarth (obsolète) et SimOïko (rigoureux mais manquant d'une interface intuitive).
-- Concurrence indirecte : Tyto Ecology, The Sandbox et Universe Sandbox, qui présentent un fort intérêt pédagogique mais sont peu spécialisés dans l'écologie réaliste.
+- Direct competitors: SimEarth (outdated) and SimOïko (rigorous but lacking an intuitive interface).
+- Indirect competitors: Tyto Ecology, The Sandbox, and Universe Sandbox, which have strong educational appeal but are not very specialized in realistic ecology.
 
-## 5. Architecture Technique & Stack
+## 5. Technical Architecture & Stack
 
-Le projet repose sur une architecture moderne Client-Serveur communiquant en temps réel via WebSocket.
+The project relies on a modern Client-Server architecture communicating in real time via WebSocket.
 
-- Moteur de calcul (Backend - Python) : Moteur performant pour modéliser les interactions scientifiques. Il calcule les étapes de l'écosystème en mode discret et génère les logs structurés.
-- Moteur de rendu (Frontend - Godot Engine) : Interface utilisateur pour la visualisation interactive en temps réel et multiplateforme.
-- Data Science (NumPy, Pandas, SciPy) : Traitement, analyse et export des données générées par la simulation.
-- Web (React) : Développement du site vitrine du projet pour la communication et l'acquisition.
-- Outils Collaboratifs : Git, GitHub ou GitLab pour le versioning et l'intégration continue.
+- Computation engine (Backend - Python): High-performance engine for modeling scientific interactions. It calculates the ecosystem's steps in discrete mode and generates structured logs.
+- Rendering engine (Frontend - Godot Engine): User interface for interactive, real-time, cross-platform visualization.
+- Data Science (NumPy, Pandas, SciPy): Processing, analysis, and export of the data generated by the simulation.
+- Web (React): Development of the project's showcase website for communication and outreach.
+- Collaborative tools: Git, GitHub or GitLab for versioning and continuous integration.
 
-## 6. Fonctionnalités Principales
+## 6. Main Features
 
-- Génération du Monde : Création procédurale ou paramétrée d'une carte avec placement stratégique des ressources (eau, nourriture).
-- Entités Autonomes (Agents) : Créatures dotées de sens, de besoins vitaux et de capacités d'action intelligentes (se déplacer, se reposer, manger, boire).
-- Contrôle du Temps et Streaming : Interface permettant de précalculer la simulation (compute) puis de la lire comme un flux vidéo interactif avec des contrôles de base (start, pause, resume, stop).
-- Rapports de Simulation : Génération de fichiers JSON structurés détaillant avec précision chaque cycle de vie (step) de la simulation.
+- World Generation: Procedural or parameterized creation of a map with strategic placement of resources (water, food).
+- Autonomous Entities (Agents): Creatures endowed with senses, vital needs, and intelligent action capabilities (move, rest, eat, drink).
+- Time Control and Streaming: Interface allowing the simulation to be pre-calculated (compute) and then played back like an interactive video stream with basic controls (start, pause, resume, stop).
+- Simulation Reports: Generation of structured JSON files precisely detailing each life cycle (step) of the simulation.
 
-## 7. Méthodologie de Travail
+## 7. Work Methodology
 
-- Méthode Agile : Organisation itérative avec des réunions de synchronisation hebdomadaires.
-- Suivi des tâches : Utilisation d'outils Git (GitHub ou GitLab) pour la gestion de projet.
-- Expertise métier : Séparation claire et nette des responsabilités techniques pour une efficacité maximale.
+- Agile Method: Iterative organization with weekly sync meetings.
+- Task tracking: Use of Git tools (GitHub or GitLab) for project management.
+- Domain expertise: Clear separation of technical responsibilities for maximum efficiency.

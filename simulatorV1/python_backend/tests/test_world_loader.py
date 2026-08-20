@@ -1,3 +1,5 @@
+"""Tests for the world configuration loading and coercion helpers."""
+
 import json
 import unittest
 from pathlib import Path
@@ -15,13 +17,21 @@ from app.world_loader import (
 
 
 class TestWorldLoader(unittest.TestCase):
+    """Tests for world_loader's config coercion and loading helpers."""
+
     def test_coerce_float(self):
+        """Verify _coerce_float converts numeric-like values and
+        returns None for invalid ones.
+        """
         self.assertEqual(_coerce_float(5), 5.0)
         self.assertEqual(_coerce_float("3.14"), 3.14)
         self.assertIsNone(_coerce_float("abc"))
         self.assertIsNone(_coerce_float(None))
 
     def test_coerce_bool(self):
+        """Verify _coerce_bool interprets truthy/falsy strings and
+        returns None for unrecognized values.
+        """
         self.assertTrue(_coerce_bool(True))
         self.assertTrue(_coerce_bool("yes"))
         self.assertTrue(_coerce_bool("1"))
@@ -30,18 +40,27 @@ class TestWorldLoader(unittest.TestCase):
         self.assertIsNone(_coerce_bool("maybe"))
 
     def test_positive_int(self):
+        """Verify _positive_int accepts positive integers and
+        rejects negative or non-numeric values.
+        """
         self.assertEqual(_positive_int(5), 5)
         self.assertEqual(_positive_int("10"), 10)
         self.assertIsNone(_positive_int(-5))
         self.assertIsNone(_positive_int("abc"))
 
     def test_positive_float(self):
+        """Verify _positive_float accepts positive floats and
+        rejects negative or non-numeric values.
+        """
         self.assertEqual(_positive_float(5.5), 5.5)
         self.assertIsNone(_positive_float(-2.0))
         self.assertIsNone(_positive_float("foo"))
 
     @patch("app.world_loader.load_config")
     def test_load_world_fallback_on_error(self, mock_load_config):
+        """Verify load_world falls back to generated sources when
+        the config file is missing.
+        """
         mock_load_config.side_effect = FileNotFoundError("Not found")
         world = load_world(fallback_food=50, fallback_water=20)
 
@@ -50,6 +69,9 @@ class TestWorldLoader(unittest.TestCase):
 
     @patch("app.world_loader.load_config")
     def test_load_world_and_species_fallback(self, mock_load_config):
+        """Verify load_world_and_species falls back to default
+        sources and species when the config is invalid JSON.
+        """
         mock_load_config.side_effect = json.JSONDecodeError("Error", "", 0)
         world, species = load_world_and_species(
             fallback_food=10, fallback_water=5
@@ -61,6 +83,9 @@ class TestWorldLoader(unittest.TestCase):
         self.assertEqual(species[0].species_type, "Chasseron")
 
     def test_resolve_config_path_absolute(self):
+        """Verify _resolve_config_path returns an absolute path
+        unchanged.
+        """
         abs_path = Path("/tmp/some_config.json").resolve()
         resolved = _resolve_config_path(str(abs_path))
         self.assertEqual(resolved, abs_path)

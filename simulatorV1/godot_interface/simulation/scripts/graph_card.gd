@@ -1,3 +1,4 @@
+## UI card displaying a chart (single line, multi-line or bars) from numeric data series.
 extends PanelContainer
 
 @export var title: String = "Graphique"
@@ -18,12 +19,14 @@ var bar_data: Dictionary = {}
 var bar_colors: Dictionary = {}
 var species_max: Dictionary = {}
 
+## Initializes the displayed title and connects the graph area's drawing to _on_graph_draw.
 func _ready() -> void:
 	if title_label:
 		title_label.text = title
 	if graph_area:
 		graph_area.draw.connect(_on_graph_draw)
 
+## Resets all data series (single line, multi-line, bars) and forces a redraw.
 func clear_data() -> void:
 	history.clear()
 	multi_history.clear()
@@ -34,6 +37,7 @@ func clear_data() -> void:
 	if graph_area:
 		graph_area.queue_redraw()
 
+## Appends a value to the single line's history (respecting the max_points limit) and updates the display.
 func add_value(val: float) -> void:
 	history.append(val)
 	if history.size() > max_points:
@@ -44,6 +48,7 @@ func add_value(val: float) -> void:
 	if graph_area:
 		graph_area.queue_redraw()
 
+## Switches the graph to bar mode and stores the values, colors and observed maximums per species.
 func set_bar_data(values: Dictionary, colors: Dictionary) -> void:
 	graph_mode = "bar"
 	bar_data = values
@@ -56,11 +61,12 @@ func set_bar_data(values: Dictionary, colors: Dictionary) -> void:
 			species_max[k] = max(species_max[k], values[k])
 	
 	if value_label:
-		value_label.visible = false # vire la population totale
+		value_label.visible = false # hide the total population
 		
 	if graph_area:
 		graph_area.queue_redraw()
 
+## Appends a value per key to each multi-line history and displays the total of the values.
 func add_multi_values(values: Dictionary, colors: Dictionary) -> void:
 	for key in values.keys():
 		if not multi_history.has(key):
@@ -83,16 +89,19 @@ func add_multi_values(values: Dictionary, colors: Dictionary) -> void:
 		graph_area.queue_redraw()
 
 
+## Changes the card's title and updates the corresponding label.
 func set_title(new_title: String) -> void:
 	title = new_title
 	if title_label:
 		title_label.text = title
 
+## Changes the main line's color and forces a redraw.
 func set_color(new_color: Color) -> void:
 	line_color = new_color
 	if graph_area:
 		graph_area.queue_redraw()
 
+## Draws the graph in line mode: plots the single line with fill and any multi-lines, or delegates to bar mode.
 func _on_graph_draw() -> void:
 	if graph_mode == "bar":
 		_draw_bar_chart()
@@ -142,7 +151,7 @@ func _on_graph_draw() -> void:
 	var range_val = max_val - min_val
 
 	
-	# Tracer la ligne principale
+	# Plot the main line
 	if history.size() >= 2:
 		var points = PackedVector2Array()
 		var step_x = w / float(max_points - 1)
@@ -169,7 +178,7 @@ func _on_graph_draw() -> void:
 			colors.append(fill_color)
 		graph_area.draw_polygon(poly_points, colors)
 	
-	# Tracer les multi-lignes si existantes
+	# Plot the multi-lines if any exist
 	if not multi_history.is_empty():
 		for key in multi_history:
 			var arr = multi_history[key]
@@ -192,6 +201,7 @@ func _on_graph_draw() -> void:
 			var c = multi_colors.get(key, Color.WHITE)
 			graph_area.draw_polyline(points, c, 2.0, true)
 
+## Draws a horizontal bar chart with name, value and maximum for each species.
 func _draw_bar_chart() -> void:
 	var w = graph_area.size.x
 	var h = graph_area.size.y

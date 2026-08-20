@@ -26,6 +26,16 @@ class SpeciesCatalogStore:
         selection_file: str = "selection.json",
         legacy_selection_file: Optional[Path] = None,
     ) -> None:
+        """Initialize the store with catalog/selection file locations.
+
+        Args:
+            base_dir (Optional[Path]): Directory holding catalog and
+                selection files. Defaults to this module's directory.
+            catalog_file (str): Catalog JSON filename.
+            selection_file (str): Selection JSON filename.
+            legacy_selection_file (Optional[Path]): Legacy selection
+                file to migrate from when no selection exists yet.
+        """
         self.base_dir = (base_dir or Path(__file__).parent).resolve()
         self.catalog_path = self.base_dir / catalog_file
         self.selection_path = self.base_dir / selection_file
@@ -93,6 +103,16 @@ class SpeciesCatalogStore:
         return merged
 
     def load_catalog(self) -> Dict[str, Any]:
+        """Loads and normalizes the species catalog from disk.
+
+        Merges profile inheritance into each template, resolves
+        species preset files, and sanitizes the nutrition range of
+        every template.
+
+        Returns:
+            Dict[str, Any]: Catalog with "profiles", "templates" and
+                "default_selection" keys.
+        """
         payload = self._load_json(self.catalog_path) or {}
         profiles_raw = payload.get("profiles")
         templates_raw = payload.get("templates")
@@ -135,6 +155,16 @@ class SpeciesCatalogStore:
     def build_selection_from_catalog(
         self, catalog: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
+        """Builds a population selection from the catalog's defaults.
+
+        Args:
+            catalog (Dict[str, Any]): Catalog as returned by
+                load_catalog().
+
+        Returns:
+            List[Dict[str, Any]]: Selection entries derived from
+                "default_selection", each merged with its template.
+        """
         templates = (
             catalog.get("templates") if isinstance(catalog, dict) else []
         )
@@ -184,6 +214,24 @@ class SpeciesCatalogStore:
     def sanitize_selection(
         self, raw_selection: List[Dict[str, Any]], catalog: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
+        """Validates and completes a raw selection against the catalog.
+
+        Merges each entry with its matching template, coerces
+        numeric fields, drops entries with an unknown template or a
+        non-positive count, and fills in missing vision/smell/speed/
+        nutrition values from the template.
+
+        Args:
+            raw_selection (List[Dict[str, Any]]): Selection entries
+                to sanitize, as loaded from disk or received from a
+                client.
+            catalog (Dict[str, Any]): Catalog as returned by
+                load_catalog().
+
+        Returns:
+            List[Dict[str, Any]]: Sanitized, catalog-consistent
+                selection.
+        """
         templates = (
             catalog.get("templates") if isinstance(catalog, dict) else []
         )
@@ -261,6 +309,19 @@ class SpeciesCatalogStore:
         return sanitized
 
     def load_selection(self, catalog: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Loads the saved selection, migrating a legacy file if needed.
+
+        Falls back to the legacy selection file when no current
+        selection exists, and to the catalog's default selection
+        when neither is available.
+
+        Args:
+            catalog (Dict[str, Any]): Catalog as returned by
+                load_catalog().
+
+        Returns:
+            List[Dict[str, Any]]: Sanitized selection ready for use.
+        """
         payload = self._load_json(self.selection_path)
         if payload and isinstance(payload.get("selection"), list):
             return self.sanitize_selection(payload["selection"], catalog)
@@ -280,6 +341,12 @@ class SpeciesCatalogStore:
         return self.build_selection_from_catalog(catalog)
 
     def save_selection(self, selection: List[Dict[str, Any]]) -> None:
+        """Persists the given selection to the selection JSON file.
+
+        Args:
+            selection (List[Dict[str, Any]]): Selection entries to
+                save.
+        """
         self.base_dir.mkdir(parents=True, exist_ok=True)
         with self.selection_path.open("w", encoding="utf-8") as handle:
             json.dump(
@@ -290,6 +357,19 @@ class SpeciesCatalogStore:
         self,
         selection: List[Dict[str, Any]],
     ) -> Dict[str, Any]:
+        """Converts a selection into a ready-to-simulate species config.
+
+        Resolves each entry's traits against its template and the
+        global defaults, and normalizes optional position(s).
+
+        Args:
+            selection (List[Dict[str, Any]]): Selection entries to
+                convert.
+
+        Returns:
+            Dict[str, Any]: Config with "defaults", "population" and
+                "presets" keys.
+        """
         defaults = {
             "vision": 110.0,
             "smell_range": 220.0,

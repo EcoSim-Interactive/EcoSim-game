@@ -1,3 +1,7 @@
+"""Domain entities describing living species: their vital gauges,
+movement algorithms, and feeding/drinking behaviors.
+"""
+
 from __future__ import annotations
 
 import math
@@ -84,6 +88,14 @@ class Species(ABC):
         carcass_edible_ratio: float = 0.55,
         carcass_calories_per_kg: float = 1800.0,
     ) -> None:
+        """Initialize the species with its physical and energetic
+        parameters.
+
+        Most public attributes are documented on the class
+        docstring; this also derives calorie/body-mass bookkeeping
+        (max_calories, body_nutrition, etc.) used by the hunger
+        gauge and carcass calculations.
+        """
         self.name = name
         self.sprite_name = sprite_name or name.lower()
         self.x, self.y = position
@@ -227,6 +239,14 @@ class Species(ABC):
         return previous - self.calories
 
     def distance_to(self, target: Dict[str, float]) -> float:
+        """Computes the Euclidean distance to a target position.
+
+        Args:
+            target (Dict[str, float]): Position with "x" and "y".
+
+        Returns:
+            float: Distance in world units.
+        """
         return math.sqrt(
             (self.x - target["x"]) ** 2 + (self.y - target["y"]) ** 2
         )
@@ -239,6 +259,24 @@ class Species(ABC):
     def move_towards(
         self, target: Dict[str, float], world: Any = None
     ) -> bool:
+        """Steps the entity towards a target position, dodging obstacles.
+
+        Effective speed is reduced when fatigued and scaled to the
+        world's step duration. If the world blocks the straight
+        path (e.g. water too deep to cross), tries a fan of steering
+        angles around the direct heading and moves to the reachable
+        point closest to the target instead. The move is clamped to
+        world bounds and increases fatigue in proportion to the
+        distance actually travelled.
+
+        Args:
+            target (Dict[str, float]): Position with "x" and "y".
+            world (Any): World used for obstacle/bounds checks, or
+                None to move unconditionally.
+
+        Returns:
+            bool: True if the entity moved, False otherwise.
+        """
         if self.resting:
             return False
 
@@ -331,6 +369,19 @@ class Species(ABC):
         return True
 
     def random_move(self, world: Any) -> bool:
+        """Moves the entity one step in a random direction.
+
+        Tries up to RANDOM_MOVE_ATTEMPTS random headings at the
+        fatigue-adjusted effective speed until one lands on a tile
+        the entity can enter, applying the resulting fatigue cost.
+
+        Args:
+            world (Any): World used for obstacle/bounds checks.
+
+        Returns:
+            bool: True if a valid random move was made, False if
+                every attempt was blocked.
+        """
         if self.resting:
             return False
 
@@ -371,6 +422,21 @@ class Species(ABC):
         return False
 
     def try_eat(self, world: Any) -> Optional[Dict[str, Any]]:
+        """Attempts to eat from a nearby matching food source.
+
+        Scans the world's food sources for one that still has
+        supply, matches the entity's diet, and lies within eating
+        distance (extended for carnivores eating meat/carrion), then
+        consumes as much as needed to cover the calorie deficit.
+
+        Args:
+            world (Any): World providing food sources and
+                consumption helpers.
+
+        Returns:
+            Optional[Dict[str, Any]]: Consumption payload if food
+                was eaten, otherwise None.
+        """
         for food in list(world.food_sources):
             if hasattr(world, "food_has_supply") and not world.food_has_supply(
                 food
@@ -407,6 +473,22 @@ class Species(ABC):
         return None
 
     def try_drink(self, world: Any) -> bool:
+        """Attempts to drink from a nearby water source.
+
+        First checks the water tiles immediately adjacent to the
+        entity's position (shore drinking), then falls back to any
+        water source within DRINK_DISTANCE. On success, reduces
+        thirst, remembers the water location, and updates any shared
+        group/pack memory of the last known water.
+
+        Args:
+            world (Any): World providing water sources and
+                consumption helpers.
+
+        Returns:
+            bool: True if water was consumed, False otherwise.
+        """
+
         def _consume_from(water_source: Dict[str, Any]) -> bool:
             if hasattr(
                 world, "water_has_supply"
@@ -463,6 +545,16 @@ class Species(ABC):
         return False
 
     def smell_for_food(self, world: Any) -> Optional[Dict[str, float]]:
+        """Detects a matching food source by smell beyond vision range.
+
+        Args:
+            world (Any): World providing food sources.
+
+        Returns:
+            Optional[Dict[str, float]]: Nearest matching food source
+                strictly beyond vision but within smell_range, or
+                None.
+        """
         for food in world.food_sources:
             if hasattr(world, "food_has_supply") and not world.food_has_supply(
                 food
@@ -478,6 +570,16 @@ class Species(ABC):
         return None
 
     def smell_for_water(self, world: Any) -> Optional[Dict[str, float]]:
+        """Detects a water source by smell beyond vision range.
+
+        Args:
+            world (Any): World providing water sources.
+
+        Returns:
+            Optional[Dict[str, float]]: Nearest water source
+                strictly beyond vision but within smell_range, or
+                None.
+        """
         for water in world.water_sources:
             if hasattr(
                 world, "water_has_supply"
@@ -498,6 +600,21 @@ class Species(ABC):
         return min(remaining, deficit, self.meal_calories)
 
     def update_vitals(self, world_time: Dict[str, float]) -> None:
+        """Advances hunger, thirst, fatigue, and vitality by one step.
+
+        Burns calories according to the daily need (reduced while
+        resting), raises thirst and fatigue over time, applies
+        vitality penalties once hunger/thirst/fatigue cross their
+        thresholds (recording a death cause when vitality reaches
+        zero), grants passive vitality recovery when all needs are
+        low, and lets resting accelerate fatigue/vitality recovery.
+        Finally clamps every gauge to its valid range and updates
+        the alive flag.
+
+        Args:
+            world_time (Dict[str, float]): Time context with
+                "minutes_per_step".
+        """
         minutes = world_time["minutes_per_step"]
         rate_scale = minutes / MINUTES_PER_RATE_UNIT
 

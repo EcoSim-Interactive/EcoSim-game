@@ -375,6 +375,15 @@ async def get_world(websocket: websockets.WebSocketServerProtocol) -> None:
 
 
 def format_step_summary(step_data: Dict[str, Any]) -> str:
+    """Formats a step's species states into a one-line log summary.
+
+    Args:
+        step_data (Dict[str, Any]): Step payload with a "species"
+            list.
+
+    Returns:
+        str: Human-readable summary, or a placeholder if empty.
+    """
     species_states = []
     for status in step_data.get("species", []):
         after = status.get("after") or {}
@@ -885,6 +894,12 @@ async def handle_command(
 
 
 async def handler(websocket: websockets.WebSocketServerProtocol) -> None:
+    """Handles one client connection's lifecycle and command stream.
+
+    Args:
+        websocket (websockets.WebSocketServerProtocol): Connected
+            client socket.
+    """
     pause_event.clear()
     stop_event.clear()
     client = websocket.remote_address
@@ -943,6 +958,7 @@ async def _bind_websocket_server() -> Tuple[Any, int]:
 
 
 async def main() -> None:
+    """Binds the WebSocket server and serves until interrupted."""
     server, bound_port = await _bind_websocket_server()
     async with server:
         logger.info(

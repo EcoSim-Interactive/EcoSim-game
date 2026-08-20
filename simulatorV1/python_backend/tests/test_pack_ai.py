@@ -1,3 +1,5 @@
+"""Tests for pack AI coordination, hunting, and shared kill logic."""
+
 from __future__ import annotations
 
 import itertools
@@ -74,16 +76,21 @@ class PackAITestCase(unittest.TestCase):
     """Verifie les scenarios critiques de coordination de meute."""
 
     def setUp(self) -> None:
+        """Reset shared animal state and the ID counter before each test."""
         Animal.reset_shared_states()
         Animal._id_sequence = itertools.count(1)
 
     def test_cli_parses_optional_seed(self) -> None:
+        """Verify parse_args reads --steps and --seed into the namespace."""
         args = parse_args(["--steps", "12", "--seed", "42"])
 
         self.assertEqual(args.steps, 12)
         self.assertEqual(args.seed, 42)
 
     def test_target_filter_keeps_requested_species(self) -> None:
+        """Verify _nearest_prey ignores closer prey outside the target
+        species filter.
+        """
         world = World(width=300, height=300)
         hunter = _build_hunter(
             "Lion",
@@ -104,6 +111,9 @@ class PackAITestCase(unittest.TestCase):
         self.assertIs(prey, gazelle)
 
     def test_same_priority_pack_members_can_all_feed(self) -> None:
+        """Verify pack members sharing the same feed priority can all
+        eat from a shared kill.
+        """
         world = World(width=300, height=300)
         prey = Animal(
             "Gazelle",
@@ -170,6 +180,9 @@ class PackAITestCase(unittest.TestCase):
         )
 
     def test_pack_members_follow_shared_target(self) -> None:
+        """Verify pack members share and pursue the same target prey
+        during a hunt.
+        """
         world = World(width=400, height=400)
         leader = _build_hunter(
             "Leader",
@@ -211,6 +224,9 @@ class PackAITestCase(unittest.TestCase):
         self.assertLess(hunter.y, 50.0)
 
     def test_hunt_creates_shared_kill_and_packmate_eats(self) -> None:
+        """Verify a successful pack hunt creates a shared kill that
+        packmates can feed from.
+        """
         world = World(width=200, height=200)
         leader = _build_hunter(
             "Leader",
@@ -258,6 +274,9 @@ class PackAITestCase(unittest.TestCase):
         self.assertIsNotNone(result["food_event"])
 
     def test_engine_clears_stale_shared_state(self) -> None:
+        """Verify SimulationEngine clears stale shared-kill state left
+        in a pack from a previous run.
+        """
         Animal.pack_state_for("stale_pride")["shared_kill"] = {
             "food_id": "stale"
         }
@@ -275,7 +294,13 @@ class PackAITestCase(unittest.TestCase):
         self.assertEqual(engine.species_list[0].pack_state, {})
 
     def test_blocked_thirst_does_not_fake_move_to_water(self) -> None:
+        """Verify handle_thirst reports no action when the world blocks
+        entry to every water tile.
+        """
+
         class BlockedWaterWorld:
+            """Minimal world stub that blocks every water tile entry."""
+
             width = 100
             height = 100
             minutes_per_step = 60
@@ -283,12 +308,18 @@ class PackAITestCase(unittest.TestCase):
 
             @staticmethod
             def find_shore_tile(_x, _y, _radius, min_radius=0):
+                """Return a shore tile only when no minimum radius is
+                required.
+                """
                 if min_radius > 0:
                     return None
                 return (10.0, 0.0)
 
             @staticmethod
             def can_entity_enter(_entity, _x, _y):
+                """Reject every entry attempt to simulate a blocked
+                area.
+                """
                 return False
 
         animal = Animal(
@@ -309,13 +340,22 @@ class PackAITestCase(unittest.TestCase):
         self.assertEqual((animal.x, animal.y), (0.0, 0.0))
 
     def test_blocked_group_avoidance_does_not_report_fake_action(self) -> None:
+        """Verify maintain_group_cohesion reports no action when
+        movement is fully blocked.
+        """
+
         class TrappedWorld:
+            """Minimal world stub that blocks all entity movement."""
+
             width = 100
             height = 100
             minutes_per_step = 60
 
             @staticmethod
             def can_entity_enter(_entity, _x, _y):
+                """Reject every entry attempt to simulate a trapped
+                area.
+                """
                 return False
 
         leader = Animal("GazelleA", (10.0, 10.0), speed=8, diet="herbivore")
@@ -330,6 +370,9 @@ class PackAITestCase(unittest.TestCase):
         self.assertEqual((leader.x, leader.y), (10.0, 10.0))
 
     def test_relationships_prioritize_hunt_before_territory(self) -> None:
+        """Verify handle_species_relationships prioritizes an active
+        hunt over territory defense.
+        """
         world = World(width=300, height=300)
         hunter = _build_hunter(
             "Leader",
@@ -367,6 +410,9 @@ class PackAITestCase(unittest.TestCase):
     def test_relationships_suspend_territory_when_hunger_is_critical(
         self,
     ) -> None:
+        """Verify territory behavior is suspended when hunger is
+        critically high.
+        """
         world = World(width=300, height=300)
         animal = Animal(
             "Gazelle",
@@ -394,6 +440,9 @@ class PackAITestCase(unittest.TestCase):
     def test_relationships_suspend_territory_while_water_target_is_active(
         self,
     ) -> None:
+        """Verify territory behavior is suspended while the animal is
+        pursuing a remembered water target.
+        """
         world = World(width=300, height=300)
         animal = Animal(
             "Gazelle",
@@ -422,6 +471,9 @@ class PackAITestCase(unittest.TestCase):
     def test_engine_logs_terminal_snapshot_for_prey_killed_mid_step(
         self,
     ) -> None:
+        """Verify the engine logs a terminal status snapshot for prey
+        killed mid-step.
+        """
         world = World(width=200, height=200)
         hunter = _build_hunter(
             "Leader",
@@ -455,6 +507,9 @@ class PackAITestCase(unittest.TestCase):
         self.assertEqual(prey_status["after"]["vitality"], 0.0)
 
     def test_thirst_drinks_immediately_when_already_on_shore(self) -> None:
+        """Verify handle_thirst drinks immediately when the animal is
+        already on the shore.
+        """
         world = World(width=20, height=20)
         world._register_water_source(
             5.0, 5.0, water_type="stagnant", capacity=None, max_capacity=None
@@ -479,26 +534,38 @@ class PackAITestCase(unittest.TestCase):
         self.assertLess(animal.thirst, 40.0)
 
     def test_thirst_reuses_memorized_drink_target(self) -> None:
+        """Verify handle_thirst reuses a memorized drink target instead
+        of recomputing it.
+        """
+
         class StableWaterWorld:
+            """World stub providing a stable, cacheable water target."""
+
             width = 50
             height = 50
             minutes_per_step = 5
 
             def __init__(self) -> None:
+                """Set up a single water source and a call counter."""
                 self.water = {"id": "water_1", "x": 10.0, "y": 0.0}
                 self.water_sources = [self.water]
                 self.find_drink_target_calls = 0
 
             def get_nearest_water(self, _x, _y):
+                """Return the fixture's single water source."""
                 return self.water
 
             @staticmethod
             def distance_to_water(x, y, water):
+                """Compute the Euclidean distance to the water source."""
                 return ((x - water["x"]) ** 2 + (y - water["y"]) ** 2) ** 0.5
 
             def find_drink_target(
                 self, _x, _y, _water, *, entity=None, search_radius=40
             ):
+                """Return a fixed target, alternating after the first
+                call.
+                """
                 self.find_drink_target_calls += 1
                 return (
                     (4.0, 0.0)
@@ -508,14 +575,17 @@ class PackAITestCase(unittest.TestCase):
 
             @staticmethod
             def can_entity_enter(_entity, _x, _y):
+                """Always allow entry."""
                 return True
 
             @staticmethod
             def water_has_supply(_water):
+                """Report the water source as always having supply."""
                 return True
 
             @staticmethod
             def consume_water(_water, amount=10.0):
+                """Simulate a successful water consumption."""
                 return True
 
         world = StableWaterWorld()
@@ -545,6 +615,9 @@ class PackAITestCase(unittest.TestCase):
         self.assertEqual(animal.recall_water_target(), (4.0, 0.0))
 
     def test_find_drink_target_prefers_same_shore_side(self) -> None:
+        """Verify find_drink_target prefers a shore tile on the
+        animal's side of the water.
+        """
         world = World(width=30, height=30)
         for wx in range(10, 13):
             for wy in range(10, 13):
@@ -576,6 +649,9 @@ class PackAITestCase(unittest.TestCase):
     def test_find_drink_target_cache_rebuilds_after_new_water_tiles(
         self,
     ) -> None:
+        """Verify find_drink_target's cache rebuilds after new tiles
+        join a water body.
+        """
         world = World(width=30, height=30)
         world._register_water_source(
             10.0,
@@ -631,39 +707,54 @@ class PackAITestCase(unittest.TestCase):
     def test_thirst_recomputes_when_stale_water_target_is_already_reached(
         self,
     ) -> None:
+        """Verify handle_thirst drinks directly when a stale but
+        already-reached water target is still visible.
+        """
+
         class RecomputeWaterWorld:
+            """World stub used to test recomputing a stale water
+            target.
+            """
+
             width = 50
             height = 50
             minutes_per_step = 5
 
             def __init__(self) -> None:
+                """Set up a single water source and a call counter."""
                 self.water = {"id": "water_1", "x": 10.0, "y": 0.0}
                 self.water_sources = [self.water]
                 self.find_drink_target_calls = 0
 
             def get_nearest_water(self, _x, _y):
+                """Return the fixture's single water source."""
                 return self.water
 
             @staticmethod
             def distance_to_water(x, y, water):
+                """Compute the Euclidean distance to the water source."""
                 return ((x - water["x"]) ** 2 + (y - water["y"]) ** 2) ** 0.5
 
             def find_drink_target(
                 self, _x, _y, _water, *, entity=None, search_radius=40
             ):
+                """Return a fixed drink target and count invocations."""
                 self.find_drink_target_calls += 1
                 return (6.0, 0.0)
 
             @staticmethod
             def can_entity_enter(_entity, _x, _y):
+                """Always allow entry."""
                 return True
 
             @staticmethod
             def water_has_supply(_water):
+                """Report the water source as always having supply."""
                 return True
 
             @staticmethod
             def consume_water(_water, amount=10.0):
+                """Simulate a successful water consumption."""
                 return True
 
         world = RecomputeWaterWorld()
@@ -689,6 +780,9 @@ class PackAITestCase(unittest.TestCase):
         self.assertEqual(world.find_drink_target_calls, 1)
 
     def test_hunger_property_maps_to_calorie_reserve(self) -> None:
+        """Verify the hunger property correctly maps to and from the
+        calorie reserve.
+        """
         animal = Animal(
             "Gazelle",
             (0.0, 0.0),
@@ -711,6 +805,9 @@ class PackAITestCase(unittest.TestCase):
     def test_try_eat_restores_calories_without_exceeding_meal_cap(
         self,
     ) -> None:
+        """Verify try_eat restores calories capped at the
+        meal_calories limit.
+        """
         world = World(width=100, height=100)
         animal = Animal(
             "Gazelle",
@@ -743,6 +840,9 @@ class PackAITestCase(unittest.TestCase):
         self.assertAlmostEqual(animal.hunger, 43.75)
 
     def test_step_status_exposes_calories(self) -> None:
+        """Verify step status snapshots include the animal's calorie
+        level.
+        """
         animal = Animal(
             "Lion",
             (5.0, 5.0),
@@ -765,6 +865,9 @@ class PackAITestCase(unittest.TestCase):
         self.assertAlmostEqual(finalized["after"]["calories"], animal.calories)
 
     def test_carcass_keeps_link_to_killed_animal(self) -> None:
+        """Verify a carcass created from a killed animal retains its
+        source metadata.
+        """
         world = World(width=100, height=100)
         prey = Animal(
             "Gazelle",
@@ -801,6 +904,9 @@ class PackAITestCase(unittest.TestCase):
         )
 
     def test_body_profile_scales_carcass_by_age_stage(self) -> None:
+        """Verify age-stage mass scaling reduces a juvenile's body
+        mass and nutrition relative to an adult.
+        """
         juvenile = Animal(
             "Gazelle",
             (0.0, 0.0),
@@ -836,8 +942,15 @@ class PackAITestCase(unittest.TestCase):
         self.assertLess(juvenile.body_nutrition, adult.body_nutrition)
 
     def test_active_shared_kill_overrides_cycle_rest(self) -> None:
+        """Verify an active shared kill overrides a pack member's
+        resting cycle.
+        """
+
         class SilentLogger:
+            """Logger stub that discards every message."""
+
             def log(self, _message: str) -> None:
+                """Discard the given log message."""
                 return
 
         world = World(width=200, height=200)
@@ -896,8 +1009,15 @@ class PackAITestCase(unittest.TestCase):
     def test_process_species_prioritizes_hunger_over_thirst(
         self,
     ) -> None:
+        """Verify process_species prioritizes acting on hunger over
+        thirst.
+        """
+
         class SilentLogger:
+            """Logger stub that discards every message."""
+
             def log(self, _message: str) -> None:
+                """Discard the given log message."""
                 return
 
         world = World(width=120, height=120)
@@ -939,6 +1059,9 @@ class PackAITestCase(unittest.TestCase):
     def test_scavenger_blocks_shared_carcass_after_repeated_failures(
         self,
     ) -> None:
+        """Verify a scavenger is blocked from a shared carcass after
+        repeated failed repositioning attempts.
+        """
         world = World(width=200, height=200)
         carcass = world._register_food_source(
             120.0,
@@ -994,6 +1117,9 @@ class PackAITestCase(unittest.TestCase):
         )
 
     def test_prey_fleeing_on_attack_failed(self) -> None:
+        """Verify prey marked under attack flees the predator on the
+        next processing step.
+        """
         world = World(width=500, height=500)
         hunter = _build_hunter(
             "Lion",
@@ -1010,7 +1136,10 @@ class PackAITestCase(unittest.TestCase):
         prey.speed = 10.0
 
         class Logger:
+            """Logger stub exposing a no-op bound log method."""
+
             def log(self, msg):
+                """Discard the given log message."""
                 pass
 
         acted, action, resolve = execute_predation_cycle(
@@ -1034,6 +1163,9 @@ class PackAITestCase(unittest.TestCase):
         self.assertIsNone(prey.recall_social("under_attack"))
 
     def test_nearest_prey_respects_chase_range(self) -> None:
+        """Verify _nearest_prey excludes prey beyond the hunter's
+        chase range.
+        """
         world = World(width=500, height=500)
         hunter = _build_hunter(
             "Lion",
@@ -1072,6 +1204,9 @@ class PackAITestCase(unittest.TestCase):
         self.assertIs(prey, near_prey)
 
     def test_water_line_blocked_aware_of_entity_depth(self) -> None:
+        """Verify water line-of-sight blocking accounts for an
+        entity's max water depth trait.
+        """
         world = World(width=500, height=500)
         world._water_tiles.add((109, 100))
         world._water_tile_depth[(109, 100)] = 0.2
@@ -1103,6 +1238,9 @@ class PackAITestCase(unittest.TestCase):
         self.assertTrue(blocked)
 
     def test_guard_stand_and_waiting_guard_counts_as_resting(self) -> None:
+        """Verify a fed hunter guarding a shared kill for the leader
+        counts as resting.
+        """
         world = World(width=500, height=500)
         leader = _build_hunter(
             "Leader",
@@ -1147,7 +1285,10 @@ class PackAITestCase(unittest.TestCase):
         )
 
         class SilentLogger:
+            """Logger stub that discards every message."""
+
             def log(self, msg):
+                """Discard the given log message."""
                 pass
 
         status = initialize_species_status(hunter)
@@ -1165,6 +1306,9 @@ class PackAITestCase(unittest.TestCase):
         self.assertTrue(hunter.resting)
 
     def test_no_guard_without_leader_or_successor(self) -> None:
+        """Verify shared kill guarding is skipped and cleared when no
+        leader or successor is present.
+        """
         world = World(width=500, height=500)
         hunter_a = _build_hunter(
             "HunterA",
@@ -1222,6 +1366,9 @@ class PackAITestCase(unittest.TestCase):
         self.assertEqual(pack_kill, {})
 
     def test_guard_stops_for_fed_animals_when_leader_has_eaten(self) -> None:
+        """Verify guarding stops once both the leader and the hunter
+        have already fed.
+        """
         world = World(width=500, height=500)
         leader = _build_hunter(
             "Leader",
@@ -1276,11 +1423,17 @@ class PackAITestCase(unittest.TestCase):
         self.assertFalse(acted)
 
     def test_same_seed_reproduces_same_summary(self) -> None:
+        """Verify running the simulation twice with the same seed
+        reproduces the same summary.
+        """
         config_path = (
             Path(__file__).resolve().parents[1] / "app" / "world_config.json"
         )
 
         def _run_once(seed: int):
+            """Run the simulation once with the given seed and return
+            its summary.
+            """
             random.seed(seed)
             Animal.reset_shared_states()
             Animal._id_sequence = itertools.count(1)

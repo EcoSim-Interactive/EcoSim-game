@@ -1,4 +1,4 @@
-## Modal de configuration des especes avant lancement de la simulation.
+## Species configuration modal shown before starting the simulation.
 extends CanvasLayer
 
 @export var world_path: NodePath
@@ -49,12 +49,13 @@ var map_width: float = 1000.0
 var map_height: float = 1000.0
 var rng := RandomNumberGenerator.new()
 
+## Initializes the random number generator, retrieves the world reference, builds the dialog box and connects the necessary signals.
 func _ready() -> void:
 	rng.randomize()
 	if world_path != NodePath():
 		world = get_node_or_null(world_path)
 	if world == null:
-		# Fallback defensif au cas ou le NodePath exporte soit incorrect.
+		# Defensive fallback in case the exported NodePath is incorrect.
 		world = get_node_or_null("../Simulateur/Panel/SubViewportContainer/SubViewport/World")
 	_build_dialog()
 
@@ -72,6 +73,7 @@ func _ready() -> void:
 	else:
 		push_warning("SpeciesConfigurator: World introuvable, la modal de configuration ne sera pas affichee.")
 
+## Dynamically builds the complete dialog box UI (species/water/food/simulation tabs, fields and buttons).
 func _build_dialog() -> void:
 	dialog = AcceptDialog.new()
 	dialog.title = "Configuration des especes"
@@ -79,10 +81,10 @@ func _build_dialog() -> void:
 	dialog.exclusive = true
 	dialog.unresizable = false
 	dialog.size = Vector2i(1000, 700)
-	# Un AcceptDialog est une Window : il n'herite pas automatiquement du
-	# theme de ses ancetres dans l'arbre de scene comme le ferait un Control
-	# classique. Sans ca il s'affichait avec le theme Godot par defaut,
-	# incoherent avec le reste de l'appli.
+	# An AcceptDialog is a Window: it does not automatically inherit the
+	# theme of its ancestors in the scene tree the way a regular Control
+	# would. Without this it displayed with the default Godot theme,
+	# inconsistent with the rest of the app.
 	dialog.theme = load("res://background/theme_dark.tres")
 	add_child(dialog)
 
@@ -95,12 +97,12 @@ func _build_dialog() -> void:
 
 	var root = VBoxContainer.new()
 	root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	# Hauteur minimale forcee explicitement (au lieu de compter sur le calcul
-	# automatique en cascade GridContainer -> VBoxContainer -> TabContainer,
-	# qui ne remontait pas correctement jusqu'au ScrollContainer). Le
-	# dialogue fait 700px de haut : avec 1000px ici, le depassement est
-	# garanti et le scroll (molette ET barre laterale) a toujours une plage
-	# non nulle sur laquelle travailler.
+	# Minimum height explicitly forced (instead of relying on the automatic
+	# cascading calculation GridContainer -> VBoxContainer -> TabContainer,
+	# which did not propagate correctly up to the ScrollContainer). The
+	# dialog is 700px tall: with 1000px here, overflow is guaranteed and
+	# the scroll (both wheel AND side bar) always has a non-zero range to
+	# work with.
 	root.custom_minimum_size = Vector2(0, 1000)
 	scroll.add_child(root)
 
@@ -120,7 +122,7 @@ func _build_dialog() -> void:
 	tab_container.custom_minimum_size = Vector2(0, 850)
 	root.add_child(tab_container)
 
-	# --- ONGLET 1: ESPÈCES ---
+	# --- TAB 1: SPECIES ---
 	var species_tab = VBoxContainer.new()
 	species_tab.name = "Especes"
 	species_tab.add_theme_constant_override("separation", 12)
@@ -270,7 +272,7 @@ func _build_dialog() -> void:
 	diet_input.add_item("carnivore")
 	form.add_child(diet_input)
 
-	# --- ONGLET 2: EAU ---
+	# --- TAB 2: WATER ---
 	var water_tab = GridContainer.new()
 	water_tab.name = "Points d'eau"
 	water_tab.columns = 4
@@ -284,7 +286,7 @@ func _build_dialog() -> void:
 	oasis_count_input = _add_spin_field(water_tab, "Oasis", 0, 50, 1)
 	lake_count_input = _add_spin_field(water_tab, "Lacs", 0, 20, 1)
 
-	# --- ONGLET 3: NOURRITURE ---
+	# --- TAB 3: FOOD ---
 	var food_tab = GridContainer.new()
 	food_tab.name = "Nourriture (Distribution)"
 	food_tab.columns = 4
@@ -296,7 +298,7 @@ func _build_dialog() -> void:
 	berries_input = _add_spin_field(food_tab, "Buissons (baies)", 0, 1000, 1)
 	tree_input = _add_spin_field(food_tab, "Arbres fruitiers", 0, 1000, 1)
 
-	# --- ONGLET 4: SIMULATION ---
+	# --- TAB 4: SIMULATION ---
 	var sim_tab = GridContainer.new()
 	sim_tab.name = "Simulation"
 	sim_tab.columns = 2
@@ -355,6 +357,7 @@ func _build_dialog() -> void:
 	if ok_button:
 		ok_button.text = "Fermer"
 
+## Adds a label and a configured SpinBox (min/max/step) to the given container and returns the created SpinBox.
 func _add_spin_field(parent: GridContainer, title: String, min_value: float, max_value: float, step_value: float) -> SpinBox:
 	var label = Label.new()
 	label.text = title
@@ -368,9 +371,11 @@ func _add_spin_field(parent: GridContainer, title: String, min_value: float, max
 	parent.add_child(spin)
 	return spin
 
+## Handler for the signal requesting species configuration: opens the dialog box.
 func _on_species_configuration_required() -> void:
 	open_modal()
 
+## Refreshes the data from the server if needed, then shows the dialog box centered on screen.
 func open_modal() -> void:
 	if world:
 		if world.get("connected") == false:
@@ -384,6 +389,7 @@ func open_modal() -> void:
 	dialog.min_size = Vector2i(1000, 700)
 	dialog.popup_centered(Vector2i(1000, 700))
 
+## Processes the species catalog received from the server: fills the template picker, the map size and the current selection.
 func _on_species_catalog_ready(payload) -> void:
 	if typeof(payload) != TYPE_DICTIONARY:
 		status_label.text = "Catalogue invalide recu"
@@ -427,6 +433,7 @@ func _on_species_catalog_ready(payload) -> void:
 	_refresh_species_list()
 	status_label.text = "Configurez l'environnement et les especes puis enregistrez."
 
+## Fills the water/food/simulation fields from the world configuration received from the server.
 func _on_world_config_ready(payload) -> void:
 	if typeof(payload) != TYPE_DICTIONARY:
 		return
@@ -449,6 +456,7 @@ func _on_world_config_ready(payload) -> void:
 	if steps_input:
 		steps_input.value = steps_val
 
+## Rebuilds the displayed list of selected species and reloads the editor for the selected entry.
 func _refresh_species_list() -> void:
 	species_list.clear()
 	for idx in range(selection.size()):
@@ -467,6 +475,7 @@ func _refresh_species_list() -> void:
 	species_list.select(selected_index)
 	_load_entry_into_editor(selection[selected_index])
 
+## Resets the edit form's fields to their default values (no species selected).
 func _clear_editor() -> void:
 	is_populating_form = true
 	count_input.value = 0
@@ -482,6 +491,7 @@ func _clear_editor() -> void:
 	_update_map_marker()
 	is_populating_form = false
 
+## Fills the form fields with a species entry's values, falling back to the template if needed.
 func _load_entry_into_editor(entry: Dictionary) -> void:
 	is_populating_form = true
 	var total_count = int(entry.get("count", 0))
@@ -527,6 +537,7 @@ func _load_entry_into_editor(entry: Dictionary) -> void:
 			break
 	is_populating_form = false
 
+## Copies the form's current values back into the selected species entry, then refreshes the display.
 func _sync_editor_to_entry() -> void:
 	if selected_index < 0 or selected_index >= selection.size():
 		return
@@ -552,11 +563,13 @@ func _sync_editor_to_entry() -> void:
 	_refresh_species_list()
 	_update_map_marker()
 
+## Handler for selection in the species list: loads the corresponding entry into the editor.
 func _on_species_selected(index: int) -> void:
 	selected_index = index
 	if index >= 0 and index < selection.size():
 		_load_entry_into_editor(selection[index])
 
+## Adds a new species to the selection from the chosen template, with a random position.
 func _on_add_pressed() -> void:
 	if template_picker.item_count == 0:
 		return
@@ -574,6 +587,7 @@ func _on_add_pressed() -> void:
 	selected_index = selection.size() - 1
 	_refresh_species_list()
 
+## Removes the currently selected species from the list.
 func _on_remove_pressed() -> void:
 	if selected_index < 0 or selected_index >= selection.size():
 		return
@@ -581,6 +595,7 @@ func _on_remove_pressed() -> void:
 	selected_index = min(selected_index, selection.size() - 1)
 	_refresh_species_list()
 
+## Resets the current selection to the base configuration received from the server.
 func _on_reset_base_pressed() -> void:
 	selection.clear()
 	for row in base_selection:
@@ -588,20 +603,24 @@ func _on_reset_base_pressed() -> void:
 	selected_index = -1
 	_refresh_species_list()
 
+## Syncs the entry with the form when a numeric field changes (ignores internal changes).
 func _on_fields_changed(_value = null) -> void:
 	if is_populating_form:
 		return
 	_sync_editor_to_entry()
 
+## Syncs the entry with the form when a text field changes (ignores internal changes).
 func _on_fields_changed_text(_value: String) -> void:
 	if is_populating_form:
 		return
 	_sync_editor_to_entry()
 
+## Re-requests the species catalog from the server.
 func _on_refresh_pressed() -> void:
 	if world and world.has_method("request_species_catalog"):
 		world.request_species_catalog()
 
+## Builds the final configuration (filtered species, water, food, simulation) and sends it to the server, with an option to start immediately.
 func _save(start_after: bool) -> void:
 	_sync_editor_to_entry()
 	if selection.is_empty():
@@ -647,12 +666,15 @@ func _save(start_after: bool) -> void:
 			status_label.text = "Enregistrement en cours..."
 		world.apply_species_configuration(filtered_selection, start_after)
 
+## Handler for the Save button: saves the configuration without starting the simulation.
 func _on_save_pressed() -> void:
 	_save(false)
 
+## Handler for the Save and Start button: saves the configuration then starts the simulation.
 func _on_save_and_start_pressed() -> void:
 	_save(true)
 
+## Handler for the save confirmation signal: updates the status and closes the dialog box on success.
 func _on_species_configuration_saved(ok, payload) -> void:
 	if ok:
 		var count = int(payload.get("species_count", 0))
@@ -661,20 +683,24 @@ func _on_species_configuration_saved(ok, payload) -> void:
 	else:
 		status_label.text = "Erreur lors de l'enregistrement de la configuration. Voir logs Godot/serveur."
 
+## Refreshes the mini-map preview once the world has loaded.
 func _on_world_loaded() -> void:
 	if map_preview and map_preview.has_method("refresh_from_world"):
 		map_preview.call("refresh_from_world")
 		map_preview.queue_redraw()
 
+## Handler for clicking on the mini-map: updates the chosen position and syncs the entry.
 func _on_map_position_selected(position_value: Vector2) -> void:
 	_set_position_inputs(position_value)
 	_sync_editor_to_entry()
 	_update_map_marker()
 
+## Applies a position (clamped to the map's dimensions) to the Position X/Y fields.
 func _set_position_inputs(position_value: Vector2) -> void:
 	position_x_input.value = max(0.0, min(map_width, position_value.x))
 	position_y_input.value = max(0.0, min(map_height, position_value.y))
 
+## Computes a random default position near the center of the map.
 func _random_default_position() -> Vector2:
 	var center_x = map_width * 0.5
 	var center_y = map_height * 0.5
@@ -685,6 +711,7 @@ func _random_default_position() -> Vector2:
 		max(0.0, min(map_height, center_y + rng.randf_range(-spread_y, spread_y)))
 	)
 
+## Updates the marker position displayed on the mini-map from the position fields.
 func _update_map_marker() -> void:
 	if map_preview == null:
 		return

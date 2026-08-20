@@ -1,9 +1,10 @@
-## Fournit un menu de zoom simple pour piloter la camera depuis l'interface.
+## Provides a simple zoom menu to control the camera from the UI.
 extends MenuButton
 
 @export var camera_path: NodePath
 var camera: Node = null
 
+## Builds the zoom popup menu, styles it, connects the selection and retrieves the camera.
 func _ready() -> void:
 	var popup: PopupMenu = get_popup()
 	popup.hide_on_item_selection = false
@@ -26,6 +27,7 @@ func _ready() -> void:
 	if camera_path != NodePath():
 		camera = get_node(camera_path)
 
+## Adjusts the camera zoom according to the chosen option, clamping the minimum zoom.
 func _on_item_selected(id: int) -> void:
 	if camera == null:
 		return

@@ -1,39 +1,42 @@
-## Gere le deplacement de la camera du monde avec drag, inertie et zoom.
+## Manages the world camera's movement with drag, inertia and zoom.
 extends Camera2D
 
 var dragging: bool = false
-var velocity: Vector2 = Vector2.ZERO  # Vélocité pour l'inertie
+var velocity: Vector2 = Vector2.ZERO  # Velocity for inertia
 
 var max_zoom: float = 15.0
 var min_zoom: float = 0.1
 var zoom_speed: float = 0.15
 
-## Vitesse de lissage du déplacement (plus élevé = plus réactif)
+## Movement smoothing speed (higher = more responsive)
 @export var smooth_speed: float = 12.0
-## Friction pour l'inertie (plus bas = glisse plus longtemps)
+## Friction for inertia (lower = slides longer)
 @export var friction: float = 5.0
-## Multiplicateur de sensibilité du drag
+## Drag sensitivity multiplier
 @export var drag_sensitivity: float = 1.0
 
+## Initializes the camera's movement limits on startup.
 func _ready() -> void:
 	_set_camera_limits()
 
+## Applies movement inertia when the user is no longer dragging the camera.
 func _process(delta: float) -> void:
-	# Appliquer l'inertie quand on ne drag pas
+	# Apply inertia when not dragging
 	if not dragging and velocity.length() > 0.5:
 		global_position -= velocity * delta
 		velocity = velocity.lerp(Vector2.ZERO, friction * delta)
 		_clamp_position()
 
+## Handles mouse drag (start/end, movement) and mouse wheel zoom.
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
 				dragging = true
-				velocity = Vector2.ZERO  # Reset inertie au début du drag
+				velocity = Vector2.ZERO  # Reset inertia at the start of the drag
 			else:
 				dragging = false
-				# L'inertie continue avec la vélocité actuelle
+				# Inertia continues with the current velocity
 
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
 			_set_zoom(zoom_speed, event.position)
@@ -43,11 +46,12 @@ func _input(event: InputEvent) -> void:
 	elif event is InputEventMouseMotion and dragging:
 		var movement: Vector2 = event.relative * drag_sensitivity / zoom.x
 		global_position -= movement
-		velocity = movement / get_process_delta_time() * 0.1  # Capturer la vélocité pour l'inertie
+		velocity = movement / get_process_delta_time() * 0.1  # Capture the velocity for inertia
 		_clamp_position()
 
+## Restricts the camera's position to stay within the map's limits.
 func _clamp_position() -> void:
-	# Garder la caméra dans les limites
+	# Keep the camera within limits
 	var vp_size = get_viewport_rect().size / zoom.x
 	var half_vp = vp_size * 0.5
 	
@@ -66,18 +70,22 @@ func _clamp_position() -> void:
 		global_position.y = clamp(global_position.y, min_y, max_y)
 
 # Used for buttons zoom
+## Zooms the camera in (used by the zoom buttons).
 func zoom_in() -> void:
 	_set_zoom(zoom_speed * 3.0)
 
+## Zooms the camera out (used by the zoom buttons).
 func zoom_out() -> void:
 	_set_zoom(-zoom_speed * 3.0)
 
+## Instantly centers the camera on a target position.
 func center_on_target(target_pos: Vector2) -> void:
 	global_position = target_pos
 	velocity = Vector2.ZERO
 	_clamp_position()
 
 
+## Changes the zoom level while keeping the point under the mouse fixed on screen.
 func _set_zoom(delta: float, mouse_pos: Vector2 = Vector2.ZERO) -> void:
 	var old_z: float = zoom.x
 	var new_z: float = clamp(old_z + delta, min_zoom, max_zoom)
@@ -88,10 +96,10 @@ func _set_zoom(delta: float, mouse_pos: Vector2 = Vector2.ZERO) -> void:
 	var vp_size: Vector2 = get_viewport_rect().size
 
 	if mouse_pos != Vector2.ZERO:
-		# Convertir la position souris en coordonnées monde avant zoom
+		# Convert the mouse position to world coordinates before zooming
 		var mouse_world_before: Vector2 = global_position + (mouse_pos - vp_size * 0.5) / old_z
 		zoom = Vector2(new_z, new_z)
-		# Après zoom, ajuster la position pour garder le point sous la souris
+		# After zooming, adjust the position to keep the point under the mouse
 		var mouse_world_after: Vector2 = global_position + (mouse_pos - vp_size * 0.5) / new_z
 		global_position += mouse_world_before - mouse_world_after
 	else:
@@ -100,6 +108,7 @@ func _set_zoom(delta: float, mouse_pos: Vector2 = Vector2.ZERO) -> void:
 	velocity = Vector2.ZERO
 	_clamp_position()
 
+## Computes the movement limits and minimum zoom based on the map's size.
 func _set_camera_limits() -> void:
 	var grass := get_parent().get_node("Grass") as TileMapLayer
 	var rect: Rect2i = grass.get_used_rect()
@@ -111,7 +120,7 @@ func _set_camera_limits() -> void:
 	var tile_size: Vector2 = Vector2(grass.tile_set.tile_size) * grass.scale
 	var map_size: Vector2 = Vector2(rect.size) * tile_size
 	
-	# Empêcher de dézoomer plus que la taille de la map
+	# Prevent zooming out further than the map's size
 	var vp_size: Vector2 = get_viewport_rect().size
 	var needed_zoom_x = vp_size.x / map_size.x
 	var needed_zoom_y = vp_size.y / map_size.y
@@ -131,6 +140,7 @@ func _set_camera_limits() -> void:
 	print("[Camera] Limites: ", limit_left, ",", limit_top, " -> ", limit_right, ",", limit_bottom)
 
 
+## Adjusts the zoom and centers the camera so the whole map fits within the window.
 func fit_camera_to_viewport(viewport_size: Vector2) -> void:
 	var grass := get_parent().get_node("Grass") as TileMapLayer
 	var rect: Rect2i = grass.get_used_rect()
@@ -138,7 +148,7 @@ func fit_camera_to_viewport(viewport_size: Vector2) -> void:
 	if rect.size.x == 0 or rect.size.y == 0:
 		return
 		
-	# Obtenir la taille réelle d'une tile en tenant compte de l'échelle
+	# Get the actual tile size accounting for the scale
 	var tile_size: Vector2 = Vector2(grass.tile_set.tile_size) * grass.scale
 	
 	var tile_origin: Vector2 = grass.global_position

@@ -39,6 +39,14 @@ def _existing_run_indices(logs_dir: str) -> int:
 
 
 def next_run_index(logs_dir: str) -> int:
+    """Computes the next unused run index for this logs directory.
+
+    Args:
+        logs_dir (str): Directory containing previous run outputs.
+
+    Returns:
+        int: Next available run index.
+    """
     return _existing_run_indices(logs_dir) + 1
 
 
@@ -60,6 +68,16 @@ def _slugify(value: str | None, *, default: str = "entity") -> str:
 def write_step(
     logs_dir: str, step_number: int, step_data: Dict[str, Any]
 ) -> str:
+    """Writes a single step's data to its own JSON file.
+
+    Args:
+        logs_dir (str): Directory to write the file into.
+        step_number (int): Zero-based step index.
+        step_data (Dict[str, Any]): Step payload to serialize.
+
+    Returns:
+        str: Path to the written file.
+    """
     ensure_logs_dir(logs_dir)
     filename = os.path.join(logs_dir, f"step{step_number + 1}.json")
     with open(filename, "w", encoding="utf-8") as handle:
@@ -74,6 +92,19 @@ def write_summary(
     index: int | None = None,
     filename: str | None = None,
 ) -> str:
+    """Writes a simulation summary to its run directory.
+
+    Args:
+        logs_dir (str): Root logs directory.
+        summary_data (Dict[str, Any]): Summary payload to serialize.
+        index (int | None): Run index; computed via
+            next_run_index() when None.
+        filename (str | None): Target filename, defaults to
+            "summary.json".
+
+    Returns:
+        str: Path to the written file.
+    """
     ensure_logs_dir(logs_dir)
     if index is None:
         index = next_run_index(logs_dir)
@@ -284,6 +315,23 @@ def write_entity_logs(
     index: int,
     summary_data: Dict[str, Any] | None = None,
 ) -> None:
+    """Splits step data into per-animal/group/species/diet log files.
+
+    Walks every step's species entries, groups them by animal,
+    group, species type, and diet, then writes one JSON file per
+    entity under logs_dir/log{index}/{animals,groups,species,diets}.
+    Animal files keep the full entry history; the other registries
+    keep a compact stats summary plus member summaries pulled from
+    summary_data.
+
+    Args:
+        logs_dir (str): Root logs directory.
+        steps_data (Sequence[Dict[str, Any]]): All computed steps.
+        index (int): Run index whose directory the files are
+            written into.
+        summary_data (Dict[str, Any] | None): Optional final summary
+            used to attach per-entity/member summaries.
+    """
     run_dir = _ensure_run_dir(logs_dir, index)
     animals_dir = os.path.join(run_dir, "animals")
     groups_dir = os.path.join(run_dir, "groups")

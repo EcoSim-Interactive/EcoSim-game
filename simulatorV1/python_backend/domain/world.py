@@ -50,6 +50,14 @@ class World:
         height: int = 1000,
         minutes_per_step: int = DEFAULT_MINUTES_PER_STEP,
     ) -> None:
+        """Initialize an empty world and its spatial/water bookkeeping.
+
+        Args:
+            width (int): World width in tiles.
+            height (int): World height in tiles.
+            minutes_per_step (int): Simulated minutes elapsed per
+                step.
+        """
         self.width = width
         self.height = height
         self.minutes_per_step = minutes_per_step
@@ -258,6 +266,18 @@ class World:
         self.add_lakes(count=lake_count, fill_step=fill_step)
 
     def add_river(self, length: int = 8, *, max_step: int = 60) -> None:
+        """Carves a river across the world and registers its water tiles.
+
+        Generates spaced key points, connects them into a continuous
+        pixel path, deduplicates it, then widens the path
+        progressively (narrower upstream, wider downstream) and
+        registers every tile inside the resulting band as river
+        water.
+
+        Args:
+            length (int): Number of river segments to generate.
+            max_step (int): Currently unused (reserved parameter).
+        """
         if length <= 0:
             return
 
@@ -1169,6 +1189,14 @@ class World:
         return water
 
     def get_water_by_id(self, source_id: str) -> Optional[Dict[str, Any]]:
+        """Looks up a water source by its identifier.
+
+        Args:
+            source_id (str): Water source id.
+
+        Returns:
+            Optional[Dict[str, Any]]: Matching water source, or None.
+        """
         return self._water_lookup.get(str(source_id))
 
     # ------------------------------------------------------------------
@@ -1196,6 +1224,24 @@ class World:
         diet: Optional[str] = None,
         entity: Any | None = None,
     ) -> Optional[Dict[str, Any]]:
+        """Finds the closest food source reachable from a position.
+
+        Only considers sources with remaining supply that match the
+        given diet, and, when an entity is provided, excludes
+        sources whose line of sight is blocked by water the entity
+        cannot cross.
+
+        Args:
+            x (float): Origin x coordinate.
+            y (float): Origin y coordinate.
+            diet (Optional[str]): Diet filter, or None for any diet.
+            entity (Any | None): Entity used to check line-of-sight
+                water blocking, or None to skip that check.
+
+        Returns:
+            Optional[Dict[str, Any]]: Nearest matching food source,
+                or None.
+        """
         return self._food_spatial_index.search_nearest(
             x,
             y,
@@ -1221,10 +1267,40 @@ class World:
         )
 
     def water_depth_at(self, x: float, y: float) -> Optional[float]:
+        """Returns the water depth at a tile position, if any.
+
+        Args:
+            x (float): Tile x coordinate.
+            y (float): Tile y coordinate.
+
+        Returns:
+            Optional[float]: Depth of the water tile, or None if the
+                position is dry.
+        """
         key = (int(round(x)), int(round(y)))
         return self._water_tile_depth.get(key)
 
     def can_entity_enter(self, entity: Any, x: float, y: float) -> bool:
+        """Checks whether an entity may step onto a given tile.
+
+        Land tiles are always enterable. For water tiles, a juvenile
+        entity (age_stage "calf"/"juvenile"/"cub") is capped by its
+        "juvenile_max_depth" trait when set. Otherwise, a swimmer
+        (water trait "can_swim") is allowed up to its "max_depth"
+        (or unrestricted if none is set); a non-swimmer is allowed
+        up to an explicit "max_depth"/"max_water_depth" trait, and
+        failing that up to 80% of its body height. An entity with
+        none of these traits cannot enter water.
+
+        Args:
+            entity (Any): Entity attempting to move; may expose
+                get_traits()/traits and age_stage.
+            x (float): Target x coordinate.
+            y (float): Target y coordinate.
+
+        Returns:
+            bool: True if the entity can occupy the tile.
+        """
         depth = self.water_depth_at(x, y)
         if depth is None:
             return True
@@ -1304,6 +1380,15 @@ class World:
         return False
 
     def is_water_at(self, x: float, y: float) -> bool:
+        """Checks whether a tile position currently holds water.
+
+        Args:
+            x (float): Tile x coordinate.
+            y (float): Tile y coordinate.
+
+        Returns:
+            bool: True if the tile is water.
+        """
         key = (int(round(x)), int(round(y)))
         return key in self._water_tiles
 
@@ -1315,6 +1400,18 @@ class World:
         attempts: int = RELOCATE_OFF_WATER_ATTEMPTS,
         radius: int = RELOCATE_OFF_WATER_RADIUS,
     ) -> Optional[Tuple[float, float]]:
+        """Finds a nearby dry position, falling back to the input point.
+
+        Args:
+            x (float): Origin x coordinate.
+            y (float): Origin y coordinate.
+            attempts (int): Random offsets to try before giving up.
+            radius (int): Maximum offset radius per attempt.
+
+        Returns:
+            Optional[Tuple[float, float]]: A dry position, or the
+                original (x, y) if none was found.
+        """
         position = self._relocate_off_water(
             x, y, attempts=attempts, radius=radius
         )
@@ -1459,6 +1556,22 @@ class World:
     def distance_to_water(
         self, x: float, y: float, water: Dict[str, Any]
     ) -> float:
+        """Computes distance from a point to a water source's edge.
+
+        Accounts for elliptical or circular radius metadata so the
+        distance reflects the body's outline rather than its center
+        point; falls back to plain center-to-point distance when no
+        radius is known.
+
+        Args:
+            x (float): Origin x coordinate.
+            y (float): Origin y coordinate.
+            water (Dict[str, Any]): Water source, possibly with
+                "radius"/"radius_x"/"radius_y" metadata.
+
+        Returns:
+            float: Distance to the water body's edge (0 if inside).
+        """
         dx = x - float(water.get("x", 0.0))
         dy = y - float(water.get("y", 0.0))
         dist = math.sqrt(dx * dx + dy * dy)
@@ -1547,6 +1660,20 @@ class World:
     def get_nearest_water(
         self, x: float, y: float
     ) -> Optional[Dict[str, Any]]:
+        """Finds the closest water source with remaining supply.
+
+        Prefers shore tiles (water adjacent to land) over interior
+        water tiles, so entities are steered towards a drinkable
+        edge rather than the middle of a lake.
+
+        Args:
+            x (float): Origin x coordinate.
+            y (float): Origin y coordinate.
+
+        Returns:
+            Optional[Dict[str, Any]]: Nearest water source, or None
+                if the world has no water.
+        """
         if not self.water_sources:
             return None
         if self._shore_water_dirty:
@@ -1571,6 +1698,14 @@ class World:
         )
 
     def get_time_info(self, step_index: int) -> Dict[str, int | bool]:
+        """Derives the hour of day and day/night flag for a step.
+
+        Args:
+            step_index (int): Zero-based simulation step index.
+
+        Returns:
+            Dict[str, int | bool]: "hour" (0-23) and "is_day" flag.
+        """
         total_minutes = step_index * self.minutes_per_step
         hour = (total_minutes // 60) % 24
         return {
@@ -1623,6 +1758,15 @@ class World:
         return {"consumed": consumed, "removed": removed, "food": snapshot}
 
     def food_has_supply(self, food: Dict[str, Any]) -> bool:
+        """Checks whether a food source still has remaining nutrition.
+
+        Args:
+            food (Dict[str, Any]): Food source to check.
+
+        Returns:
+            bool: True if the source is still registered and not
+                depleted.
+        """
         food_id = food.get("id")
         if (
             food_id is not None
@@ -1636,6 +1780,16 @@ class World:
     def food_matches_diet(
         self, food: Dict[str, Any], diet: Optional[str]
     ) -> bool:
+        """Checks whether a food source is compatible with a diet.
+
+        Args:
+            food (Dict[str, Any]): Food source to check.
+            diet (Optional[str]): Diet name, or None to accept any
+                food.
+
+        Returns:
+            bool: True if the food's class matches the given diet.
+        """
         return self._food_matches_diet(food, diet)
 
     # ------------------------------------------------------------------

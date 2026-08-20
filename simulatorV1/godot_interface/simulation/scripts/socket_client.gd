@@ -1,4 +1,4 @@
-## Coordonne la communication WebSocket avec le backend et la mise a jour de la scene.
+## Coordinates the WebSocket communication with the backend and the scene updates.
 extends Node2D
 class_name SimulationManager
 
@@ -17,7 +17,7 @@ signal species_deselected()
 
 var socket := WebSocketPeer.new()
 var connected := false
-var running := false   # false = pause par defaut
+var running := false   # false = paused by default
 var precompute_ready := false
 var precompute_pending := false
 var species_configured := false
@@ -56,9 +56,10 @@ const COLOR_PLANT := Color(0.15, 0.8, 0.15, 1.0)
 const COLOR_OMNIVORE := Color(0.95, 0.85, 0.1, 1.0)
 const COLOR_MEAT := Color(0.9, 0.35, 0.05, 1.0)
 
+## Initializes the WebSocket connection and hides the spawn templates on startup.
 func _ready():
 	socket.inbound_buffer_size = 1_000_000_000
-	socket.outbound_buffer_size = 1_000_000_000  # pour autoriser l'envoi de gros JSON (rerun)
+	socket.outbound_buffer_size = 1_000_000_000  # to allow sending large JSON payloads (rerun)
 	var err = socket.connect_to_url("ws://localhost:8765")
 	if err != OK:
 		print("[CLIENT] Erreur de connexion :", err)
@@ -75,6 +76,7 @@ func _ready():
 	if water_template:
 		water_template.visible = false
 
+## Polls the socket every frame, processes received packets and handles connection closure.
 func _process(_delta):
 	socket.poll()
 	var state = socket.get_ready_state()
@@ -102,6 +104,7 @@ func _process(_delta):
 		species_configured = false
 		pending_start_after_species_save = false
 
+## Decodes a JSON message from the server and dispatches it based on its type (world, step, status, error...).
 func _on_message(msg: String):
 	var data = JSON.parse_string(msg)
 	if typeof(data) != TYPE_DICTIONARY:
@@ -201,6 +204,7 @@ func _on_message(msg: String):
 				pending_start_after_species_save = false
 				start_simulation()
 
+## Interprets the status payload (string or dictionary) and updates the local simulation state.
 func _handle_status(payload):
 	match typeof(payload):
 		TYPE_STRING:
@@ -232,6 +236,7 @@ func _handle_status(payload):
 		_:
 			print("[CLIENT] Etat serveur (inconnu) :", payload)
 
+## Fully rebuilds the world scene: terrain, food and water sources.
 func _spawn_world(world_data: Dictionary):
 	_clear_species_markers()
 	_clear_food_markers()
@@ -260,18 +265,21 @@ func _spawn_world(world_data: Dictionary):
 	#add_child(clone)
 	#return clone
 
+## Removes all currently displayed dynamic water markers.
 func _clear_water_markers() -> void:
 	for node in get_tree().get_nodes_in_group("dynamic_water"):
 		if node.get_parent() == self and is_instance_valid(node):
 			node.queue_free()
 
-# ---- Commandes (tout passe par cmd) ----
+# ---- Commands (everything goes through cmd) ----
+## Sends a JSON command to the backend, with an optional value.
 func _send_cmd(cmd: String, value = null):
 	var payload := {"cmd": cmd}
 	if value != null:
 		payload["value"] = value
 	socket.send_text(JSON.stringify(payload))
 
+## Asks the backend to pre-compute the simulation, unless a computation is already in progress or finished.
 func _request_precompute(force: bool = false):
 	if not connected:
 		return
@@ -284,13 +292,16 @@ func _request_precompute(force: bool = false):
 	_send_cmd("compute")
 	print("[CLIENT] Pre-calcul demande")
 
+## Forces a new simulation pre-computation, even if a result already exists.
 func compute_simulation():
 	_request_precompute(true)
 
+## Asks the backend for the list of available species.
 func request_species_catalog() -> void:
 	if connected:
 		_send_cmd("get_species_catalog")
 
+## Sends the chosen species selection to the backend and starts the simulation afterwards if requested.
 func apply_species_configuration(selection: Array, start_after_apply: bool = false) -> void:
 	if not connected:
 		return
@@ -298,10 +309,12 @@ func apply_species_configuration(selection: Array, start_after_apply: bool = fal
 	pending_start_after_species_save = start_after_apply
 	_send_cmd("configure_species", {"selection": selection})
 
+## Asks the backend for the current world configuration.
 func request_world_config() -> void:
 	if connected:
 		_send_cmd("get_world_config")
 
+## Sends a new world configuration to the backend and starts the simulation afterwards if requested.
 func apply_world_configuration(payload: Dictionary, start_after_apply: bool = false) -> void:
 	if not connected:
 		return
@@ -309,6 +322,7 @@ func apply_world_configuration(payload: Dictionary, start_after_apply: bool = fa
 	pending_start_after_species_save = start_after_apply
 	_send_cmd("configure_world", payload)
 
+## Starts the simulation, handling all cases (species not configured, world not ready, resume or restart after a run ends).
 func start_simulation():
 	if not species_configured and not precompute_ready and not run_completed:
 		request_species_catalog()
@@ -345,18 +359,21 @@ func start_simulation():
 func is_running() -> bool:
 	return running
 
+## Pauses the simulation on the backend side.
 func pause_simulation():
 	if connected and running:
 		_send_cmd("pause")
 		running = false
 		print("[CLIENT] Pause envoyee")
 
+## Resumes a paused simulation on the backend side.
 func resume_simulation():
 	if connected and not running:
 		_send_cmd("resume")
 		running = true
 		print("[CLIENT] Reprise envoyee")
 
+## Stops the simulation on the backend side and resets the pre-computation flags.
 func stop_simulation():
 	if connected:
 		_send_cmd("stop")
@@ -365,11 +382,13 @@ func stop_simulation():
 		precompute_pending = false
 		print("[CLIENT] Stop envoye")
 
+## Sends the new simulation speed to the backend, in milliseconds per step.
 func set_speed(ms: int):
 	if connected:
 		_send_cmd("speed", ms)
 		print("[CLIENT] Vitesse envoyee :", ms, "ms par step")
 
+## Reruns a simulation from already computed step data (replay).
 func rerun_simulation(sim_data: Dictionary):
 	if not connected:
 		print("[CLIENT] Rerun impossible : client non connecte")
@@ -388,11 +407,13 @@ func rerun_simulation(sim_data: Dictionary):
 	running = true
 	print("[CLIENT] Rerun envoye (", steps_count, " steps)")
 
-# ---- Update visuel ----
+# ---- Visual update ----
+## Applies a simulation step by updating the species and food markers.
 func _update_simulation(step_data: Dictionary):
 	_update_species_markers(step_data)
 	_apply_food_updates(step_data)
 
+## Updates the position and appearance of living animals' markers, and removes those that became inactive.
 func _update_species_markers(step_data: Dictionary) -> void:
 	if not step_data.has("species"):
 		return
@@ -411,7 +432,7 @@ func _update_species_markers(step_data: Dictionary) -> void:
 		if base_name.is_empty():
 			base_name = String(entry.get("display_name", entry.get("original_name", "Species")))
 
-		# Ne pas afficher les espèces mortes
+		# Do not display dead species
 		var is_alive := true
 		if entry.has("after") and typeof(entry["after"]) == TYPE_DICTIONARY:
 			is_alive = bool(entry["after"].get("alive", true))
@@ -423,7 +444,7 @@ func _update_species_markers(step_data: Dictionary) -> void:
 		if not is_alive:
 			continue
 
-		# Clé unique stable basée sur animal_id pour éviter tout décalage d'index lors des décès
+		# Stable unique key based on animal_id to avoid any index shift on deaths
 		var animal_id = entry.get("animal_id")
 		var id: String
 		if animal_id != null and str(animal_id) != "":
@@ -483,6 +504,7 @@ func _update_species_markers(step_data: Dictionary) -> void:
 		else:
 			_handle_selected_species_death(step_data)
 
+## Looks for the currently selected animal in the step and emits its state as dead if it is found there.
 func _handle_selected_species_death(step_data: Dictionary) -> void:
 	if not step_data.has("species") or typeof(step_data["species"]) != TYPE_ARRAY:
 		return
@@ -500,6 +522,7 @@ func _handle_selected_species_death(step_data: Dictionary) -> void:
 			emit_signal("species_selected", dead_data)
 			break
 
+## Selects a clicked species marker and updates the selection display on all markers.
 func select_species_marker(marker: Node2D) -> void:
 	if marker == null or not is_instance_valid(marker):
 		return
@@ -511,6 +534,7 @@ func select_species_marker(marker: Node2D) -> void:
 	if marker.has_method("get_full_data"):
 		emit_signal("species_selected", marker.get_full_data())
 
+## Selects a species marker by its identifier rather than by direct reference.
 func select_species_by_id(p_id: String) -> void:
 	selected_species_id = p_id
 	for key in species_markers.keys():
@@ -520,6 +544,7 @@ func select_species_by_id(p_id: String) -> void:
 			if key == p_id and m.has_method("get_full_data"):
 				emit_signal("species_selected", m.get_full_data())
 
+## Deselects the current species and notifies listeners.
 func deselect_species() -> void:
 	selected_species_id = ""
 	for m in species_markers.values():
@@ -527,6 +552,7 @@ func deselect_species() -> void:
 			m.set_selected(false)
 	emit_signal("species_deselected")
 
+## Returns the marker node of the currently selected species, or null if none.
 func get_selected_species_marker() -> Node2D:
 	if selected_species_id != "" and species_markers.has(selected_species_id):
 		var m = species_markers[selected_species_id]
@@ -534,6 +560,7 @@ func get_selected_species_marker() -> Node2D:
 			return m
 	return null
 
+## Applies additions, updates and removals of food sources for a step.
 func _apply_food_updates(step_data: Dictionary) -> void:
 	for food in step_data.get("new_food_sources", []):
 		_spawn_or_update_food(food)
@@ -544,6 +571,7 @@ func _apply_food_updates(step_data: Dictionary) -> void:
 
 var _texture_cache: Dictionary = {}
 
+## Loads and caches a texture from res://sprites, falling back to "carcass" for corpses.
 func _get_dynamic_texture(sprite_name: String) -> Texture2D:
 	if _texture_cache.has(sprite_name):
 		return _texture_cache[sprite_name]
@@ -558,7 +586,7 @@ func _get_dynamic_texture(sprite_name: String) -> Texture2D:
 			icon = ImageTexture.create_from_image(img)
 			
 	if icon == null and ResourceLoader.exists(path):
-		icon = load(path) # Fallback classique (et pour le jeu exporté)
+		icon = load(path) # Classic fallback (and for the exported game)
 
 	if icon == null and sprite_name.begins_with("carcass_") and sprite_name != "carcass":
 		var fallback_icon = _get_dynamic_texture("carcass")
@@ -569,6 +597,7 @@ func _get_dynamic_texture(sprite_name: String) -> Texture2D:
 	_texture_cache[sprite_name] = icon
 	return icon
 
+## Creates or updates a food source's visual marker (color, icon, state).
 func _spawn_or_update_food(food_data: Dictionary) -> void:
 	var food_id := String(food_data.get("id", ""))
 	if food_id.is_empty():
@@ -602,19 +631,21 @@ func _spawn_or_update_food(food_data: Dictionary) -> void:
 				marker.default_texture = null
 				
 		marker.update_state(food_data, icon, color)
+## Returns the color associated with a known species type, or white by default.
 func _get_species_color(type: String) -> Color:
 	match type:
 		"gazelle":
-			return Color(1, 1, 0) # jaune
+			return Color(1, 1, 0) # yellow
 		"lion":
-			return Color(1, 0, 0) # rouge
+			return Color(1, 0, 0) # red
 		"hyene":
 			return Color(1, 0.5, 0) # orange
 		"elephant":
-			return Color(0.6, 0.6, 0.6) # gris
+			return Color(0.6, 0.6, 0.6) # gray
 		_:
-			return Color(1, 1, 1) # blanc
+			return Color(1, 1, 1) # white
 
+## Duplicates the template matching the food class and adds it to the scene.
 func _create_food_marker(food_data: Dictionary) -> Node2D:
 	var template := _get_food_template(String(food_data.get("food_class", "plant")))
 	if template == null:
@@ -625,6 +656,7 @@ func _create_food_marker(food_data: Dictionary) -> Node2D:
 	add_child(marker)
 	return marker
 
+## Selects the marker template (plant or meat) matching a food class.
 func _get_food_template(food_class: String) -> Node2D:
 	var normalized := food_class.to_lower()
 	if normalized in ["plant", "fungi"]:
@@ -635,6 +667,7 @@ func _get_food_template(food_class: String) -> Node2D:
 		return plant_food_template
 	return plant_food_template
 
+## Returns the color associated with a food class (plant, meat, omnivore).
 func _color_for_food_class(food_class: String) -> Color:
 	var normalized := food_class.to_lower()
 	if normalized in ["plant", "fungi"]:
@@ -645,6 +678,7 @@ func _color_for_food_class(food_class: String) -> Color:
 		return COLOR_OMNIVORE
 	return COLOR_PLANT
 
+## Destroys and removes from the dictionary the food marker matching the given identifier.
 func _remove_food_marker(food_id: String) -> void:
 	if not food_markers.has(food_id):
 		return
@@ -653,16 +687,19 @@ func _remove_food_marker(food_id: String) -> void:
 		marker.queue_free()
 	food_markers.erase(food_id)
 
+## Removes all currently displayed food markers.
 func _clear_food_markers() -> void:
 	for marker in get_tree().get_nodes_in_group("food_markers"):
 		if marker.get_parent() == self and is_instance_valid(marker):
 			marker.queue_free()
 	food_markers.clear()
 	
+## Clears the terrain tilemap's content.
 func _clear_tilemap():
 	if $Grass:
 		$Grass.clear()
 
+## Draws the terrain tiles chunk by chunk onto the tilemap and fits the camera to the full world.
 func _draw_terrain(terrain):
 	var tilemap_layer = $Grass as TileMapLayer
 	tilemap_layer.scale = Vector2(1.0/16.0, 1.0/16.0)
@@ -684,8 +721,8 @@ func _draw_terrain(terrain):
 			for x in range(len(row)):
 				## var tile_id = int(row[x])
 				var coords = Vector2i(x, y_start + y)
-				
-				# Avec tile_id = 0, on place la tuile à atlas_coords (0,12), A CHANGER EN FONCTION DE CE QU'ON VEUT (EAU ETCETC)
+
+				# With tile_id = 0, the tile is placed at atlas_coords (0,12), CHANGE THIS BASED ON WHAT'S NEEDED (WATER ETC.)
 				tilemap_layer.set_cell(coords, 0, Vector2i(0, 12))
 		
 		chunks_drawn += 1
@@ -698,6 +735,7 @@ func _draw_terrain(terrain):
 	var camera = $Camera2D
 	camera.fit_camera_to_viewport(get_viewport().size)
 
+## Places the water tiles on the tilemap for each of the world's water sources.
 func _draw_water(world_data):
 	var tilemap_layer = $Grass as TileMapLayer # Need to rename tilemaplayer to a better name
 	tilemap_layer.scale = Vector2(1.0/16.0, 1.0/16.0)
@@ -713,9 +751,10 @@ func _draw_water(world_data):
 		var x = int(w.get("x", 0))
 		var y = int(w.get("y", 0))
 
-		# Exemple : tuile d’eau située à (5,15) dans l’atlas (1 is water_layer)
+		# Example: water tile located at (5,15) in the atlas (1 is water_layer)
 		tilemap_layer.set_cell(Vector2i(x, y), 1, Vector2i(4, 16))
 
+## Returns an animal's existing marker or creates a new one at the given initial position.
 func _ensure_species_marker(species_name: String, initial_pos: Vector2 = Vector2.ZERO) -> Node2D:
 	if species_marker_template == null:
 		return null
@@ -734,6 +773,7 @@ func _ensure_species_marker(species_name: String, initial_pos: Vector2 = Vector2
 	species_markers[species_name] = marker
 	return marker
 
+## Destroys species markers that no longer appear in the list of active names.
 func _remove_inactive_species_markers(active_names: Array) -> void:
 	var to_remove: Array = []
 	for species_name in species_markers.keys():
@@ -745,6 +785,7 @@ func _remove_inactive_species_markers(active_names: Array) -> void:
 	for name_to_remove in to_remove:
 		species_markers.erase(name_to_remove)
 
+## Removes all currently displayed species markers.
 func _clear_species_markers() -> void:
 	for species_name in species_markers.keys():
 		var marker = species_markers[species_name]
@@ -752,6 +793,7 @@ func _clear_species_markers() -> void:
 			marker.queue_free()
 	species_markers.clear()
 
+## Cleans up all visual elements of the scene (species, food, water, terrain) and deselects the current species.
 func _reset_visuals() -> void:
 	_clear_species_markers()
 	_clear_food_markers()
@@ -762,6 +804,7 @@ func _reset_visuals() -> void:
 		selected_species_id = ""
 		emit_signal("species_deselected")
 
+## Imports a complete simulation (world and step) from locally supplied data, without going through the backend.
 func import_simulation(sim_data: Dictionary) -> void:
 	print("[CLIENT] Import simulation...")
 	species_configured = true

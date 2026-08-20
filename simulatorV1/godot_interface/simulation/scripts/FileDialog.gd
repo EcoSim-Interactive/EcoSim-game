@@ -1,15 +1,17 @@
-## Dialogue d'import permettant de recharger une simulation JSON existante.
+## Import dialog that lets the user reload an existing JSON simulation.
 extends FileDialog
 
 @export var simulation_manager_path: NodePath
 var manager: SimulationManager
 
+## Initializes the reference to the manager and connects the file selection signal.
 func _ready():
 	manager = get_node_or_null(simulation_manager_path)
 	file_selected.connect(_on_file_selected)
 	access = FileDialog.ACCESS_FILESYSTEM
 
 
+## Reads the selected JSON file, validates it, then reruns the simulation via the manager.
 func _on_file_selected(path: String):
 	var file := FileAccess.open(path, FileAccess.READ)
 	var text := file.get_as_text()
