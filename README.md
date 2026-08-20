@@ -26,6 +26,7 @@ front-end for real-time visualization and control.
 | [simulatorV1/python_backend/README.md](simulatorV1/python_backend/README.md) | Backend install/run/test instructions. |
 | [simulatorV1/python_backend/REFERENCE.md](simulatorV1/python_backend/REFERENCE.md) | Module-by-module API reference (generated from the code's docstrings). |
 | [simulatorV1/python_backend/commande.md](simulatorV1/python_backend/commande.md) | Quick command cheat sheet for the backend. |
+| [simulatorV1/godot_interface/README.md](simulatorV1/godot_interface/README.md) | Godot frontend layout, scenes, and scripts reference. |
 
 ## Quick start
 

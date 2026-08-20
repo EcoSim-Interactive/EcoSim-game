@@ -23,6 +23,9 @@ This repository contains a pre-calculated ecosystem simulator (Python backend) a
 - Godot frontend
   - `socket_client.gd` sends `get_world`, `compute`, `start`, `pause`, `resume`, `stop` and receives the `step`, `status`, `summary` payloads.
 
+  Detailed frontend reference (scenes, scripts, client/server flow):
+  [simulatorV1/godot_interface/README.md](../simulatorV1/godot_interface/README.md).
+
 ## Runtime flow (summary)
 1. Client sends `get_world` -> backend returns geometry + resources.
 2. Client requests `compute` -> backend runs `SimulationEngine.generate_all_steps()` (background pre-calculation) and produces the log files.
